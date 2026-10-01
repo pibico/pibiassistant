@@ -231,8 +231,8 @@ class PAOWidget {
 			const win = settings.window;
 			css += `
 				.pao-chat-window {
-					width: ${win.width}px !important;
-					max-height: ${win.height}px !important;
+					width: ${win.width}px;
+					max-height: ${win.height}px;
 					border-radius: ${win.border_radius}px !important;
 				}
 
@@ -438,6 +438,7 @@ class PAOWidget {
 
 				<!-- Chat Window -->
 				<div class="pao-chat-window" style="display: none;">
+					<button type="button" class="pao-resize-grip" aria-label="${__('Resize chat (Alt+arrows, Alt+Home resets)')}" title="${__('Resize chat')}"></button>
 					<!-- Header -->
 					<div class="pao-header">
 						<div class="pao-header-brand">
@@ -604,6 +605,8 @@ class PAOWidget {
 
 		// Setup drag functionality on header
 		this.setup_drag_handlers();
+		PAOWidgetPositioning.setup_resize_grip(this);
+		PAOWidgetPositioning.setup_window_drag(this);
 
 		// Setup window resize handler to keep widget within viewport
 		this.setup_resize_handler();
@@ -1650,7 +1653,7 @@ function initPAOWidget() {
 }
 
 // Public helpers for the PA Admin hot-toggle flow. Available on window so
-// pa_admin_tools.js can call them without importing this module.
+// the PA Admin page (public/js/pa_admin/sidebar/chat-card.js) can call them without importing this module.
 window.initPAOWidget = initPAOWidget;
 window.paoWidgetRemount = function () {
 	// Tear down any existing instance (ghost or live) and re-init from a

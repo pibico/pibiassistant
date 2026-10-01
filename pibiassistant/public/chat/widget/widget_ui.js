@@ -327,6 +327,18 @@ window.PAOWidgetUI = {
 	 * @param {jQuery} $toggleBtn - Toggle button element
 	 * @param {jQuery} $chatWindow - Chat window element
 	 */
+	/**
+	 * Where the launcher is when it has never been measured (page loaded with the chat
+	 * already open): the saved drag position, else the default bottom-right corner.
+	 */
+	_launcher_rect(vw, vh) {
+		const size = 72;
+		const saved = PAOWidgetPositioning.load_custom_position();
+		const left = saved ? saved.x * Math.max(1, vw - size) : vw - size - 35;
+		const top = saved ? saved.y * Math.max(1, vh - size) : vh - size - 35;
+		return { left, top, right: left + size, bottom: top + size };
+	},
+
 	position_chat_window($widget, $toggleBtn, $chatWindow) {
 		if (window.innerWidth < 1024) {
 			$chatWindow.css({ top: "", left: "", right: "", bottom: "", width: "", height: "" });
@@ -336,14 +348,31 @@ window.PAOWidgetUI = {
 		const vh = window.innerHeight;
 		const margin = 15;
 		const edge = 10;
-		const chatWidth = Math.min(400, vw - 2 * edge);
-		const chatHeight = Math.min(650, vh - 2 * edge);
+		const saved = window.PAOWidgetPositioning && PAOWidgetPositioning.get_chat_size();
+		const chatWidth = Math.min(saved ? saved.w : 400, vw - 2 * edge);
+		const chatHeight = Math.min(saved ? saved.h : 650, vh - 2 * edge);
+
+		const custom = PAOWidgetPositioning.get_window_position();
+		if (custom) {
+			$chatWindow.css({
+				position: "fixed",
+				left: edge + custom.x * Math.max(0, vw - chatWidth - 2 * edge) + "px",
+				top: edge + custom.y * Math.max(0, vh - chatHeight - 2 * edge) + "px",
+				right: "auto",
+				bottom: "auto",
+				width: chatWidth + "px",
+				height: chatHeight + "px",
+				"max-height": chatHeight + "px",
+			});
+			return;
+		}
 
 		// The button is display:none while the chat is open, so fall back to
 		// the rect remembered by PAOWidgetPositioning.
 		let b = $toggleBtn[0].getBoundingClientRect();
 		if (!b.width && $widget._btn) b = $widget._btn;
 		else if (b.width) $widget._btn = { left: b.left, top: b.top, right: b.right, bottom: b.bottom };
+		else b = this._launcher_rect(vw, vh);
 
 		const clampL = (v) => Math.max(edge, Math.min(v, vw - chatWidth - edge));
 		const clampT = (v) => Math.max(edge, Math.min(v, vh - chatHeight - edge));
@@ -376,6 +405,7 @@ window.PAOWidgetUI = {
 			bottom: "auto",
 			width: chatWidth + "px",
 			height: chatHeight + "px",
+			"max-height": chatHeight + "px",
 		});
 	},
 };

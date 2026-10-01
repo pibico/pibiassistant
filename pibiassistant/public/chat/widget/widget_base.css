@@ -703,7 +703,61 @@ html[data-theme="dark"] .pao-widget .pao-send-btn:hover:not(:disabled) {
 
 /* Phone + tablet Desk: keep the launcher in the corner and give the open
    panel a near-full viewport so 400×650 doesn't overflow the screen. */
+.pao-resize-grip {
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 5;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: 0;
+	border-radius: 8px 0 8px 0;
+	background: transparent;
+	cursor: nwse-resize;
+	touch-action: none;
+	opacity: 0.55;
+	transition: opacity 0.15s ease;
+}
+
+.pao-resize-grip::before {
+	content: "";
+	position: absolute;
+	top: 5px;
+	left: 5px;
+	width: 10px;
+	height: 10px;
+	background: linear-gradient(135deg, currentColor 0 1.5px, transparent 1.5px 4px, currentColor 4px 5.5px, transparent 5.5px);
+	color: var(--pao-text-muted, #8d99a6);
+}
+
+.pao-resize-grip:hover,
+.pao-resize-grip:focus-visible,
+.pao-widget.pao-resizing .pao-resize-grip {
+	opacity: 1;
+}
+
+.pao-resize-grip:focus-visible {
+	outline: 2px solid var(--pao-accent, #4682b4);
+	outline-offset: -2px;
+}
+
+.pao-widget.pao-resizing,
+.pao-widget.pao-moving {
+	user-select: none;
+}
+
+@media (min-width: 1024px) {
+	.pao-header {
+		cursor: move;
+	}
+}
+
 @media (max-width: 1023px) {
+	.pao-resize-grip {
+		display: none;
+	}
+
 	.pao-widget {
 		bottom: max(16px, env(safe-area-inset-bottom, 0px));
 		right: max(12px, env(safe-area-inset-right, 0px));
