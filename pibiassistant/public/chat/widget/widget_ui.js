@@ -40,32 +40,14 @@ window.PAOWidgetUI = {
 	},
 
 	/**
-	 * Get robot avatar HTML
+	 * Get AIDA avatar HTML
 	 * @param {string} size - Size variant (default, header, welcome, message)
-	 * @returns {string} Robot HTML
+	 * @returns {string} Avatar HTML
 	 */
 	get_robot_html(size = "default") {
-		const sizeClass = size !== "default" ? `pao-robot-${size}` : "";
-		return `
-			<div class="pao-robot ${sizeClass}">
-				<div class="robot-antenna">
-					<div class="robot-antenna-tip"></div>
-				</div>
-				<div class="robot-arm robot-arm-left"></div>
-				<div class="robot-arm robot-arm-right"></div>
-				<div class="robot-head">
-					<div class="robot-screen">
-						<div class="robot-brow robot-brow-left"></div>
-						<div class="robot-brow robot-brow-right"></div>
-						<div class="robot-eye robot-eye-left"></div>
-						<div class="robot-eye robot-eye-right"></div>
-						<div class="robot-mouth"></div>
-					</div>
-				</div>
-				<div class="robot-body"></div>
-				<div class="robot-shadow"></div>
-			</div>
-		`;
+		const sizes = { default: 48, header: 24, welcome: 72, message: 24 };
+		const px = sizes[size] || sizes.default;
+		return `<img class="aida-avatar aida-avatar-${size}" src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" width="${px}" height="${px}" style="border-radius:50%;">`;
 	},
 
 	/**
@@ -76,23 +58,7 @@ window.PAOWidgetUI = {
 		return `
 			<div class="pao-header">
 				<div class="pao-header-brand">
-					<div class="pao-robot pao-robot-header">
-						<div class="robot-antenna">
-							<div class="robot-antenna-tip"></div>
-						</div>
-						<div class="robot-arm robot-arm-left"></div>
-						<div class="robot-arm robot-arm-right"></div>
-						<div class="robot-head">
-							<div class="robot-screen">
-								<div class="robot-brow robot-brow-left"></div>
-								<div class="robot-brow robot-brow-right"></div>
-								<div class="robot-eye robot-eye-left"></div>
-								<div class="robot-eye robot-eye-right"></div>
-								<div class="robot-mouth"></div>
-							</div>
-						</div>
-						<div class="robot-body"></div>
-					</div>
+					${this.get_robot_html("header")}
 					<span class="pao-brand-text">AIDA</span>
 				</div>
 				<div class="pao-header-actions">
@@ -144,13 +110,13 @@ window.PAOWidgetUI = {
 				<div class="pao-avatar">
 					${this.get_robot_html("welcome")}
 				</div>
-				<h3>Hola! Soy AIDA</h3>
-				<p>Tu asistente inteligente de pibiCo. I can help you with:</p>
+				<h3>¡Hola! Soy AIDA</h3>
+				<p>Tu asistente inteligente de pibiCo. Puedo ayudarte a:</p>
 				<ul>
-					<li>Understanding forms and data</li>
-					<li>Creating and managing documents</li>
-					<li>Answering questions about Frappe</li>
-					<li>Navigating the system</li>
+					<li>Consultar datos y formularios</li>
+					<li>Crear y gestionar documentos</li>
+					<li>Resolver dudas sobre el sistema</li>
+					<li>Navegar y encontrar lo que necesitas</li>
 				</ul>
 			</div>
 		`;
@@ -176,7 +142,7 @@ window.PAOWidgetUI = {
 						</svg>
 					</button>
 					<input type="file" class="pao-file-input" style="display: none;" accept=".pdf,.png,.jpg,.jpeg,.gif,.csv,.xlsx,.xls,.docx,.doc,.txt,.json,.xml">
-					<textarea class="pao-input" placeholder="Ask me anything..." rows="1"></textarea>
+					<textarea class="pao-input" placeholder="Pregúntame lo que necesites..." rows="1"></textarea>
 					<button class="pao-send-btn" disabled title="Send message">
 						<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 							<line x1="22" y1="2" x2="11" y2="13"></line>

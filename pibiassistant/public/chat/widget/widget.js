@@ -190,7 +190,7 @@ class PAOWidget {
 		return {
 			button: {
 				size: 56,
-				icon: "robot",
+				icon: "aida",
 				enable_pulse: true,
 				shadow: "0 4px 20px rgba(0,0,0,0.15)",
 			},
@@ -432,24 +432,7 @@ class PAOWidget {
 
 				<!-- Toggle Button -->
 				<button class="pao-toggle-btn">
-					<div class="pao-robot">
-						<div class="robot-antenna">
-							<div class="robot-antenna-tip"></div>
-						</div>
-						<div class="robot-arm robot-arm-left"></div>
-						<div class="robot-arm robot-arm-right"></div>
-						<div class="robot-head">
-							<div class="robot-screen">
-								<div class="robot-brow robot-brow-left"></div>
-								<div class="robot-brow robot-brow-right"></div>
-								<div class="robot-eye robot-eye-left"></div>
-								<div class="robot-eye robot-eye-right"></div>
-								<div class="robot-mouth"></div>
-							</div>
-						</div>
-						<div class="robot-body"></div>
-						<div class="robot-shadow"></div>
-					</div>
+						<img class="aida-avatar" src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" width="48" height="48" style="border-radius:50%;">
 					<span class="pao-approval-badge" aria-hidden="true"></span>
 				</button>
 
@@ -458,24 +441,8 @@ class PAOWidget {
 					<!-- Header -->
 					<div class="pao-header">
 						<div class="pao-header-brand">
-							<div class="pao-robot pao-robot-header">
-								<div class="robot-antenna">
-									<div class="robot-antenna-tip"></div>
-								</div>
-								<div class="robot-arm robot-arm-left"></div>
-								<div class="robot-arm robot-arm-right"></div>
-								<div class="robot-head">
-									<div class="robot-screen">
-										<div class="robot-brow robot-brow-left"></div>
-										<div class="robot-brow robot-brow-right"></div>
-										<div class="robot-eye robot-eye-left"></div>
-										<div class="robot-eye robot-eye-right"></div>
-										<div class="robot-mouth"></div>
-									</div>
-								</div>
-								<div class="robot-body"></div>
-							</div>
-							<span class="pao-brand-text">AIDA</span>
+							<img class="aida-avatar aida-avatar-header" src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" width="24" height="24" style="border-radius:50%;margin-right:6px;vertical-align:middle;">
+								<span class="pao-brand-text">AIDA</span>
 						</div>
 						<div class="pao-header-actions">
 							<button class="pao-expand-btn" title="Open Full Page">
@@ -501,7 +468,7 @@ class PAOWidget {
 							<div class="pao-avatar">
 								<img src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" style="width:64px;height:64px;border-radius:50%;">
 							</div>
-							<h3>Hola! Soy AIDA</h3>
+							<h3>¡Hola! Soy AIDA</h3>
 							<p>Tu asistente inteligente de pibiCo. Puedo ayudarte con:</p>
 							<ul>
 								<li>Consultar datos y formularios</li>
@@ -535,7 +502,7 @@ class PAOWidget {
 							</button>
 							<textarea
 								class="pao-input"
-								placeholder="Ask me anything about Frappe..."
+								placeholder="Pregúntame lo que necesites..."
 								rows="1"
 							></textarea>
 							<button class="pao-send-btn" title="Send" disabled>
@@ -773,7 +740,7 @@ class PAOWidget {
 			$btn.addClass("is-error");
 			setTimeout(() => $btn.removeClass("is-error"), 200);
 		} else {
-			$input.attr("placeholder", "Ask me anything about Frappe...");
+			$input.attr("placeholder", "Pregúntame lo que necesites...");
 		}
 	}
 

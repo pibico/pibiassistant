@@ -352,7 +352,7 @@ window.PAOCore = {
 		return {
 			button: {
 				size: 56,
-				icon: "robot",
+				icon: "aida",
 				enable_pulse: true,
 				shadow: "0 4px 20px rgba(0,0,0,0.15)",
 			},
@@ -477,7 +477,7 @@ window.PAOCore = {
 	},
 
 	/**
-	 * Get assistant avatar HTML (robot icon)
+	 * Get assistant avatar HTML
 	 * @returns {string} HTML for assistant avatar
 	 */
 	get_assistant_avatar() {

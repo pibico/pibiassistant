@@ -55,19 +55,19 @@
 
   <g class="head-group">
     <!-- Hair back layer -->
-    <path d="M 14 28 Q 12 18 18 12 Q 24 6 32 6 Q 40 6 46 12 Q 52 18 50 28 L 50 36 Q 50 42 46 44 L 44 38 Q 44 34 42 32 L 22 32 Q 20 34 20 38 L 18 44 Q 14 42 14 36 Z"
+    <path d="M 18 28 Q 17 20 21 14 Q 25 9 32 9 Q 39 9 43 14 Q 47 20 46 28 L 46 34 Q 46 40 43 42 L 42 37 Q 43 34 42 32 L 22 32 Q 21 34 22 37 L 21 42 Q 18 40 18 34 Z"
           fill="url(#hair)"/>
 
     <!-- Face -->
     <ellipse cx="32" cy="30" rx="12" ry="13" fill="url(#skin)"/>
 
     <!-- Hair fringe -->
-    <path d="M 18 24 Q 18 14 24 10 Q 28 7 32 8 Q 36 7 40 10 Q 46 14 46 24 Q 44 18 38 16 Q 34 15 32 17 Q 30 15 26 16 Q 20 18 18 24 Z"
+    <path d="M 20 24 Q 20 16 25 12 Q 28 10 32 11 Q 36 10 39 12 Q 44 16 44 24 Q 42 19 38 17 Q 35 16 32 17.5 Q 29 16 26 17 Q 22 19 20 24 Z"
           fill="url(#hair)"/>
 
-    <!-- Side hair waves -->
-    <path d="M 18 26 Q 16 30 17 36 Q 18 40 20 42 Q 18 38 19 34 Q 20 30 20 26 Z" fill="url(#hair)"/>
-    <path d="M 46 26 Q 48 30 47 36 Q 46 40 44 42 Q 46 38 45 34 Q 44 30 44 26 Z" fill="url(#hair)"/>
+    <!-- Side hair wisps -->
+    <path d="M 19 27 Q 18 30 18.5 34 Q 19 37 21 39 Q 19 36 19.5 33 Q 20 30 20 27 Z" fill="url(#hair)"/>
+    <path d="M 45 27 Q 46 30 45.5 34 Q 45 37 43 39 Q 45 36 44.5 33 Q 44 30 44 27 Z" fill="url(#hair)"/>
 
     <!-- Glasses frames -->
     <circle cx="27" cy="29" r="4.5" stroke="#555" stroke-width="1.2" fill="none"/>

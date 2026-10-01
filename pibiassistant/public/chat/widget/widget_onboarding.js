@@ -55,23 +55,7 @@ window.PAOWidgetOnboarding = {
 		const html = `
 			<div class="pao-onboarding">
 				<div class="pao-onboarding-header">
-					<div class="pao-robot pao-robot-large">
-						<div class="robot-antenna">
-							<div class="robot-antenna-tip"></div>
-						</div>
-						<div class="robot-arm robot-arm-left"></div>
-						<div class="robot-arm robot-arm-right"></div>
-						<div class="robot-head">
-							<div class="robot-screen">
-								<div class="robot-brow robot-brow-left"></div>
-								<div class="robot-brow robot-brow-right"></div>
-								<div class="robot-eye robot-eye-left"></div>
-								<div class="robot-eye robot-eye-right"></div>
-								<div class="robot-mouth"></div>
-							</div>
-						</div>
-						<div class="robot-body"></div>
-					</div>
+					<img class="aida-avatar" src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" width="80" height="80" style="border-radius:50%;margin-bottom:10px;">
 					<h2>${msg.title}</h2>
 					<p>${msg.subtitle}</p>
 				</div>
@@ -146,23 +130,7 @@ window.PAOWidgetOnboarding = {
 		$messages.html(`
 			<div class="pao-welcome">
 				<div class="pao-avatar">
-					<div class="pao-robot pao-robot-welcome">
-						<div class="robot-antenna">
-							<div class="robot-antenna-tip"></div>
-						</div>
-						<div class="robot-arm robot-arm-left"></div>
-						<div class="robot-arm robot-arm-right"></div>
-						<div class="robot-head">
-							<div class="robot-screen">
-								<div class="robot-brow robot-brow-left"></div>
-								<div class="robot-brow robot-brow-right"></div>
-								<div class="robot-eye robot-eye-left"></div>
-								<div class="robot-eye robot-eye-right"></div>
-								<div class="robot-mouth"></div>
-							</div>
-						</div>
-						<div class="robot-body"></div>
-					</div>
+					<img class="aida-avatar" src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" width="72" height="72" style="border-radius:50%;">
 				</div>
 				<h3>${__("Hi! Soy AIDA")}</h3>
 				<p>${__("Tu asistente inteligente de pibiCo. Puedo ayudarte con:")}</p>
