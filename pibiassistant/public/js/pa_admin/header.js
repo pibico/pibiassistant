@@ -22,7 +22,7 @@ function renderServerStatus(root, isEnabled) {
         setHtml(pill, '<span class="pa-status-dot" aria-hidden="true"></span> ' + __('Running'));
         removeClass(btn, 'btn-primary');
         addClass(btn, 'btn-danger');
-        setHtml(btnText, '<i class="fa fa-stop" aria-hidden="true"></i> ' + __('Disable'));
+        setHtml(btnText, '<i class="ph ph-stop" aria-hidden="true"></i> ' + __('Disable'));
     } else {
         removeClass(icon, 'active');
         addClass(icon, 'inactive');
@@ -31,7 +31,7 @@ function renderServerStatus(root, isEnabled) {
         setHtml(pill, '<span class="pa-status-dot" aria-hidden="true"></span> ' + __('Stopped'));
         removeClass(btn, 'btn-danger');
         addClass(btn, 'btn-primary');
-        setHtml(btnText, '<i class="fa fa-play" aria-hidden="true"></i> ' + __('Enable'));
+        setHtml(btnText, '<i class="ph ph-play" aria-hidden="true"></i> ' + __('Enable'));
     }
 }
 
@@ -48,7 +48,7 @@ function renderUnavailable(root) {
     setHtml(pill, '<span class="pa-status-dot" aria-hidden="true"></span> ' + __('Unavailable'));
     removeClass(btn, 'btn-danger');
     addClass(btn, 'btn-primary');
-    setHtml(qs('#toggle-server-text', root), '<i class="fa fa-refresh" aria-hidden="true"></i> ' + __('Retry'));
+    setHtml(qs('#toggle-server-text', root), '<i class="ph ph-arrows-clockwise" aria-hidden="true"></i> ' + __('Retry'));
     if (btn) btn.disabled = false;
 }
 

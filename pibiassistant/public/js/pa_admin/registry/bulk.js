@@ -29,7 +29,7 @@ async function performBulkToggle(ctx, category, plugin, enabled) {
   for (const b of [enableBtn, disableBtn]) if (b) b.disabled = true;
   const btn = enabled ? enableBtn : disableBtn;
   const originalHtml = btn?.innerHTML;
-  setHtml(btn, `<i class="fa fa-spinner fa-spin" aria-hidden="true"></i> ${enabled ? __('Enabling...') : __('Disabling...')}`);
+  setHtml(btn, `<i class="ph ph-spinner ph-spin" aria-hidden="true"></i> ${enabled ? __('Enabling...') : __('Disabling...')}`);
 
   try {
     const res = await call('pibiassistant.api.admin_api.bulk_toggle_tools_by_category', {

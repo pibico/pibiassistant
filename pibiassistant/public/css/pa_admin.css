@@ -2,8 +2,9 @@
 /* Auto-extracted from pa_admin.js */
 
 .pa-admin-container {
+    --pad-y-xs: 2px; --pad-y-sm: 4px; --pad-y-md: 6px; --pad-y-lg: 8px; --pad-y-xl: 12px;
     /* pibiCo steelblue accent — local page-scoped vars. */
-    --pa-accent: #4682B4;
+    --pa-accent: #2F6A9A;
     --pa-accent-soft: rgba(70, 130, 180, 0.12);
     max-width: 1400px;
     margin: 0 auto;
@@ -20,7 +21,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 4px 16px;
+    padding: 8px 4px 8px;
     margin-bottom: 8px;
     gap: 12px;
     flex-wrap: wrap;
@@ -52,7 +53,7 @@
 }
 
 .pa-registry-card {
-    padding-bottom: 16px;
+    padding-bottom: 8px;
     /* Override the global card padding so tab nav sits flush */
     padding-top: 0;
 }
@@ -84,7 +85,7 @@
 }
 
 .pa-sidebar-card {
-    padding: 14px 16px;
+    padding: 8px 12px;
     margin-bottom: 0;
 }
 .pa-sidebar-row {
@@ -127,7 +128,7 @@
     margin-top: 8px;
 }
 .pa-endpoint-compact {
-    padding: 6px 8px;
+    padding: 4px 8px;
     font-size: 11px;
     margin-bottom: 8px;
     background: var(--control-bg);
@@ -149,7 +150,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px;
+    padding: 4px 8px;
     margin: 0 -8px;
     border-radius: 6px;
     color: var(--text-color);
@@ -186,13 +187,13 @@
     margin-bottom: 10px;
 }
 .pa-analytics-cell {
-    padding: 8px 10px;
+    padding: 4px 8px;
     background: var(--bg-color);
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
 }
 .pa-analytics-label {
-    font-size: 10px;
+    font-size: 11px;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.4px;
@@ -253,7 +254,7 @@
     height: 18px;
     padding: 0 6px;
     background: var(--bg-color);
-    color: var(--text-muted);
+    color: var(--gray-800, #2b2f33);
     border-radius: 9px;
     font-size: 11px;
     font-weight: 600;
@@ -313,8 +314,8 @@
 .pa-card {
     background: var(--card-bg);
     border-radius: var(--border-radius-md);
-    padding: 20px;
-    margin-bottom: 20px;
+    padding: 12px;
+    margin-bottom: var(--pad-y-xl);
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border-color);
 }
@@ -322,8 +323,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
     border-bottom: 1px solid var(--border-color);
 }
 .pa-card-title {
@@ -349,7 +350,7 @@
     box-shadow: 0 0 0 3px var(--red-100);
 }
 .pa-tool-item {
-    padding: 12px 16px;
+    padding: 6px 12px;
     border-bottom: 1px solid var(--border-color);
     transition: background 0.15s;
     display: flex;
@@ -379,7 +380,7 @@
 }
 .pa-tool-badge {
     display: inline-block;
-    padding: 3px 10px;
+    padding: 2px 8px;
     background: var(--bg-color);
     border-radius: 12px;
     font-size: 11px;
@@ -391,7 +392,7 @@
     margin: 0;
 }
 .pa-plugin-item {
-    padding: 16px;
+    padding: var(--pad-y-md) 12px;
     border-bottom: 1px solid var(--border-color);
     transition: background 0.15s;
 }
@@ -467,7 +468,7 @@ input:checked + .slider:before {
     border-radius: 50%;
 }
 .pa-settings-group {
-    margin-bottom: 24px;
+    margin-bottom: 12px;
 }
 .pa-settings-label {
     font-size: 13px;
@@ -479,13 +480,13 @@ input:checked + .slider:before {
 .pa-settings-value {
     font-size: 13px;
     color: var(--text-color);
-    padding: 10px 12px;
+    padding: 6px 10px;
     background: var(--control-bg);
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
 }
 .pa-endpoint-url {
-    font-family: var(--font-stack-monospace);
+    font-family: inherit;
     font-size: 12px;
     word-break: break-all;
 }
@@ -508,7 +509,7 @@ input:checked + .slider:before {
     background: var(--bg-color);
 }
 .pa-table th {
-    padding: 10px 12px;
+    padding: var(--pad-y-sm) 10px;
     text-align: left;
     font-size: 12px;
     font-weight: 600;
@@ -516,7 +517,8 @@ input:checked + .slider:before {
     border-bottom: 1px solid var(--border-color);
 }
 .pa-table td {
-    padding: 10px 12px;
+    padding: var(--pad-y-md) 10px;
+    line-height: 1.4;
     font-size: 13px;
     color: var(--text-color);
     border-bottom: 1px solid var(--border-color);
@@ -536,10 +538,10 @@ input:checked + .slider:before {
 .pa-view-tabs {
     display: flex;
     gap: 8px;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
 }
 .pa-view-tab {
-    padding: 8px 16px;
+    padding: 4px 12px;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     background: var(--card-bg);
@@ -561,7 +563,7 @@ input:checked + .slider:before {
     display: inline-block;
     padding: 2px 8px;
     border-radius: 10px;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
 }
@@ -571,7 +573,7 @@ input:checked + .slider:before {
 }
 .pa-category-badge.write, .pa-category-badge.yellow {
     background: var(--yellow-100);
-    color: var(--yellow-700);
+    color: var(--yellow-900, #5c3d00);
 }
 .pa-category-badge.read_write, .pa-category-badge.blue {
     background: var(--blue-100);
@@ -588,7 +590,7 @@ input:checked + .slider:before {
 }
 /* Tool item with expanded layout */
 .pa-tool-item-detailed {
-    padding: 12px 16px;
+    padding: 6px 12px;
     border-bottom: 1px solid var(--border-color);
     transition: background 0.15s;
 }
@@ -643,13 +645,13 @@ input:checked + .slider:before {
 .pa-filter-input {
     flex: 1;
     min-width: 200px;
-    padding: 8px 12px;
+    padding: 4px 10px;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     font-size: 13px;
 }
 .pa-filter-select {
-    padding: 8px 12px;
+    padding: 4px 10px;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     font-size: 13px;
@@ -660,7 +662,7 @@ input:checked + .slider:before {
     background: transparent;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    padding: 4px 8px;
+    padding: 2px 8px;
     cursor: pointer;
     color: var(--text-muted);
     font-size: 12px;
@@ -681,7 +683,7 @@ input:checked + .slider:before {
 .pa-tool-config-panel {
     display: none;
     margin-top: 12px;
-    padding: 12px;
+    padding: 8px 12px;
     background: var(--control-bg);
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
@@ -800,7 +802,7 @@ input:checked + .slider:before {
     gap: 10px;
     align-items: center;
     margin-bottom: 12px;
-    padding: 10px 12px;
+    padding: 6px 12px;
     background: var(--bg-color);
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
@@ -874,10 +876,11 @@ input:checked + .slider:before {
     gap: 0;
     border-bottom: 1px solid var(--border-color);
     margin: 0 -16px 0;
-    padding: 0 16px;
+    padding: 0 12px;
 }
 .pa-top-tab {
-    padding: 12px 20px;
+    padding: var(--pad-y-md) 12px;
+    min-height: 34px;
     border: none;
     background: transparent;
     cursor: pointer;
@@ -904,13 +907,13 @@ input:checked + .slider:before {
 /* Tab content panels */
 .pa-tab-panel {
     display: none;
-    padding-top: 16px;
+    padding-top: 8px;
 }
 .pa-tab-panel.active {
     display: block;
 }
 .pa-registry-card .pa-tab-panel {
-    padding-top: 16px;
+    padding-top: 8px;
 }
 .pa-registry-card .pa-filter-bar {
     margin-bottom: 12px;
@@ -918,7 +921,7 @@ input:checked + .slider:before {
 
 /* Clean card layout for prompts and skills lists */
 .pa-item-card {
-    padding: 16px 20px;
+    padding: 8px 12px;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-md);
     margin-bottom: 10px;
@@ -960,8 +963,9 @@ input:checked + .slider:before {
 .pa-item-subtitle {
     font-size: 12px;
     color: var(--text-light);
-    font-family: var(--font-stack-monospace, monospace);
-    margin-bottom: 10px;
+    font-family: inherit;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 4px;
 }
 
 /* Bottom row: metadata chips */
@@ -993,7 +997,7 @@ input:checked + .slider:before {
 .pa-expand-panel {
     display: none;
     margin-top: 12px;
-    padding: 12px;
+    padding: 8px 12px;
     background: var(--control-bg);
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
@@ -1041,13 +1045,13 @@ input:checked + .slider:before {
     background: var(--bg-color);
     font-weight: 600;
     text-align: left;
-    padding: 8px 12px;
+    padding: 4px 10px;
     border: 1px solid var(--border-color);
     font-size: 12px;
     color: var(--heading-color);
 }
 .pa-expand-panel td, .pa-preview-content td {
-    padding: 8px 12px;
+    padding: 4px 10px;
     border: 1px solid var(--border-color);
     vertical-align: top;
 }
@@ -1118,14 +1122,14 @@ input:checked + .slider:before {
 
 @media (prefers-reduced-motion: reduce) {
     .pa-skeleton-line,
-    .fa-spin {
+    .ph-spin {
         animation: none;
     }
 }
 
 /* ===== Empty states ===== */
 .pa-empty-state {
-    padding: 40px 20px;
+    padding: 20px 16px;
     text-align: center;
     color: var(--text-muted);
     display: flex;
@@ -1134,9 +1138,9 @@ input:checked + .slider:before {
     gap: 8px;
 }
 .pa-empty-state--compact {
-    padding: 24px 16px;
+    padding: 12px 16px;
 }
-.pa-empty-state > .fa {
+.pa-empty-state > .ph {
     font-size: 28px;
     opacity: 0.5;
     margin-bottom: 4px;
@@ -1159,13 +1163,13 @@ input:checked + .slider:before {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: 12px 0;
+    padding: 8px 0;
 }
 .pa-skeleton-card {
     background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    padding: 14px 16px;
+    padding: 8px 12px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -1263,6 +1267,7 @@ mark.pa-hl {
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    line-height: 1.4;
 }
 .pa-view-all:hover {
     color: var(--pa-accent);
@@ -1415,28 +1420,27 @@ mark.pa-hl {
     }
 
     /* Touch targets >= 44px. */
-    .pa-top-tab,
-    .pa-view-tab,
     .pa-plugin-toggle,
     .pa-btn,
     .pa-copy-endpoint {
-        min-height: 44px;
+        min-height: 32px;
     }
 }
 @media (max-width: 480px) {
     .pa-top-tab {
-        padding: 10px 12px;
+        padding: var(--pad-y-md) 10px;
         font-size: 13px;
     }
 }
 
 /* AIDA services card: one service per row, status pill above its URL */
 #pa-aida-services li {
+    text-align: left; justify-content: flex-start;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 2px;
-    padding: 6px 0;
+    padding: var(--pad-y-sm) 0;
 }
 #pa-aida-services .svc-detail {
     max-width: 100%;
@@ -1452,4 +1456,68 @@ mark.pa-hl {
 .pa-view-tab:focus-visible {
     outline: 2px solid var(--pa-accent);
     outline-offset: 2px;
+}
+
+.ph-spin { display: inline-block; animation: pa-ph-spin 1s linear infinite; }
+@keyframes pa-ph-spin { to { transform: rotate(360deg); } }
+.pa-admin-container { font-variant-numeric: tabular-nums; }
+.pa-admin-container, .pa-admin-container button, .pa-admin-container input, .pa-admin-container select {
+    font-family: var(--font-stack, "Inter", -apple-system, "Segoe UI", Roboto, sans-serif);
+}
+.pa-admin-container .ph { line-height: 1; vertical-align: -0.125em; }
+#pa-aida-services li {
+    text-align: left; justify-content: flex-start;
+    display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; row-gap: 0;
+    min-height: 28px; padding: var(--pad-y-xs) 0; line-height: 1.4;
+}
+#pa-aida-services .pa-sidebar-subtle { margin-bottom: 0; overflow-wrap: anywhere; }
+.pa-admin-container .pa-card-header .btn, .pa-admin-container .pa-card-header .btn-xs { position: relative; }
+@media (pointer: coarse) {
+    .pa-view-all { min-height: 44px; padding: 0 8px; margin: 0 -8px; }
+    .pa-admin-container .btn-xs, .pa-admin-container .btn-sm, #refresh-all, #copy-endpoint, #open-aida { min-width: 44px; }
+    .pa-top-tab, .pa-view-tab, .pa-admin-container .btn, .pa-tool-settings-btn, .pa-add-role-btn,
+    .pa-quick-list a, .pa-filter-input, .pa-filter-select, .pa-desc-toggle {
+        min-height: 44px;
+    }
+    .pa-desc-toggle, .pa-admin-container .btn { display: inline-flex; align-items: center; justify-content: center; }
+    .pa-plugin-toggle, .pa-tool-toggle, .switch { position: relative; }
+    .switch::before, .pa-plugin-toggle::before {
+        content: ""; position: absolute; left: -6px; right: -6px; top: 50%; height: 44px; transform: translateY(-50%);
+    }
+    .pa-plugin-toggle { min-width: 44px; min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) { .ph-spin { animation: none; } }
+
+.pa-admin-container .btn-success { background: #176B3A; border-color: #176B3A; color: #fff; }
+.pa-admin-container .btn-warning { background: #8A4B00; border-color: #8A4B00; color: #fff; }
+.pa-admin-container .btn-success .pa-btn-label, .pa-admin-container .btn-warning .pa-btn-label { color: #fff; }
+.pa-admin-container .btn-danger #toggle-server-text, #toggle-server-text { color: inherit; }
+.pa-admin-container .btn-danger { background: #B3261E; border-color: #B3261E; color: #fff; }
+.pa-category-badge.privileged, .pa-category-badge.orange, .pa-category-badge.dangerous { color: #8A3A00; }
+.pa-category-badge.read_only, .pa-category-badge.green { color: #14562F; }
+.pa-category-badge.read_write, .pa-category-badge.blue { color: #1D4F7C; }
+[data-theme="dark"] .pa-admin-container .btn-success, [data-theme="dark"] .pa-admin-container .btn-warning { color: #fff; }
+[data-theme="dark"] .pa-category-badge.privileged, [data-theme="dark"] .pa-category-badge.orange, [data-theme="dark"] .pa-category-badge.dangerous { color: var(--orange-300, #ffb877); }
+[data-theme="dark"] .pa-category-badge.read_only, [data-theme="dark"] .pa-category-badge.green { color: var(--green-300, #7fdc9f); }
+[data-theme="dark"] .pa-category-badge.read_write, [data-theme="dark"] .pa-category-badge.blue { color: var(--blue-300, #8fc3ee); }
+[data-theme="dark"] .pa-category-badge.write, [data-theme="dark"] .pa-category-badge.yellow { color: var(--yellow-300, #f5d76e); }
+[data-theme="dark"] .pa-tab-count { color: var(--gray-300, #c4c9ce); }
+
+/* Compact but not cramped: small action buttons keep a 28px target on fine pointers */
+@media (pointer: fine) {
+    .pa-card .btn.btn-xs,
+    .pa-copy-endpoint {
+        min-height: 28px;
+    }
+}
+.pa-card .btn.btn-xs,
+.pa-sidebar-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.pa-item-title {
+    flex-wrap: wrap;
+    min-width: 0;
 }

@@ -119,7 +119,7 @@ export async function saveToolConfig(ctx, toolName) {
   const category = panel.querySelector('.pa-category-select').value;
   const saveBtn = panel.querySelector('.pa-config-save');
   saveBtn.disabled = true;
-  setHtml(saveBtn, `<i class="fa fa-spinner fa-spin"></i> ${__('Saving...')}`);
+  setHtml(saveBtn, `<i class="ph ph-spinner ph-spin" aria-hidden="true"></i> ${__('Saving...')}`);
   const restore = () => {
     if (!ctx.scope.alive) return;
     saveBtn.disabled = false;

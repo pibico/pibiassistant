@@ -5,7 +5,7 @@ const esc = (s) => frappe.utils.escape_html(String(s ?? ''));
 
 function rowHtml(a) {
 	const ok = a.status === 'Success';
-	const icon = ok ? 'fa-check-circle' : 'fa-times-circle';
+	const icon = ok ? 'ph-check-circle' : 'ph-x-circle';
 	return `
 		<tr>
 			<td>${esc(a.action)}</td>
@@ -13,7 +13,7 @@ function rowHtml(a) {
 			<td>${esc(a.user)}</td>
 			<td>
 				<span class="indicator-pill ${ok ? 'green' : 'red'}">
-					<i class="fa ${icon}" aria-hidden="true"></i>
+					<i class="ph ${icon}" aria-hidden="true"></i>
 					${esc(a.status)}
 				</span>
 			</td>
@@ -42,7 +42,7 @@ function tableHtml(activities) {
 function emptyHtml() {
 	return `
 		<div class="pa-empty-state pa-empty-state--compact">
-			<i class="fa fa-history" aria-hidden="true"></i>
+			<i class="ph ph-clock-counter-clockwise" aria-hidden="true"></i>
 			<div class="pa-empty-title">${esc(__('No activity yet'))}</div>
 			<div class="pa-empty-subtitle">${esc(__('Tool calls will appear here.'))}</div>
 		</div>`;

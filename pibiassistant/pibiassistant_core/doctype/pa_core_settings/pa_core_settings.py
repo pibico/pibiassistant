@@ -217,7 +217,7 @@ class PACoreSettings(Document):
                 <div class="row align-items-center">
                     <div class="col-md-8">
                         <h5 class="mb-2" style="color: var(--heading-color);">
-                            <i class="fa fa-cogs"></i> Plugin System Status
+                            <i class="ph ph-gear-six" aria-hidden="true"></i> Plugin System Status
                         </h5>
                         <div class="row">
                             <div class="col-md-4">
@@ -233,21 +233,21 @@ class PACoreSettings(Document):
                             <div class="col-md-4">
                                 <strong>Status:</strong>
                                 <span style="color: var(--green-600);">
-                                    <i class="fa fa-check-circle"></i> Operational
+                                    <i class="ph ph-check-circle" aria-hidden="true"></i> Operational
                                 </span>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-4 text-right">
                         <a href="/app/pa-admin" class="btn btn-primary btn-sm">
-                            <i class="fa fa-external-link-alt"></i> Open PA Admin
+                            <i class="ph ph-arrow-square-out" aria-hidden="true"></i> Open PA Admin
                         </a>
                     </div>
                 </div>
             </div>
 
             <div class="p-3 rounded" style="background: var(--card-bg); border: 1px solid var(--border-color);">
-                <h6 style="color: var(--heading-color);"><i class="fa fa-puzzle-piece"></i> Plugins</h6>
+                <h6 style="color: var(--heading-color);"><i class="ph ph-puzzle-piece" aria-hidden="true"></i> Plugins</h6>
                 <div class="row mt-3">
             """
 
@@ -284,7 +284,7 @@ class PACoreSettings(Document):
                 </div>
                 <div class="mt-3 pt-2" style="border-top: 1px solid var(--border-color);">
                     <small style="color: var(--text-muted);">
-                        <i class="fa fa-info-circle"></i>
+                        <i class="ph ph-info" aria-hidden="true"></i>
                         For individual tool management, role-based access control, and category filtering,
                         use the <a href="/app/pa-admin">PA Admin</a> page.
                     </small>

@@ -21,7 +21,7 @@ function config(ctx) {
 		toggleMethod: 'pibiassistant.api.admin_api.toggle_prompt_template_status',
 		toggleClass: 'pa-prompt-toggle',
 		actionBtnClass: 'pa-prompt-preview-btn',
-		actionIcon: 'fa-eye',
+		actionIcon: 'ph-eye',
 		get actionLabel() { return __('Preview template'); },
 		get publishLabel() { return __('Publish prompt'); },
 		docUrl: '/app/prompt-template/',
@@ -33,7 +33,7 @@ function config(ctx) {
 		loadErrorText: () => __('Error loading prompt templates'),
 		toggleErrorText: () => __('Error toggling template status'),
 		metaHtml: (t, lastUsed) => `
-			${t.category ? `<span class="pa-meta-chip"><i class="fa fa-folder-o"></i> ${esc(t.category)}</span>` : ''}
+			${t.category ? `<span class="pa-meta-chip"><i class="ph ph-folder" aria-hidden="true"></i> ${esc(t.category)}</span>` : ''}
 			${sharedChipsHtml(t, lastUsed)}`,
 		matches: (t) => {
 			const q = (qs('#prompt-search', root)?.value || '').toLowerCase();
@@ -44,13 +44,13 @@ function config(ctx) {
 			return true;
 		},
 		emptyHtml: () => emptyStateHtml({
-			icon: 'fa-file-text-o',
+			icon: 'ph-file-text',
 			title: __('No prompt templates yet'),
 			subtitle: __('Create a prompt template to expose it to MCP clients.'),
 			action: `<a href="/app/prompt-template/new?status=Draft" class="btn btn-xs btn-primary">${esc(__('Create template'))}</a>`,
 		}),
 		noMatchHtml: () => emptyStateHtml({
-			icon: 'fa-search',
+			icon: 'ph-magnifying-glass',
 			title: __('No templates match the current filters'),
 			action: `<button type="button" class="btn btn-xs btn-default pa-clear-prompt-filters">${esc(__('Clear filters'))}</button>`,
 		}),

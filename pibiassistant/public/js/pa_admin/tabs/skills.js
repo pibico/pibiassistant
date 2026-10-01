@@ -21,7 +21,7 @@ function config(ctx) {
 		toggleMethod: 'pibiassistant.api.admin_api.toggle_skill_status',
 		toggleClass: 'pa-skill-toggle',
 		actionBtnClass: 'pa-skill-content-btn',
-		actionIcon: 'fa-book',
+		actionIcon: 'ph-book-open',
 		actionAriaColon: true,
 		get actionLabel() { return __('View skill content'); },
 		get publishLabel() { return __('Publish skill'); },
@@ -35,7 +35,7 @@ function config(ctx) {
 		toggleErrorText: () => __('Error toggling skill status'),
 		metaHtml: (s, lastUsed) => `
 			<span class="pa-meta-chip">${esc(s.skill_type || '')}</span>
-			${s.linked_tool ? `<span class="pa-meta-chip"><i class="fa fa-wrench"></i> ${esc(s.linked_tool)}</span>` : ''}
+			${s.linked_tool ? `<span class="pa-meta-chip"><i class="ph ph-wrench" aria-hidden="true"></i> ${esc(s.linked_tool)}</span>` : ''}
 			${sharedChipsHtml(s, lastUsed)}`,
 		matches: (s) => {
 			const q = (qs('#skill-search', root)?.value || '').toLowerCase();
@@ -48,13 +48,13 @@ function config(ctx) {
 			return true;
 		},
 		emptyHtml: () => emptyStateHtml({
-			icon: 'fa-graduation-cap',
+			icon: 'ph-graduation-cap',
 			title: __('No skills yet'),
 			subtitle: __('Skills are reusable workflows or tool-usage patterns exposed to MCP clients.'),
 			action: `<a href="/app/pa-skill/new?status=Draft" class="btn btn-xs btn-primary">${esc(__('Create skill'))}</a>`,
 		}),
 		noMatchHtml: () => emptyStateHtml({
-			icon: 'fa-search',
+			icon: 'ph-magnifying-glass',
 			title: __('No skills match the current filters'),
 			action: `<button type="button" class="btn btn-xs btn-default pa-clear-skill-filters">${esc(__('Clear filters'))}</button>`,
 		}),

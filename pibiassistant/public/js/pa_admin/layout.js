@@ -14,7 +14,7 @@ export function layoutHtml() {
                 <div class="pa-page-actions">
                     <span id="pa-last-refreshed" class="pa-last-refreshed"></span>
                     <button class="btn btn-sm btn-default" id="refresh-all" aria-label="${__('Refresh dashboard')}">
-                        <i class="fa fa-refresh" aria-hidden="true"></i>
+                        <i class="ph ph-arrows-clockwise" aria-hidden="true"></i>
                     </button>
                     <button class="btn btn-sm btn-primary" id="toggle-server">
                         <span id="toggle-server-text">${__("Loading...")}</span>
@@ -31,17 +31,17 @@ export function layoutHtml() {
                     <!-- Top-Level Tab Navigation -->
                     <div class="pa-top-tabs" role="tablist" aria-label="${__('AIDA Admin sections')}">
                         <button class="pa-top-tab active" data-tab="tools" role="tab" id="tab-tools" aria-selected="true" aria-controls="tab-panel-tools" tabindex="0">
-                            <i class="fa fa-wrench" aria-hidden="true"></i>
+                            <i class="ph ph-wrench" aria-hidden="true"></i>
                             ${__("Tools")}
                             <span class="pa-tab-count" id="tab-count-tools" aria-hidden="true">–</span>
                         </button>
                         <button class="pa-top-tab" data-tab="prompts" role="tab" id="tab-prompts" aria-selected="false" aria-controls="tab-panel-prompts" tabindex="-1">
-                            <i class="fa fa-file-text-o" aria-hidden="true"></i>
+                            <i class="ph ph-file-text" aria-hidden="true"></i>
                             ${__("Prompts")}
                             <span class="pa-tab-count" id="tab-count-prompts" aria-hidden="true">–</span>
                         </button>
                         <button class="pa-top-tab" data-tab="skills" role="tab" id="tab-skills" aria-selected="false" aria-controls="tab-panel-skills" tabindex="-1">
-                            <i class="fa fa-graduation-cap" aria-hidden="true"></i>
+                            <i class="ph ph-graduation-cap" aria-hidden="true"></i>
                             ${__("Skills")}
                             <span class="pa-tab-count" id="tab-count-skills" aria-hidden="true">–</span>
                         </button>
@@ -53,10 +53,10 @@ export function layoutHtml() {
                         <!-- View Mode Tabs -->
                         <div class="pa-view-tabs" role="tablist" aria-label="${__('Tool registry view mode')}">
                             <button type="button" class="pa-view-tab active" data-view="plugins" role="tab" aria-selected="true" tabindex="0">
-                                <i class="fa fa-cube" aria-hidden="true"></i> ${__("Plugins")}
+                                <i class="ph ph-cube" aria-hidden="true"></i> ${__("Plugins")}
                             </button>
                             <button type="button" class="pa-view-tab" data-view="tools" role="tab" aria-selected="false" tabindex="-1">
-                                <i class="fa fa-wrench" aria-hidden="true"></i> ${__("Individual Tools")}
+                                <i class="ph ph-wrench" aria-hidden="true"></i> ${__("Individual Tools")}
                             </button>
                         </div>
 
@@ -76,10 +76,10 @@ export function layoutHtml() {
                             </select>
                             <span id="bulk-scope-count" class="pa-bulk-scope" aria-live="polite"></span>
                             <button class="btn btn-xs btn-success" id="bulk-enable-btn" disabled>
-                                <i class="fa fa-check" aria-hidden="true"></i> <span class="pa-btn-label">${__("Enable matching")}</span>
+                                <i class="ph ph-check" aria-hidden="true"></i> <span class="pa-btn-label">${__("Enable matching")}</span>
                             </button>
                             <button class="btn btn-xs btn-warning" id="bulk-disable-btn" disabled>
-                                <i class="fa fa-times" aria-hidden="true"></i> <span class="pa-btn-label">${__("Disable matching")}</span>
+                                <i class="ph ph-x" aria-hidden="true"></i> <span class="pa-btn-label">${__("Disable matching")}</span>
                             </button>
                         </div>
 
@@ -138,13 +138,13 @@ export function layoutHtml() {
                         <div class="pa-sidebar-row">
                             <span class="pa-sidebar-label">${__("MCP endpoint")}</span>
                             <button type="button" class="btn btn-xs btn-default pa-copy-endpoint" id="copy-endpoint" aria-label="${__('Copy MCP endpoint URL')}" title="${__('Copy endpoint URL')}">
-                                <i class="fa fa-copy" aria-hidden="true"></i>
+                                <i class="ph ph-copy" aria-hidden="true"></i>
                             </button>
                         </div>
                         <div class="pa-endpoint-url pa-endpoint-compact" id="pa-mcp-endpoint">${__("Loading...")}</div>
                         <div class="pa-sidebar-actions">
                             <button class="btn btn-xs btn-default" id="open-settings">
-                                <i class="fa fa-cog" aria-hidden="true"></i> ${__("Settings")}
+                                <i class="ph ph-gear" aria-hidden="true"></i> ${__("Settings")}
                             </button>
                         </div>
                     </div>
@@ -153,7 +153,7 @@ export function layoutHtml() {
                     <div class="pa-card pa-sidebar-card" id="pa-aida-card">
                         <div class="pa-sidebar-row">
                             <div class="pa-sidebar-title">
-                                <i class="fa fa-plug" aria-hidden="true"></i> ${__("AIDA services")}
+                                <i class="ph ph-plugs" aria-hidden="true"></i> ${__("AIDA services")}
                             </div>
                         </div>
                         <ul class="pa-quick-list" id="pa-aida-services">
@@ -162,10 +162,10 @@ export function layoutHtml() {
                         <div class="pa-sidebar-subtle" id="pa-aida-model"></div>
                         <div class="pa-sidebar-actions">
                             <button class="btn btn-xs btn-default" id="test-aida">
-                                <i class="fa fa-refresh" aria-hidden="true"></i> ${__("Test connections")}
+                                <i class="ph ph-arrows-clockwise" aria-hidden="true"></i> ${__("Test connections")}
                             </button>
                             <button class="btn btn-xs btn-primary" id="configure-aida">
-                                <i class="fa fa-cog" aria-hidden="true"></i> ${__("Configure")}
+                                <i class="ph ph-gear" aria-hidden="true"></i> ${__("Configure")}
                             </button>
                         </div>
                     </div>
@@ -174,7 +174,7 @@ export function layoutHtml() {
                     <div class="pa-card pa-sidebar-card" id="pa-chat-card">
                         <div class="pa-sidebar-row">
                             <div class="pa-sidebar-title">
-                                <i class="fa fa-comments" aria-hidden="true"></i>
+                                <i class="ph ph-chats" aria-hidden="true"></i>
                                 ${__("AIDA Chat")}
                                 <span id="pa-chat-status-pill" class="pa-status-pill" role="status" aria-live="polite"></span>
                             </div>
@@ -185,7 +185,7 @@ export function layoutHtml() {
                                 <span id="toggle-pa-chat-text">${__("Loading...")}</span>
                             </button>
                             <a href="/aida" target="_blank" rel="noopener" class="btn btn-xs btn-default" id="open-aida" aria-label="${__('Open AIDA in a new tab')}">
-                                <i class="fa fa-external-link" aria-hidden="true"></i>
+                                <i class="ph ph-arrow-square-out" aria-hidden="true"></i>
                             </a>
                         </div>
                     </div>
@@ -194,7 +194,7 @@ export function layoutHtml() {
                     <div class="pa-card pa-sidebar-card" id="pa-chat-analytics-card" style="display: none;">
                         <div class="pa-sidebar-row">
                             <div class="pa-sidebar-title">
-                                <i class="fa fa-line-chart" aria-hidden="true"></i> ${__("Chat usage")}
+                                <i class="ph ph-chart-line" aria-hidden="true"></i> ${__("Chat usage")}
                             </div>
                         </div>
                         <div class="pa-analytics-grid">
@@ -221,24 +221,24 @@ export function layoutHtml() {
                     <!-- Quick Actions card -->
                     <div class="pa-card pa-sidebar-card">
                         <div class="pa-sidebar-row">
-                            <div class="pa-sidebar-title"><i class="fa fa-bolt" aria-hidden="true"></i> ${__("Quick actions")}</div>
+                            <div class="pa-sidebar-title"><i class="ph ph-lightning" aria-hidden="true"></i> ${__("Quick actions")}</div>
                         </div>
                         <ul class="pa-quick-list">
-                            <li><a href="/app/pa-audit-log"><i class="fa fa-history" aria-hidden="true"></i> ${__("Audit log")}</a></li>
-                            <li><a href="/app/pa-core-settings"><i class="fa fa-cogs" aria-hidden="true"></i> ${__("AIDA Settings")}</a></li>
-                            <li><a href="/aida" target="_blank" rel="noopener"><i class="fa fa-external-link" aria-hidden="true"></i> ${__("Open AIDA")}</a></li>
+                            <li><a href="/app/pa-audit-log"><i class="ph ph-clock-counter-clockwise" aria-hidden="true"></i> ${__("Audit log")}</a></li>
+                            <li><a href="/app/pa-core-settings"><i class="ph ph-gear-six" aria-hidden="true"></i> ${__("AIDA Settings")}</a></li>
+                            <li><a href="/aida" target="_blank" rel="noopener"><i class="ph ph-arrow-square-out" aria-hidden="true"></i> ${__("Open AIDA")}</a></li>
                         </ul>
                     </div>
 
                     <!-- Recent Activity card -->
                     <div class="pa-card pa-sidebar-card">
                         <div class="pa-sidebar-row">
-                            <div class="pa-sidebar-title"><i class="fa fa-history" aria-hidden="true"></i> ${__("Recent activity")}</div>
-                            <a href="/app/pa-audit-log" class="pa-view-all">${__("View all")} <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+                            <div class="pa-sidebar-title"><i class="ph ph-clock-counter-clockwise" aria-hidden="true"></i> ${__("Recent activity")}</div>
+                            <a href="/app/pa-audit-log" class="pa-view-all">${__("View all")} <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
                         </div>
                         <div id="recent-activity" class="pa-activity-list">
                             <div style="padding: 12px 0; text-align: center; color: var(--text-muted);">
-                                <i class="fa fa-spinner fa-spin"></i> ${__("Loading...")}
+                                <i class="ph ph-spinner ph-spin" aria-hidden="true"></i> ${__("Loading...")}
                             </div>
                         </div>
                     </div>

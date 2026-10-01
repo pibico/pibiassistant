@@ -113,7 +113,7 @@ frappe.ui.form.on('Prompt Template', {
                                 </div>
                                 <button class="btn btn-xs btn-default mt-2"
                                         onclick="pibiassistant_restore_version('${frm.doc.name}', '${v.version_id}')">
-                                    <i class="fa fa-undo"></i> Restore
+                                    <i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i> Restore
                                 </button>
                             </div>
                         `;

@@ -59,13 +59,15 @@ function update_model_options(frm, reset_invalid) {
 
 function show_aida_test_results(results) {
     let rows = Object.entries(results || {}).map(function([name, info]) {
-        let icon = info.ok ? '✅' : '❌';
+        let icon = info.ok
+            ? '<i class="ph ph-check-circle" aria-hidden="true" style="color: var(--green-600, #176B3A); vertical-align: -0.125em;"></i>'
+            : '<i class="ph ph-x-circle" aria-hidden="true" style="color: var(--red-600, #B3261E); vertical-align: -0.125em;"></i>';
         let detail = info.ok ? info.detail : info.error;
         return `<p>${icon} <b>${frappe.utils.escape_html(name)}</b>: ${frappe.utils.escape_html(detail || '')}</p>`;
     });
     frappe.msgprint({
         title: __('AIDA API Test Results'),
-        message: `<div style="font-family: monospace; font-size: 13px; overflow-wrap: anywhere;">${rows.join('')}</div>`,
+        message: `<div style="font-size: 13px; overflow-wrap: anywhere;">${rows.join('')}</div>`,
         indicator: 'blue'
     });
 }

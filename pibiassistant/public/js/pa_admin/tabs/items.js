@@ -12,7 +12,7 @@ export function errorBlockHtml(text) {
 export function emptyStateHtml({ icon, title, subtitle, action }) {
 	return `
 		<div class="pa-empty-state">
-			<i class="fa ${icon}" aria-hidden="true"></i>
+			<i class="ph ${icon}" aria-hidden="true"></i>
 			<div class="pa-empty-title">${esc(title)}</div>
 			${subtitle ? `<div class="pa-empty-subtitle">${esc(subtitle)}</div>` : ''}
 			${action || ''}
@@ -25,10 +25,10 @@ export function findCard(root, name) {
 
 export function sharedChipsHtml(item, lastUsed) {
 	return `
-		<span class="pa-meta-chip"><i class="fa fa-eye"></i> ${esc(__(item.visibility || 'Private'))}</span>
+		<span class="pa-meta-chip"><i class="ph ph-eye" aria-hidden="true"></i> ${esc(__(item.visibility || 'Private'))}</span>
 		${item.is_system ? `<span class="pa-meta-chip system-chip">${esc(__('System'))}</span>` : ''}
 		<span class="pa-meta-chip">${esc(__('Used {0}x', [item.use_count || 0]))}</span>
-		<span class="pa-meta-chip"><i class="fa fa-clock-o"></i> ${esc(lastUsed)}</span>`;
+		<span class="pa-meta-chip"><i class="ph ph-clock" aria-hidden="true"></i> ${esc(lastUsed)}</span>`;
 }
 
 export function cardHtml(cfg, item) {
@@ -49,13 +49,13 @@ export function cardHtml(cfg, item) {
 							data-name="${esc(item.name)}"
 							aria-label="${esc(cfg.actionLabel)}${cfg.actionAriaColon ? ':' : ''} ${title}"
 							title="${esc(cfg.actionLabel)}">
-						<i class="fa ${cfg.actionIcon}" aria-hidden="true"></i>
+						<i class="ph ${cfg.actionIcon}" aria-hidden="true"></i>
 					</button>
 					<a href="${cfg.docUrl}${encodeURIComponent(item.name)}" target="_blank"
 					   class="pa-tool-settings-btn"
 					   aria-label="${esc(__('Open in DocType'))}: ${title}"
 					   title="${esc(__('Open in DocType'))}">
-						<i class="fa fa-external-link" aria-hidden="true"></i>
+						<i class="ph ph-arrow-square-out" aria-hidden="true"></i>
 					</a>
 					<label class="switch" style="margin:0;" title="${esc(isPublished ? __('Click to unpublish') : __('Click to publish'))}">
 						<input type="checkbox" class="${cfg.toggleClass}"
@@ -162,7 +162,7 @@ export async function togglePanel(ctx, cfg, name, fill) {
 		return;
 	}
 	addClass(panel, 'open');
-	setHtml(panel, `<div style="color:var(--text-muted);font-size:12px;"><i class="fa fa-spinner fa-spin"></i> ${esc(cfg.loadingText())}</div>`);
+	setHtml(panel, `<div style="color:var(--text-muted);font-size:12px;"><i class="ph ph-spinner ph-spin" aria-hidden="true"></i> ${esc(cfg.loadingText())}</div>`);
 	toggleClass(btn, 'active', true);
 	await fill(panel);
 }

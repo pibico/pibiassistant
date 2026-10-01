@@ -7,7 +7,7 @@ export function roleTagHtml(toolName, role) {
   return `<span class="pa-role-tag" data-role="${r}">
                     ${r}
                     <button type="button" class="pa-role-remove-btn" aria-label="${__('Remove role')} ${r}" data-tool="${t}" data-role="${r}">
-                        <i class="fa fa-times remove-role" data-tool="${t}" data-role="${r}" aria-hidden="true"></i>
+                        <i class="ph ph-x remove-role" data-tool="${t}" data-role="${r}" aria-hidden="true"></i>
                     </button>
                 </span>`;
 }
@@ -35,7 +35,7 @@ export function toolCardHtml(tool, { isToggling, isPanelOpen, searchTerm }) {
                                     aria-label="${__('Configure role access')}: ${display}"
                                     aria-expanded="${isPanelOpen ? 'true' : 'false'}"
                                     title="${__('Configure role access')}">
-                                <i class="fa fa-cog" aria-hidden="true"></i>
+                                <i class="ph ph-gear" aria-hidden="true"></i>
                             </button>
                             <label class="switch" style="margin: 0;">
                                 <input type="checkbox" class="pa-tool-toggle"
@@ -53,8 +53,8 @@ export function toolCardHtml(tool, { isToggling, isPanelOpen, searchTerm }) {
                     </div>
                     <div class="pa-tool-footer">
                         <span class="pa-tool-badge">${esc(tool.plugin_display_name)}</span>
-                        ${pluginDisabled ? '<span class="pa-plugin-disabled-notice"><i class="fa fa-exclamation-circle"></i> ' + __('Plugin disabled') + '</span>' : ''}
-                        ${tool.role_access_mode !== 'Allow All' ? '<span class="pa-tool-badge" style="background: var(--blue-100); color: var(--blue-600);"><i class="fa fa-lock"></i> ' + __('Role restricted') + '</span>' : ''}
+                        ${pluginDisabled ? '<span class="pa-plugin-disabled-notice"><i class="ph ph-warning-circle" aria-hidden="true"></i> ' + __('Plugin disabled') + '</span>' : ''}
+                        ${tool.role_access_mode !== 'Allow All' ? '<span class="pa-tool-badge" style="background: var(--blue-100); color: var(--blue-600);"><i class="ph ph-lock" aria-hidden="true"></i> ' + __('Role restricted') + '</span>' : ''}
                     </div>
 
                     <div class="pa-tool-config-panel ${isPanelOpen ? 'open' : ''}" id="config-panel-${name}">
@@ -82,7 +82,7 @@ export function toolCardHtml(tool, { isToggling, isPanelOpen, searchTerm }) {
                                 <div class="pa-role-tags" id="role-tags-${name}">
                                     ${roleTags}
                                     <button type="button" class="pa-add-role-btn" data-tool="${name}" aria-label="${__('Add role')}: ${display}">
-                                        <i class="fa fa-plus" aria-hidden="true"></i> ${__('Add Role')}
+                                        <i class="ph ph-plus" aria-hidden="true"></i> ${__('Add Role')}
                                     </button>
                                 </div>
                             </div>

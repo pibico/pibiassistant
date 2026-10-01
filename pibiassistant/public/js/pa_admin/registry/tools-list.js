@@ -26,7 +26,7 @@ function emptyHtml(zeroData) {
   if (zeroData) {
     return `
                     <div class="pa-empty-state">
-                        <i class="fa fa-wrench" aria-hidden="true"></i>
+                        <i class="ph ph-wrench" aria-hidden="true"></i>
                         <div class="pa-empty-title">${__('No tools registered')}</div>
                         <div class="pa-empty-subtitle">${__('Enable a plugin in the Plugins tab to register tools.')}</div>
                     </div>
@@ -34,7 +34,7 @@ function emptyHtml(zeroData) {
   }
   return `
                     <div class="pa-empty-state">
-                        <i class="fa fa-search" aria-hidden="true"></i>
+                        <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
                         <div class="pa-empty-title">${__('No tools match the current filters')}</div>
                         <button type="button" class="btn btn-xs btn-default pa-clear-filters-btn">${__('Clear filters')}</button>
                     </div>

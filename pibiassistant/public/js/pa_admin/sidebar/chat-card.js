@@ -13,10 +13,10 @@ export function renderChatStatus(root, isEnabled) {
 	const dot = '<span class="pa-status-dot" aria-hidden="true"></span> ';
 	if (isEnabled) {
 		setHtml(pill, dot + __('Enabled'));
-		setHtml(btnText, '<i class="fa fa-power-off" aria-hidden="true"></i> ' + __('Disable Chat'));
+		setHtml(btnText, '<i class="ph ph-power" aria-hidden="true"></i> ' + __('Disable Chat'));
 	} else {
 		setHtml(pill, dot + __('Disabled'));
-		setHtml(btnText, '<i class="fa fa-play" aria-hidden="true"></i> ' + __('Enable Chat'));
+		setHtml(btnText, '<i class="ph ph-play" aria-hidden="true"></i> ' + __('Enable Chat'));
 	}
 }
 

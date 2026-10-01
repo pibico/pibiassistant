@@ -9,7 +9,7 @@ function pluginItemHtml(plugin, isToggling) {
                                 <div class="pa-plugin-header">
                                     <div class="pa-plugin-info">
                                         <div class="pa-plugin-name">
-                                            <i class="fa fa-cube"></i>
+                                            <i class="ph ph-cube" aria-hidden="true"></i>
                                             ${esc(plugin.name)}
                                         </div>
                                     </div>
@@ -33,7 +33,7 @@ export function renderPlugins(host, plugins, toggling) {
   if (plugins.length === 0) {
     setHtml(host, `
                             <div class="pa-empty-state">
-                                <i class="fa fa-cube" aria-hidden="true"></i>
+                                <i class="ph ph-cube" aria-hidden="true"></i>
                                 <div class="pa-empty-title">${__('No plugins installed')}</div>
                                 <div class="pa-empty-subtitle">${__('Install plugins to start registering tools with the MCP server.')}</div>
                             </div>
