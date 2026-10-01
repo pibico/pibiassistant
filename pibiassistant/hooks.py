@@ -360,6 +360,7 @@ def _widget_asset(path: str) -> str:
 # CSS bundles for the chat widget. Loaded unconditionally; the widget JS
 # decides at runtime whether to mount any UI based on the chat gate.
 app_include_css = [
+    _widget_asset("/assets/pibiassistant/vendor/phosphor/regular/style.css"),
     _widget_asset("/assets/pibiassistant/chat/widget/widget_base.css"),
     _widget_asset("/assets/pibiassistant/chat/widget/widget_robot.css"),
     _widget_asset("/assets/pibiassistant/chat/widget/widget_messages.css"),
