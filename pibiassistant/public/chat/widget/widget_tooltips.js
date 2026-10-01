@@ -53,7 +53,7 @@ window.PAOWidgetTooltips = {
 		const $toggleBtn = widget.$widget.find(".pao-toggle-btn");
 
 		// Update content
-		$icon.text(message.icon);
+		$icon.empty().append($("<i>").addClass("ph " + message.icon).attr("aria-hidden", "true"));
 		$text.text(message.text);
 
 		// Position tooltip dynamically based on actual widget position

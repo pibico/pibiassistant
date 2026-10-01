@@ -309,7 +309,7 @@ window.PAOWidgetStreaming = {
 		widget.$widget.find(".pao-thinking-indicator").remove();
 		widget.$widget.find(".pao-tool-indicator").remove();
 
-		const prefix = icon === undefined ? "⏱️" : icon;
+		const prefix = icon === undefined ? "" : icon;
 		widget.add_message_to_ui("assistant", prefix ? `${prefix} ${message}` : message, true);
 		this._release_composer(widget);
 		this.clear_approval_attention(widget);
@@ -1143,7 +1143,7 @@ window.PAOWidgetStreaming = {
 			callback: () => {
 				// Replace each card with its resolved indicator.
 				pending.forEach((entry) => {
-					const icon = entry.decision.isPositive ? "✓" : "✕";
+					const icon = entry.decision.isPositive ? '<i class="ph ph-check" aria-hidden="true"></i>' : '<i class="ph ph-x" aria-hidden="true"></i>';
 					entry.$card.replaceWith(
 						`<div class="pao-interaction-resolved">${icon} ${frappe.utils.escape_html(
 							entry.decision.displayResponse
@@ -1435,7 +1435,7 @@ window.PAOWidgetStreaming = {
 		if (widget._activePlan) {
 			const $slot = this._running_subactivity_slot(widget);
 			if ($slot && $slot.length) {
-				$slot.html('<span class="pao-plan-sub-spinner" style="animation: pao-pulse 1.5s ease-in-out infinite;">💭</span> ' + window.PAOPlanStrip._escape(__("Thinking...")));
+				$slot.html('<span class="pao-plan-sub-spinner" style="animation: pao-pulse 1.5s ease-in-out infinite;"><i class="ph ph-chat-dots" aria-hidden="true"></i></span> ' + window.PAOPlanStrip._escape(__("Thinking...")));
 				return;
 			}
 		}
@@ -1455,7 +1455,7 @@ window.PAOWidgetStreaming = {
 						align-items: center;
 						gap: 6px;
 					">
-						<span class="pao-thinking-spinner" style="animation: pao-pulse 1.5s ease-in-out infinite;">💭</span>
+						<span class="pao-thinking-spinner" style="animation: pao-pulse 1.5s ease-in-out infinite;"><i class="ph ph-chat-dots" aria-hidden="true"></i></span>
 						<span class="pao-thinking-text">${__("Thinking...")}</span>
 					</div>
 				`);
@@ -1491,7 +1491,7 @@ window.PAOWidgetStreaming = {
 			const $slot = this._running_subactivity_slot(widget);
 			if ($slot && $slot.length) {
 				$slot.attr("data-active-tool-id", tool_id || "");
-				$slot.html('<span class="pao-plan-sub-spinner" style="animation: pao-spin 1s linear infinite;">⚙️</span> ' + window.PAOPlanStrip._escape(`${__("Executing")}: ${tool_name}`));
+				$slot.html('<span class="pao-plan-sub-spinner" style="display:inline-block; animation: pao-spin 1s linear infinite;"><i class="ph ph-gear" aria-hidden="true"></i></span> ' + window.PAOPlanStrip._escape(`${__("Executing")}: ${tool_name}`));
 				return;
 			}
 		}
@@ -1511,7 +1511,7 @@ window.PAOWidgetStreaming = {
 						align-items: center;
 						gap: 6px;
 					">
-						<span class="pao-tool-spinner" style="animation: pao-spin 1s linear infinite;">⚙️</span>
+						<span class="pao-tool-spinner" style="animation: pao-spin 1s linear infinite;"><i class="ph ph-gear" aria-hidden="true"></i></span>
 						<span class="pao-tool-name"></span>
 					</div>
 				`);

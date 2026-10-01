@@ -9,11 +9,11 @@
  */
 window.PAOPlanStrip = {
 	GLYPHS: {
-		pending: "☐",
-		running: "⠿",
-		done: "✓",
-		failed: "✗",
-		skipped: "⊘",
+		pending: '<i class="ph ph-circle" aria-hidden="true"></i>',
+		running: '<i class="ph ph-spinner" aria-hidden="true"></i>',
+		done: '<i class="ph ph-check-circle" aria-hidden="true"></i>',
+		failed: '<i class="ph ph-x-circle" aria-hidden="true"></i>',
+		skipped: '<i class="ph ph-prohibit" aria-hidden="true"></i>',
 	},
 
 	glyph(status) {
@@ -42,7 +42,7 @@ window.PAOPlanStrip = {
 			? ` <span class="pao-plan-note">· ${this._escape(task.note)}</span>`
 			: "";
 		const delegatedHtml = task.delegated
-			? ` <span class="pao-plan-delegated">↳ specialist</span>`
+			? ` <span class="pao-plan-delegated"><i class="ph ph-arrow-bend-down-right" aria-hidden="true"></i> specialist</span>`
 			: "";
 		const subSlot = task.status === "running"
 			? `<div class="pao-plan-subactivity" data-task-id="${this._escape(task.id)}"></div>`
@@ -79,7 +79,7 @@ window.PAOPlanStrip = {
 		const label = tasks.length === 1 ? __("Completed {0} of 1 step", [done]) : __("Completed {0} of {1} steps", [done, tasks.length]);
 		return (
 			`<div class="pao-plan-strip pao-plan-collapsed" data-plan-id="${this._escape(plan && plan.id)}">` +
-			`<button type="button" class="pao-plan-summary">✓ ${this._escape(label)} <span class="pao-plan-caret">›</span></button>` +
+			`<button type="button" class="pao-plan-summary"><i class="ph ph-check" aria-hidden="true"></i> ${this._escape(label)} <span class="pao-plan-caret"><i class="ph ph-caret-right" aria-hidden="true"></i></span></button>` +
 			`<ul class="pao-plan-list" style="display:none;">${rows}</ul>` +
 			`</div>`
 		);

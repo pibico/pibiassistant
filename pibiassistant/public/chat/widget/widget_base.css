@@ -12,6 +12,12 @@
 
 /* Light Theme (default) - Quiet Ledger "Paper" */
 .pao-widget {
+	--pao-font: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	--pad-y-xs: 2px;
+	--pad-y-sm: 4px;
+	--pad-y-md: 6px;
+	--pad-y-lg: 8px;
+	--pad-y-xl: 12px;
 	/* Backgrounds */
 	--pao-bg-primary: #FFFFFF;
 	--pao-bg-secondary: #FBFAF8;
@@ -65,7 +71,7 @@ html[data-theme="dark"] .pao-widget {
 	right: 20px;
 	left: auto;
 	z-index: 9999;
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-family: var(--pao-font);
 	transition: opacity 0.2s ease;
 }
 
@@ -213,6 +219,7 @@ html[data-theme="dark"] .pao-widget {
 
 .pao-tooltip-icon {
 	display: inline-block;
+	vertical-align: middle;
 	margin-right: 6px;
 	font-size: 14px;
 	animation: pao-tooltip-bounce 0.5s ease;
@@ -253,7 +260,7 @@ html[data-theme="dark"] .pao-widget {
 .pao-header {
 	background: var(--pao-bg-tertiary, #f7f7f7);
 	color: var(--pao-text-primary, #36414c);
-	padding: 0px 16px;
+	padding: var(--pad-y-xs) 12px;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
@@ -320,10 +327,9 @@ html[data-theme="dark"] .pao-widget {
 	color: var(--pao-text-primary, #36414c);
 }
 
-.pao-new-btn svg,
-.pao-expand-btn svg {
-	width: 16px;
-	height: 16px;
+.pao-new-btn .ph,
+.pao-expand-btn .ph {
+	font-size: 16px;
 }
 
 /* Prominent expand button with text - teal gradient (Quiet Ledger) */
@@ -350,9 +356,8 @@ html[data-theme="dark"] .pao-widget {
 	box-shadow: 0 4px 8px rgba(15, 110, 92, 0.3);
 }
 
-.pao-expand-prominent svg {
-	width: 14px;
-	height: 14px;
+.pao-expand-prominent .ph {
+	font-size: 14px;
 	flex-shrink: 0;
 }
 
@@ -364,10 +369,10 @@ html[data-theme="dark"] .pao-widget {
 .pao-input-area {
 	background: #FBFAF8;
 	border-top: 1px solid var(--pao-border-color, #ECE9E3);
-	padding: 16px;
+	padding: var(--pad-y-lg) 12px;
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
+	gap: var(--pad-y-md);
 }
 
 /* Dark theme input area */
@@ -395,13 +400,13 @@ html[data-theme="dark"] .pao-widget .pao-input-area {
 	min-width: 0;
 }
 
-.pao-context-indicator svg {
+.pao-context-indicator .ph {
 	color: var(--pao-text-muted, #9ca3af);
 	flex-shrink: 0;
 }
 
 .pao-context-text {
-	color: var(--pao-text-muted, #9ca3af);
+	color: var(--pao-text-muted, #5f6b7a);
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
@@ -547,7 +552,7 @@ html[data-theme="dark"] .pao-widget .pao-file-remove:hover {
 	background: white;
 	border: 1px solid var(--pao-border-color, #e5e7eb);
 	border-radius: 12px;
-	padding: 6px 8px;
+	padding: var(--pad-y-xs) 8px;
 	transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -566,9 +571,9 @@ html[data-theme="dark"] .pao-widget .pao-input-wrapper {
 	min-width: 0;
 	border: none;
 	background: transparent;
-	padding: 6px 4px;
+	padding: var(--pad-y-md) 4px;
 	font-size: 14px;
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	font-family: var(--pao-font);
 	resize: none;
 	outline: none;
 	min-height: 28px;
@@ -686,10 +691,9 @@ html[data-theme="dark"] .pao-widget .pao-send-btn:hover:not(:disabled) {
 	height: 14px;
 }
 
-.pao-context-toggle svg {
+.pao-context-toggle .ph {
 	opacity: 0.5;
-	width: 14px;
-	height: 14px;
+	font-size: 14px;
 }
 
 .pao-context-toggle label:hover {
@@ -697,7 +701,7 @@ html[data-theme="dark"] .pao-widget .pao-send-btn:hover:not(:disabled) {
 	color: var(--pao-text-secondary, #6b7280);
 }
 
-.pao-context-toggle label:hover svg {
+.pao-context-toggle label:hover .ph {
 	opacity: 0.7;
 }
 
@@ -859,4 +863,166 @@ html[data-theme="dark"] .pao-widget .pao-send-btn:hover:not(:disabled) {
 @keyframes pao-mic-spin {
 	from { transform: rotate(0deg); }
 	to   { transform: rotate(360deg); }
+}
+
+/* pibiCo guidelines: Phosphor icons, sans-serif everywhere, compact vertical density */
+.pao-widget,
+.pao-widget button,
+.pao-widget input,
+.pao-widget textarea,
+.pao-widget select {
+	font-family: var(--pao-font);
+}
+
+.pao-widget pre,
+.pao-widget code,
+.pao-widget pre *,
+.pao-widget code * {
+	font-family: ui-monospace, "SF Mono", Monaco, "Cascadia Code", monospace;
+}
+
+.pao-widget .ph {
+	font-size: 16px;
+	line-height: 1;
+	flex-shrink: 0;
+}
+
+.pao-close-btn .ph,
+.pao-send-btn .ph,
+.pao-file-upload-btn .ph,
+.pao-mic-btn .ph {
+	font-size: 18px;
+}
+
+.pao-widget .pao-mic-icon {
+	display: inline-block;
+}
+
+.pao-widget .ph-spin {
+	display: inline-block;
+	animation: pao-spin 1s linear infinite;
+}
+
+.pao-widget .pao-context-indicator .ph,
+.pao-widget .pao-context-toggle .ph,
+.pao-widget .pao-attachment-item .ph,
+.pao-widget .pao-context-badge .ph,
+.pao-widget .pao-file-remove .ph,
+.pao-widget .pao-expand-prominent .ph {
+	font-size: 14px;
+}
+
+.pao-widget .pao-header-actions button {
+	min-height: 28px;
+	min-width: 28px;
+	padding: var(--pad-y-sm);
+}
+
+.pao-widget .pao-file-upload-btn,
+.pao-widget .pao-send-btn,
+.pao-widget .pao-mic-btn {
+	height: 28px;
+	min-height: 28px;
+}
+
+.pao-widget .pao-file-upload-btn,
+.pao-widget .pao-send-btn {
+	width: 28px;
+}
+
+.pao-widget .pao-expand-prominent {
+	padding: var(--pad-y-sm) 10px;
+}
+
+.pao-widget .pao-messages {
+	padding: var(--pad-y-lg) 12px;
+}
+
+.pao-widget .pao-message {
+	padding: var(--pad-y-sm) 8px;
+	margin-bottom: var(--pad-y-xs);
+}
+
+.pao-widget .pao-welcome {
+	padding: var(--pad-y-xl) 16px;
+}
+
+.pao-widget .pao-welcome h3 {
+	margin: 0 0 var(--pad-y-md);
+	font-size: 18px;
+}
+
+.pao-widget .pao-welcome p {
+	margin: 0 0 var(--pad-y-lg);
+}
+
+.pao-widget .pao-welcome ul {
+	line-height: 1.5;
+}
+
+.pao-widget .pao-message-text {
+	line-height: 1.5;
+}
+
+.pao-widget .pao-interaction-btn {
+	padding: var(--pad-y-sm) 12px;
+}
+
+.pao-widget .pao-typing-indicator {
+	margin-bottom: var(--pad-y-lg);
+}
+
+.pao-widget .pao-typing-dots {
+	padding: var(--pad-y-md) 12px;
+}
+
+.pao-widget .pao-message-time,
+.pao-widget .pao-message-meta,
+.pao-widget .pao-message-size {
+	font-variant-numeric: tabular-nums;
+}
+
+@media (pointer: coarse) {
+	.pao-widget .pao-input {
+		min-height: 44px;
+	}
+
+	.pao-widget .pao-header-actions button,
+	.pao-widget .pao-file-upload-btn,
+	.pao-widget .pao-send-btn,
+	.pao-widget .pao-mic-btn,
+	.pao-widget .pao-interaction-btn,
+	.pao-widget .pao-file-remove {
+		position: relative;
+	}
+
+	.pao-widget .pao-header-actions button::before,
+	.pao-widget .pao-file-upload-btn::before,
+	.pao-widget .pao-send-btn::before,
+	.pao-widget .pao-mic-btn::before,
+	.pao-widget .pao-interaction-btn::before,
+	.pao-widget .pao-file-remove::before {
+		content: "";
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: max(100%, 44px);
+		height: max(100%, 44px);
+		transform: translate(-50%, -50%);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.pao-widget .ph-spin,
+	.pao-widget .pao-mic-icon {
+		animation: none !important;
+	}
+}
+
+.pao-widget .pao-plan-row.pao-plan-running .pao-plan-glyph .ph {
+	animation: none;
+}
+
+.pao-tooltip-icon .ph {
+	font-size: 16px;
 }

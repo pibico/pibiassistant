@@ -4,12 +4,12 @@
 
 window.PAOWidgetSlashMenu = {
 	CATEGORY_ICONS: {
-		"data-quality": "🔍",
-		documentation: "📄",
-		"sales-crm": "📊",
-		"hr-payroll": "👥",
-		purchasing: "📦",
-		manufacturing: "🏭",
+		"data-quality": "magnifying-glass",
+		documentation: "file-text",
+		"sales-crm": "chart-bar",
+		"hr-payroll": "users",
+		purchasing: "package",
+		manufacturing: "factory",
 	},
 
 	/**
@@ -224,17 +224,17 @@ window.PAOWidgetSlashMenu = {
 	},
 
 	appendRow($body, t) {
-		const icon = this.CATEGORY_ICONS[t.category] || "📋";
+		const icon = this.CATEGORY_ICONS[t.category] || "clipboard-text";
 		const title = this.escapeHtml(t.title || t.name || "");
 		const desc = t.description ? this.escapeHtml(t.description) : "";
 		const $row = $(`
 			<div class="pao-slash-row" role="option">
-				<span class="pao-slash-icon">${icon}</span>
+				<span class="pao-slash-icon"><i class="ph ph-${icon}" aria-hidden="true"></i></span>
 				<span class="pao-slash-body-text">
 					<span class="pao-slash-title">${title}</span>
 					${desc ? `<span class="pao-slash-desc">${desc}</span>` : ""}
 				</span>
-				<span class="pao-slash-enter" aria-hidden="true">⏎</span>
+				<span class="pao-slash-enter" aria-hidden="true"><i class="ph ph-arrow-elbow-down-left"></i></span>
 			</div>
 		`);
 		$body.append($row);

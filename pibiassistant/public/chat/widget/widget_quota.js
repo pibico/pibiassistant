@@ -173,7 +173,7 @@ window.PAOWidgetQuota = {
 					fieldtype: "HTML",
 					options: `
 						<div class="pao-quota-overage-content">
-							<div class="pao-quota-overage-icon">💳</div>
+							<div class="pao-quota-overage-icon"><i class="ph ph-credit-card" aria-hidden="true"></i></div>
 							<h4>${__("Your monthly quota is used up")}</h4>
 							<p>${__("Requests now draw on your prepaid credits — {0} remaining.", [
 								this.format_credits(balance),
@@ -222,7 +222,7 @@ window.PAOWidgetQuota = {
 					options: `
 						<div class="pao-quota-warning-content">
 							<div class="pao-quota-warning-icon">
-								${threshold >= 90 ? "⚠️" : "📊"}
+								${threshold >= 90 ? '<i class="ph ph-warning" aria-hidden="true"></i>' : '<i class="ph ph-chart-bar" aria-hidden="true"></i>'}
 							</div>
 							<h4>${__("You've used {0}% of your monthly quota", [threshold])}</h4>
 							<p>${__("Remaining credits: {0}", [this.format_credits(remaining)])}</p>
@@ -267,7 +267,7 @@ window.PAOWidgetQuota = {
 					fieldtype: "HTML",
 					options: `
 						<div class="pao-quota-blocked-content">
-							<div class="pao-quota-blocked-icon">🚫</div>
+							<div class="pao-quota-blocked-icon"><i class="ph ph-prohibit" aria-hidden="true"></i></div>
 							<h4>${__("You've reached your monthly quota limit")}</h4>
 							<p>${__("Your quota will reset at the beginning of next month.")}</p>
 							<p style="margin-top: 12px;">

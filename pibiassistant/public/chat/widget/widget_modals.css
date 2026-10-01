@@ -6,7 +6,7 @@
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	padding: 32px 24px;
+	padding: 16px 16px;
 	text-align: center;
 	height: 100%;
 	min-height: 400px;
@@ -19,8 +19,8 @@
 }
 
 .pao-onboarding-header h2 {
-	margin: 16px 0 8px;
-	font-size: 22px;
+	margin: 8px 0 6px;
+	font-size: 18px;
 	font-weight: 600;
 	color: var(--pao-text-primary, #111827);
 }
@@ -33,14 +33,14 @@
 
 
 .pao-setup-section {
-	margin-top: 20px;
+	margin-top: 12px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 }
 
 .pao-setup-btn {
-	padding: 12px 28px;
+	padding: 6px 20px;
 	font-size: 15px;
 	font-weight: 500;
 	border-radius: 8px;
@@ -76,8 +76,8 @@
 }
 
 .pao-contact-admin {
-	margin-top: 24px;
-	padding: 16px 20px;
+	margin-top: 12px;
+	padding: 8px 12px;
 	background: #fef3c7;
 	border: 1px solid #fcd34d;
 	border-radius: 8px;
@@ -114,15 +114,15 @@ html[data-theme="dark"] .pao-widget .pao-contact-admin p {
    =================================== */
 
 .pao-upgrade-modal {
-	padding: 16px 0;
+	padding: 8px 0;
 }
 
 /* Billing Toggle */
 .pao-billing-toggle {
 	display: flex;
 	justify-content: center;
-	gap: 16px;
-	margin-bottom: 24px;
+	gap: 8px;
+	margin-bottom: 12px;
 	padding: 8px;
 	background: var(--control-bg, #f1f5f9);
 	border-radius: 8px;
@@ -165,7 +165,7 @@ html[data-theme="dark"] .pao-widget .pao-contact-admin p {
 .pao-plans-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-	gap: 16px;
+	gap: 8px;
 	margin-bottom: 20px;
 }
 
@@ -271,7 +271,7 @@ html[data-theme="dark"] .pao-widget .pao-contact-admin p {
 
 .pao-plan-btn {
 	width: 100%;
-	padding: 10px 16px;
+	padding: 6px 16px;
 	font-size: 14px;
 	font-weight: 600;
 	border-radius: 8px;
@@ -306,7 +306,7 @@ html[data-theme="dark"] .pao-widget .pao-contact-admin p {
 	margin: 0;
 }
 
-.pao-payment-info svg {
+.pao-payment-info .ph {
 	color: #10b981;
 }
 
@@ -318,14 +318,21 @@ html[data-theme="dark"] .pao-widget .pao-contact-admin p {
 .pao-quota-blocked-content,
 .pao-quota-overage-content {
 	text-align: center;
-	padding: 16px 0;
+	padding: 8px 0;
 }
 
 .pao-quota-warning-icon,
 .pao-quota-blocked-icon,
 .pao-quota-overage-icon {
 	font-size: 48px;
-	margin-bottom: 16px;
+	line-height: 1;
+	margin-bottom: 12px;
+}
+
+.pao-quota-blocked-icon .ph,
+.pao-quota-overage-icon .ph,
+.pao-quota-warning-icon .ph {
+	font-size: 40px;
 }
 
 .pao-quota-warning-content h4,

@@ -38,9 +38,9 @@ class PAOWidget {
 		this.user_setup_complete = false; // Per-user AR registration status
 		this.privacy_consent_complete = false; // Privacy consent done in SPA
 		this.default_tooltip_messages = [
-			{ icon: "👋", text: __("Need help with anything?") },
-			{ icon: "💬", text: __("Click me to start chatting!") },
-			{ icon: "🔍", text: __("Looking for something specific?") },
+			{ icon: "ph-hand-waving", text: __("Need help with anything?") },
+			{ icon: "ph-chat-circle", text: __("Click me to start chatting!") },
+			{ icon: "ph-magnifying-glass", text: __("Looking for something specific?") },
 		];
 		this.tooltip_messages = [...this.default_tooltip_messages];
 		this.current_tooltip_index = 0;
@@ -447,24 +447,13 @@ class PAOWidget {
 						</div>
 						<div class="pao-header-actions">
 							<button class="pao-new-btn" type="button" title="${__('New conversation')}" aria-label="${__('New conversation')}">
-								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-									<path d="M12 20h9"></path>
-									<path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-								</svg>
+								<i class="ph ph-pencil-simple-line" aria-hidden="true"></i>
 							</button>
 							<button class="pao-expand-btn" title="${__('Open full assistant')}">
-								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-									<polyline points="15 3 21 3 21 9"></polyline>
-									<polyline points="9 21 3 21 3 15"></polyline>
-									<line x1="21" y1="3" x2="14" y2="10"></line>
-									<line x1="3" y1="21" x2="10" y2="14"></line>
-								</svg>
+								<i class="ph ph-arrows-out-simple" aria-hidden="true"></i>
 							</button>
 							<button class="pao-close-btn" title="${__('Close')}">
-								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-									<line x1="18" y1="6" x2="6" y2="18"></line>
-									<line x1="6" y1="6" x2="18" y2="18"></line>
-								</svg>
+								<i class="ph ph-x" aria-hidden="true"></i>
 							</button>
 						</div>
 					</div>
@@ -493,18 +482,11 @@ class PAOWidget {
 
 						<div class="pao-input-wrapper">
 							<button class="pao-file-upload-btn" title="${__('Attach file')}">
-								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-									<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-								</svg>
+								<i class="ph ph-paperclip" aria-hidden="true"></i>
 							</button>
 							<input type="file" class="pao-file-input" style="display: none;" accept=".pdf,.png,.jpg,.jpeg,.csv,.xlsx,.xls,.docx,.txt">
 							<button class="pao-mic-btn" type="button" title="${__('Voice input')} (Ctrl+Shift+Space)" aria-label="${__('Voice input')} (Ctrl+Shift+Space)">
-								<svg class="pao-mic-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-									<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-									<path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-									<line x1="12" y1="19" x2="12" y2="23"></line>
-									<line x1="8" y1="23" x2="16" y2="23"></line>
-								</svg>
+								<i class="ph ph-microphone pao-mic-icon" aria-hidden="true"></i>
 								<span class="pao-mic-elapsed" style="display:none;"></span>
 							</button>
 							<textarea
@@ -513,19 +495,12 @@ class PAOWidget {
 								rows="1"
 							></textarea>
 							<button class="pao-send-btn" title="${__('Send')}" disabled>
-								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-									<line x1="22" y1="2" x2="11" y2="13"></line>
-									<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-								</svg>
+								<i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>
 							</button>
 						</div>
 						<div class="pao-context-row">
 							<div class="pao-context-indicator">
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-									<circle cx="12" cy="12" r="10"></circle>
-									<line x1="12" y1="16" x2="12" y2="12"></line>
-									<line x1="12" y1="8" x2="12.01" y2="8"></line>
-								</svg>
+								<i class="ph ph-info" aria-hidden="true"></i>
 								<span class="pao-context-text"></span>
 							</div>
 						</div>
@@ -1087,20 +1062,14 @@ class PAOWidget {
 		const $preview = $(`
 			<div class="pao-file-preview" data-file-url="${file.file_url}">
 				<div class="pao-file-icon">
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-						<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-						<polyline points="13 2 13 9 20 9"></polyline>
-					</svg>
+					<i class="ph ph-file" aria-hidden="true"></i>
 				</div>
 				<div class="pao-file-info">
 					<div class="pao-file-name">${file.file_name}</div>
 					<div class="pao-file-size">${fileSize}</div>
 				</div>
 				<button class="pao-file-remove" title="${__('Remove')}">
-					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-						<line x1="18" y1="6" x2="6" y2="18"></line>
-						<line x1="6" y1="6" x2="18" y2="18"></line>
-					</svg>
+					<i class="ph ph-x" aria-hidden="true"></i>
 				</button>
 			</div>
 		`);
@@ -1135,7 +1104,7 @@ class PAOWidget {
 			attachmentsHtml = '<div class="pao-message-attachments">';
 			attached_files.forEach((file) => {
 				const fileSizeKB = file.file_size ? (file.file_size / 1024).toFixed(1) : "0";
-				attachmentsHtml += `<div class="pao-attachment-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg><span class="pao-attachment-name">${
+				attachmentsHtml += `<div class="pao-attachment-item"><i class="ph ph-file" aria-hidden="true"></i><span class="pao-attachment-name">${
 					file.file_name || "Unnamed file"
 				}</span><span class="pao-attachment-size">${fileSizeKB} KB</span></div>`;
 			});
