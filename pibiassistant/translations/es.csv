@@ -1260,3 +1260,19 @@ Error updating server settings,Error al actualizar la configuración del servido
 Request failed,Solicitud fallida
 Error toggling chat,Error al cambiar el chat
 AIDA needs JavaScript to run. Please enable JavaScript in your browser.,AIDA necesita JavaScript para funcionar. Activa JavaScript en tu navegador.
+{0} failed,{0} falló
+Used {0},Usado: {0}
+Details,Detalles
+This request expired. Ask again to repeat it.,Esta solicitud caducó. Vuelve a pedirlo para repetirla.
+Approve for this chat,Aprobar en este chat
+AIDA wants to run this action on your behalf. Check it before approving.,AIDA quiere ejecutar esta acción en tu nombre. Revísala antes de aprobar.
+AIDA is waiting for your approval,AIDA espera tu aprobación
+Create a document,Crear un documento
+Update a document,Modificar un documento
+Submit a document,Validar un documento
+Delete a document,Eliminar un documento
+Send an email,Enviar un correo
+Run a workflow action,Ejecutar una acción de flujo de trabajo
+Generate a document,Generar un documento
+This approval has expired. Please ask again.,Esta aprobación ha caducado. Vuelve a pedirlo.
+Changing data from the chat is not enabled on this site.,Modificar datos desde el chat no está activado en este sitio.
