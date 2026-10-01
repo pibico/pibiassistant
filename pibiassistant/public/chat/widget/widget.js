@@ -189,7 +189,7 @@ class PAOWidget {
 		 */
 		return {
 			button: {
-				size: 56,
+				size: 72,
 				icon: "aida",
 				enable_pulse: true,
 				shadow: "0 4px 20px rgba(0,0,0,0.15)",
@@ -432,7 +432,7 @@ class PAOWidget {
 
 				<!-- Toggle Button -->
 				<button class="pao-toggle-btn">
-						<img class="aida-avatar" src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" width="48" height="48" style="border-radius:50%;">
+						<img class="aida-avatar" src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" width="64" height="64" style="border-radius:50%;">
 					<span class="pao-approval-badge" aria-hidden="true"></span>
 				</button>
 
@@ -441,7 +441,7 @@ class PAOWidget {
 					<!-- Header -->
 					<div class="pao-header">
 						<div class="pao-header-brand">
-							<img class="aida-avatar aida-avatar-header" src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" width="24" height="24" style="border-radius:50%;margin-right:6px;vertical-align:middle;">
+							<img class="aida-avatar aida-avatar-header" src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" width="32" height="32" style="border-radius:50%;margin-right:6px;vertical-align:middle;">
 								<span class="pao-brand-text">AIDA</span>
 						</div>
 						<div class="pao-header-actions">
@@ -472,7 +472,7 @@ class PAOWidget {
 					<div class="pao-messages">
 						<div class="pao-welcome">
 							<div class="pao-avatar">
-								<img src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" style="width:64px;height:64px;border-radius:50%;">
+								<img src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" style="width:88px;height:88px;border-radius:50%;">
 							</div>
 							<h3>${__("Hi! I am AIDA")}</h3>
 							<p>${__("Your intelligent assistant from pibiCo. I can help you with:")}</p>

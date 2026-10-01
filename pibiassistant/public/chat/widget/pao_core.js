@@ -351,7 +351,7 @@ window.PAOCore = {
 	get_default_settings() {
 		return {
 			button: {
-				size: 56,
+				size: 72,
 				icon: "aida",
 				enable_pulse: true,
 				shadow: "0 4px 20px rgba(0,0,0,0.15)",

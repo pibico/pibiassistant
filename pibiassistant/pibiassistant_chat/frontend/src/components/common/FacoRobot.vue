@@ -29,7 +29,7 @@ const props = defineProps({
 	extraClass: { type: String, default: "" },
 });
 
-const SIZES = { xs: 20, sm: 32, md: 48, lg: 80 };
+const SIZES = { xs: 28, sm: 44, md: 48, lg: 96 };
 const px = computed(() => SIZES[props.size] || SIZES.md);
 </script>
 

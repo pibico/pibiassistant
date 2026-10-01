@@ -5,7 +5,7 @@
 			<h1 class="wh-greeting">{{ greeting }}, {{ displayName }}.</h1>
 			<p class="wh-sub">{{ __("What should we work through today?") }}</p>
 		</div>
-		<FacoRobot size="sm" float show-arms track extra-class="wh-robot" />
+		<FacoRobot size="lg" float show-arms track extra-class="wh-robot" />
 	</header>
 	<div class="wh-rule" aria-hidden="true"></div>
 </template>

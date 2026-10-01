@@ -45,7 +45,7 @@ window.PAOWidgetUI = {
 	 * @returns {string} Avatar HTML
 	 */
 	get_robot_html(size = "default") {
-		const sizes = { default: 48, header: 24, welcome: 72, message: 24 };
+		const sizes = { default: 64, header: 32, welcome: 88, message: 44 };
 		const px = sizes[size] || sizes.default;
 		return `<img class="aida-avatar aida-avatar-${size}" src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" width="${px}" height="${px}" style="border-radius:50%;">`;
 	},

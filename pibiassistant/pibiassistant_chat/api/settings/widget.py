@@ -87,8 +87,8 @@ def get_widget_settings() -> dict:
 
         return {
             "button": {
-                "size": 56,
-                "icon": "robot",
+                "size": 72,
+                "icon": "aida",
                 "enable_pulse": True,
                 "shadow": "0 4px 20px rgba(0,0,0,0.15)",
             },
@@ -104,7 +104,7 @@ def get_widget_settings() -> dict:
     except Exception as e:
         frappe.log_error(title="AIDA Widget Error", message=f"Error getting widget settings: {e!s}")
         return {
-            "button": {"size": 56, "icon": "robot"},
+            "button": {"size": 72, "icon": "aida"},
             "window": {"width": 400, "height": 650},
             "messages": {},
             "custom_css": "",
