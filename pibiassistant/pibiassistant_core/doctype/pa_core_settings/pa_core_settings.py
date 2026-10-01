@@ -211,83 +211,37 @@ class PACoreSettings(Document):
             )
             total_tools = len(available_tools)
 
-            # Build simplified HTML
-            html = f"""
-            <div class="p-3 rounded mb-3" style="background: var(--control-bg); border: 1px solid var(--border-color);">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <h5 class="mb-2" style="color: var(--heading-color);">
-                            <i class="ph ph-gear-six" aria-hidden="true"></i> Plugin System Status
-                        </h5>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <strong>Active Tools:</strong>
-                                <span class="badge" style="background: var(--green-500); color: white;">{active_tools}</span>
-                                / {total_tools}
-                            </div>
-                            <div class="col-md-4">
-                                <strong>Plugins:</strong>
-                                <span class="badge" style="background: var(--primary); color: white;">{len(enabled_plugins)}</span>
-                                / {len(discovered_plugins)}
-                            </div>
-                            <div class="col-md-4">
-                                <strong>Status:</strong>
-                                <span style="color: var(--green-600);">
-                                    <i class="ph ph-check-circle" aria-hidden="true"></i> Operational
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 text-right">
-                        <a href="/app/pa-admin" class="btn btn-primary btn-sm">
-                            <i class="ph ph-arrow-square-out" aria-hidden="true"></i> Open PA Admin
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-3 rounded" style="background: var(--card-bg); border: 1px solid var(--border-color);">
-                <h6 style="color: var(--heading-color);"><i class="ph ph-puzzle-piece" aria-hidden="true"></i> Plugins</h6>
-                <div class="row mt-3">
-            """
-
-            # Show plugin summary cards
+            esc = frappe.utils.escape_html
+            rows = []
             for plugin in discovered_plugins:
                 plugin_name = plugin.get("name", "Unknown")
                 is_enabled = plugin_name in enabled_plugins
-                plugin_tools = plugin.get("tools", [])
-                tools_count = len(plugin_tools)
+                tools_count = len(plugin.get("tools", []))
+                label = plugin.get("display_name", plugin_name.replace("_", " ").title())
+                state = "on" if is_enabled else "off"
+                rows.append(
+                    f"""<li class="pa-ps__row pa-ps__row--{state}">
+                        <span class="pa-ps__name">{esc(label)}</span>
+                        <span class="pa-ps__meta">{esc(_("{0} tools").format(tools_count))}</span>
+                        <span class="pa-ps__pill pa-ps__pill--{state}">{esc(_("Active") if is_enabled else _("Inactive"))}</span>
+                    </li>"""
+                )
 
-                status_color = "var(--green-500)" if is_enabled else "var(--gray-400)"
-                status_text = "Active" if is_enabled else "Inactive"
-                status_badge_bg = "var(--green-100)" if is_enabled else "var(--gray-100)"
-                status_badge_color = "var(--green-700)" if is_enabled else "var(--gray-600)"
-
-                html += f"""
-                    <div class="col-md-6 mb-2">
-                        <div class="p-2 rounded" style="background: var(--control-bg); border-left: 3px solid {status_color};">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong style="color: var(--heading-color);">{plugin.get("display_name", plugin_name.replace("_", " ").title())}</strong>
-                                    <br>
-                                    <small style="color: var(--text-muted);">{tools_count} tools</small>
-                                </div>
-                                <span class="badge" style="background: {status_badge_bg}; color: {status_badge_color};">
-                                    {status_text}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                """
-
-            html += """
+            html = f"""
+            <div class="pa-ps">
+                <div class="pa-ps__summary">
+                    <span class="pa-ps__title"><i class="ph ph-gear-six" aria-hidden="true"></i> {esc(_("Plugin System Status"))}</span>
+                    <span class="pa-ps__stat"><span class="pa-ps__label">{esc(_("Active Tools"))}</span> <strong>{active_tools}</strong> / {total_tools}</span>
+                    <span class="pa-ps__stat"><span class="pa-ps__label">{esc(_("Plugins"))}</span> <strong>{len(enabled_plugins)}</strong> / {len(discovered_plugins)}</span>
+                    <span class="pa-ps__pill pa-ps__pill--on"><i class="ph ph-check-circle" aria-hidden="true"></i> {esc(_("Operational"))}</span>
+                    <a class="btn btn-primary btn-xs pa-ps__open" href="/app/pa-admin"><i class="ph ph-arrow-square-out" aria-hidden="true"></i> {esc(_("Open PA Admin"))}</a>
                 </div>
-                <div class="mt-3 pt-2" style="border-top: 1px solid var(--border-color);">
-                    <small style="color: var(--text-muted);">
-                        <i class="ph ph-info" aria-hidden="true"></i>
-                        For individual tool management, role-based access control, and category filtering,
-                        use the <a href="/app/pa-admin">PA Admin</a> page.
-                    </small>
+                <div class="pa-ps__panel">
+                    <h6 class="pa-ps__heading"><i class="ph ph-puzzle-piece" aria-hidden="true"></i> {esc(_("Plugins"))}</h6>
+                    <ul class="pa-ps__list">{"".join(rows)}</ul>
+                    <p class="pa-ps__note"><i class="ph ph-info" aria-hidden="true"></i>
+                        {esc(_("For individual tool management, role-based access control, and category filtering, use the PA Admin page."))}
+                        <a href="/app/pa-admin">PA Admin</a></p>
                 </div>
             </div>
             """
@@ -297,7 +251,7 @@ class PACoreSettings(Document):
         except Exception as e:
             return {
                 "success": False,
-                "html": f"<div class='p-3 rounded' style='background: var(--alert-bg-danger); color: var(--alert-text-danger);'>Error loading plugin status: {str(e)}</div>",
+                "html": f"<div class='pa-ps__error' role='alert'>{frappe.utils.escape_html(_('Error loading plugin status'))}: {frappe.utils.escape_html(str(e))}</div>",
             }
 
     @frappe.whitelist()

@@ -357,6 +357,15 @@ def _widget_asset(path: str) -> str:
     return f"{path}?v={_WIDGET_ASSET_VERSION}"
 
 
+def _file_asset(url: str, relative_path: str) -> str:
+    """Version a single static file by its content: nginx serves /assets with a one-year cache."""
+    try:
+        with open(os.path.join(os.path.dirname(__file__), relative_path), "rb") as f:
+            return f"{url}?v={hashlib.sha1(f.read()).hexdigest()[:10]}"
+    except OSError:
+        return url
+
+
 # CSS bundles for the chat widget. Loaded unconditionally; the widget JS
 # decides at runtime whether to mount any UI based on the chat gate.
 app_include_css = [
@@ -366,6 +375,7 @@ app_include_css = [
     _widget_asset("/assets/pibiassistant/chat/widget/widget_messages.css"),
     _widget_asset("/assets/pibiassistant/chat/widget/widget_modals.css"),
     _widget_asset("/assets/pibiassistant/chat/widget/widget_richblocks.css"),
+    _file_asset("/assets/pibiassistant/css/pa_core_settings.css", "public/css/pa_core_settings.css"),
 ]
 
 # JS bundles. Order matters: banner first (always meaningful), then the libs +
