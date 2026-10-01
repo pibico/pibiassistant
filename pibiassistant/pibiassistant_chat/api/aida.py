@@ -67,6 +67,25 @@ def get_models():
 
 
 @frappe.whitelist()
+def get_overview():
+    """Non-secret AIDA configuration summary for the admin page."""
+    if "System Manager" not in frappe.get_roles():
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
+    chat_url, chat_key, provider, model = _get_aida_config()
+    conv_url, conv_key = _get_convert_config()
+    voice_url, voice_key = _get_voice_config()
+    return {
+        "provider": provider,
+        "model": model,
+        "services": {
+            "Chat": {"url": chat_url, "configured": bool(chat_url and chat_key)},
+            "Convert": {"url": conv_url, "configured": bool(conv_url and conv_key)},
+            "Voice": {"url": voice_url, "configured": bool(voice_url and voice_key)},
+        },
+    }
+
+
+@frappe.whitelist()
 def test_connections():
     """Test connectivity to all configured AIDA APIs. Returns status for each."""
     results = {}

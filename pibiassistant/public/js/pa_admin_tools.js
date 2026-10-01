@@ -230,14 +230,6 @@
 
                 const used = data.quota_used || 0;
                 const limit = data.quota_limit || 0;
-                if (limit > 0) {
-                    const pct = Math.min(100, Math.round((used / limit) * 100));
-                    $('#analytics-credits').text(`${pct}%`);
-                } else if (used > 0) {
-                    $('#analytics-credits').text(ns._fmtNumber(used));
-                } else {
-                    $('#analytics-credits').text('—');
-                }
 
                 ns._renderSparkline('#analytics-spark', data.series || []);
             },
@@ -1107,6 +1099,55 @@
                 }
                 btn.html(originalHtml);
             }
+        });
+    };
+
+    // ── AIDA services ─────────────────────────────────────────────────
+    // Shows which of the Chat / Convert / Voice APIs are configured and, on
+    // demand (or on first load), whether each one answers.
+    ns.loadAidaServices = function(showToast) {
+        const esc = frappe.utils.escape_html;
+        const $list = $('#pa-aida-services');
+        frappe.call({
+            method: "pibiassistant.pibiassistant_chat.api.aida.get_overview",
+            callback: function(r) {
+                const o = r.message || {};
+                const model = [o.provider, o.model].filter(Boolean).join(' / ');
+                $('#pa-aida-model').text(model ? 'Modelo: ' + model : 'Sin modelo por defecto');
+                $('#analytics-model').text(o.model || '—');
+                $list.empty();
+                Object.keys(o.services || {}).forEach(function(name) {
+                    const s = o.services[name];
+                    $list.append(
+                        `<li data-svc="${esc(name)} API"><span class="pa-status-pill ${s.configured ? '' : 'pa-status-pill--stopped'}">` +
+                        `<span class="pa-status-dot" aria-hidden="true"></span> ${esc(name)}</span> ` +
+                        `<span class="pa-sidebar-subtle svc-detail">${s.configured ? esc(s.url) : 'Sin configurar'}</span></li>`
+                    );
+                });
+                frappe.call({
+                    method: "pibiassistant.pibiassistant_chat.api.aida.test_connections",
+                    callback: function(t) {
+                        const res = t.message || {};
+                        let failed = 0;
+                        $list.find('li').each(function() {
+                            const $li = $(this);
+                            const st = res[$li.data('svc')];
+                            if (!st) return;
+                            const $pill = $li.find('.pa-status-pill');
+                            $pill.toggleClass('pa-status-pill--running', !!st.ok)
+                                 .toggleClass('pa-status-pill--stopped', !st.ok);
+                            if (!st.ok) { failed++; $li.find('.svc-detail').text(st.error || 'Sin respuesta'); }
+                        });
+                        if (showToast) {
+                            frappe.show_alert({
+                                message: failed ? `${failed} servicio(s) AIDA con problemas` : 'Servicios AIDA operativos',
+                                indicator: failed ? 'orange' : 'green'
+                            });
+                        }
+                    }
+                });
+            },
+            error: function() { $('#pa-aida-card').hide(); }
         });
     };
 })();

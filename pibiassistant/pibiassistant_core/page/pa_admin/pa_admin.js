@@ -174,6 +174,27 @@ frappe.pages['pa-admin'].on_page_load = function(wrapper) {
                         </div>
                     </div>
 
+                    <!-- AIDA services card -->
+                    <div class="pa-card pa-sidebar-card" id="pa-aida-card">
+                        <div class="pa-sidebar-row">
+                            <div class="pa-sidebar-title">
+                                <i class="fa fa-plug" aria-hidden="true"></i> Servicios AIDA
+                            </div>
+                        </div>
+                        <ul class="pa-quick-list" id="pa-aida-services">
+                            <li><span class="pa-sidebar-subtle">Cargando...</span></li>
+                        </ul>
+                        <div class="pa-sidebar-subtle" id="pa-aida-model"></div>
+                        <div class="pa-sidebar-actions">
+                            <button class="btn btn-xs btn-default" id="test-aida">
+                                <i class="fa fa-refresh" aria-hidden="true"></i> Probar conexiones
+                            </button>
+                            <button class="btn btn-xs btn-primary" id="configure-aida">
+                                <i class="fa fa-cog" aria-hidden="true"></i> Configurar
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- PA Chat card -->
                     <div class="pa-card pa-sidebar-card" id="pa-chat-card">
                         <div class="pa-sidebar-row">
@@ -215,8 +236,8 @@ frappe.pages['pa-admin'].on_page_load = function(wrapper) {
                                 <div class="pa-analytics-value" id="analytics-users">–</div>
                             </div>
                             <div class="pa-analytics-cell">
-                                <div class="pa-analytics-label">Credits</div>
-                                <div class="pa-analytics-value pa-analytics-value--money" id="analytics-credits">–</div>
+                                <div class="pa-analytics-label">Modelo</div>
+                                <div class="pa-analytics-value" id="analytics-model" style="font-size:13px;word-break:break-all;">–</div>
                             </div>
                         </div>
                         <div class="pa-analytics-spark" id="analytics-spark" aria-label="Daily messages, last 30 days"></div>
@@ -229,7 +250,6 @@ frappe.pages['pa-admin'].on_page_load = function(wrapper) {
                         </div>
                         <ul class="pa-quick-list">
                             <li><a href="/app/assistant-audit-log"><i class="fa fa-history" aria-hidden="true"></i> Audit log</a></li>
-                            <li><a href="/app/pa-chat-settings"><i class="fa fa-user-circle-o" aria-hidden="true"></i> AIDA Chat Settings</a></li>
                             <li><a href="/app/assistant-core-settings"><i class="fa fa-cogs" aria-hidden="true"></i> AIDA Settings</a></li>
                             <li><a href="/aida" target="_blank" rel="noopener"><i class="fa fa-external-link" aria-hidden="true"></i> Open AIDA</a></li>
                         </ul>
@@ -275,6 +295,12 @@ frappe.pages['pa-admin'].on_page_load = function(wrapper) {
         // PA Chat toggle
         $('#toggle-pa-chat').on('click', ns.toggleFacChat);
 
+        // AIDA services
+        $('#configure-aida').on('click', function() {
+            frappe.set_route('Form', 'PA Core Settings');
+        });
+        $('#test-aida').on('click', function() { ns.loadAidaServices(true); });
+
         // Copy MCP endpoint URL to clipboard
         $('#copy-endpoint').on('click', function() {
             const url = $('#pa-mcp-endpoint').text().trim();
@@ -288,6 +314,7 @@ frappe.pages['pa-admin'].on_page_load = function(wrapper) {
             if (typeof ns.updateLastRefreshedLabel === 'function') ns.updateLastRefreshedLabel();
             ns.loadServerStatus();
             ns.loadChatStatus();
+            ns.loadAidaServices();
             ns.loadStats();
             ns.loadRecentActivity();
             ns.loadToolRegistry();
@@ -433,6 +460,7 @@ frappe.pages['pa-admin'].on_page_load = function(wrapper) {
         ns.state.lastRefreshedAt = new Date();
         ns.loadServerStatus();
         ns.loadChatStatus();
+        ns.loadAidaServices();
         ns.loadStats();
         ns.loadToolRegistry();
         ns.loadRecentActivity();
