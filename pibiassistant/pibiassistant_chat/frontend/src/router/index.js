@@ -156,6 +156,13 @@ const router = createRouter({
 	routes,
 });
 
+// AIDA mode has no PA Cloud, so only the local Appearance settings exist.
+router.beforeEach((to) => {
+	if (window.aida_mode && to.path.startsWith("/settings") && to.path !== "/settings/appearance" && to.path !== "/settings") {
+		return "/settings/appearance";
+	}
+});
+
 // Non-members are walled out of the whole SPA; /chat renders the access screen.
 router.beforeEach((to) => {
 	const userStore = useUserStore();

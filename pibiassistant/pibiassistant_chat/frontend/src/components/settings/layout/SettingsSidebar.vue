@@ -166,6 +166,22 @@ const TourIcon = () =>
 const visibleGroups = computed(() => {
 	const groups = [];
 
+	// AIDA mode: every other section depends on the PA Cloud service.
+	if (window.aida_mode) {
+		return [
+			{
+				id: "personal",
+				label: "Personal",
+				items: [{ to: "/settings/appearance", label: "Apariencia", icon: AppearanceIcon }],
+			},
+			{
+				id: "help",
+				label: "Ayuda",
+				items: [{ label: "Repetir tour", icon: TourIcon, action: () => tourStore.open() }],
+			},
+		];
+	}
+
 	// Personal — always visible
 	const personalItems = [
 		{ to: "/settings/profile", label: "Profile", icon: ProfileIcon },

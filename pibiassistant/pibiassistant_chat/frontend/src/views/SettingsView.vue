@@ -93,7 +93,7 @@ const leafTitle = computed(() => {
 // crosses the breakpoint while sitting on /settings.
 function forwardIfWide() {
 	if (!isMobile.value && !isLeaf.value) {
-		router.replace("/settings/profile");
+		router.replace(window.aida_mode ? "/settings/appearance" : "/settings/profile");
 	}
 }
 onMounted(forwardIfWide);

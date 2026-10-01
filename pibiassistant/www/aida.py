@@ -54,6 +54,14 @@ def get_context_for_dev():
     return get_boot()
 
 
+def _is_aida_mode():
+    """True when the native AIDA API is configured, i.e. PA Cloud features are unavailable."""
+    try:
+        return bool(frappe.get_doc("PA Core Settings").get_password("aida_api_key"))
+    except Exception:
+        return False
+
+
 def get_boot():
     """
     Get boot data for the frontend
@@ -70,6 +78,7 @@ def get_boot():
         "lang": str(frappe.local.lang or "en"),
         "theme": theme,
         "socketio_port": frappe.conf.get("socketio_port") or 9000,
+        "aida_mode": _is_aida_mode(),
     }
 
     # Get user's full name for display
