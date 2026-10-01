@@ -787,11 +787,14 @@ class PAOWidget {
 			const json = await res.json();
 			const data = json.message || json;
 			if (!res.ok || !data || data.text === undefined) {
-				frappe.show_alert({ message: "Couldn't transcribe — try again or type instead.", indicator: "red" });
+				let detail = "";
+				try { detail = (JSON.parse(json._server_messages || "[]").map((m) => JSON.parse(m).message).join(" ") || json.exception || "").replace(/<[^>]*>/g, "").slice(0, 160); } catch (e) {}
+				console.error("AIDA transcribe failed", res.status, json);
+				frappe.show_alert({ message: "No se pudo transcribir" + (detail ? ": " + detail : ""), indicator: "red" });
 				return;
 			}
 			if (!data.text) {
-				frappe.show_alert({ message: "Didn't catch that.", indicator: "orange" });
+				frappe.show_alert({ message: "No te he entendido, inténtalo de nuevo.", indicator: "orange" });
 				return;
 			}
 			// Auto-send the transcribed text. send_message() takes the text
@@ -959,6 +962,7 @@ class PAOWidget {
 			const apiArgs = {
 				session_id: this.session_id,
 				message: full_message,
+				file_urls: JSON.stringify(file_urls),
 			};
 
 			const response = await frappe.call({

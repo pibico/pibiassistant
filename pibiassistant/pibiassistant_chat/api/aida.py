@@ -128,6 +128,21 @@ def send_message(session_id=None, message=None, **kwargs):
 
     _emit(session_id, "stream_start", message_id=frappe.generate_hash(length=10))
 
+    file_urls = frappe.parse_json(kwargs.get("file_urls") or "[]")
+    if file_urls:
+        from pibiassistant.plugins.data_science.tools.extract_file_content import ExtractFileContent
+
+        extractor = ExtractFileContent()
+        parts = []
+        for url in file_urls:
+            result = extractor.execute({"file_url": url, "operation": "extract"})
+            name = url.split("/")[-1]
+            if result.get("success") and result.get("content"):
+                parts.append(f"[Archivo adjunto: {name}]\n{result['content']}")
+            else:
+                parts.append(f"[Archivo adjunto: {name}] No se pudo extraer el contenido: {result.get('error', 'desconocido')}")
+        message = "\n\n".join(parts) + "\n\n" + message
+
     endpoint = f"{api_url}/api/v1/chat/completions"
     headers = {
         "X-API-Key": api_key,
@@ -197,38 +212,45 @@ def send_message(session_id=None, message=None, **kwargs):
         return {"ok": False, "error": str(e)[:200]}
 
 
-@frappe.whitelist()
-def convert_document(file_url=None):
-    """Convert a PDF/image to markdown via the AIDA Convert API.
-
-    Accepts a Frappe file URL (e.g. /private/files/doc.pdf), downloads it
-    server-side, sends it to the convert service, and returns the markdown text.
-    """
-    if not file_url:
-        frappe.throw(_("file_url is required"))
-
+def convert_bytes_to_markdown(content, filename):
+    """Send file bytes to the AIDA Convert API. Returns (markdown, error)."""
     convert_url, convert_key = _get_convert_config()
     if not convert_url or not convert_key:
-        frappe.throw(_("AIDA Convert API is not configured. Go to PA Core Settings > AIDA Chat."))
-
-    file_doc = frappe.get_doc("File", {"file_url": file_url})
-    file_path = file_doc.get_full_path()
-
-    filename = file_url.split("/")[-1]
-    with open(file_path, "rb") as f:
+        return "", "AIDA Convert API is not configured"
+    try:
         resp = requests.post(
             f"{convert_url}/api/v1/convert",
             headers={"X-API-Key": convert_key},
-            files={"file": (filename, f)},
+            files={"file": (filename, content)},
             data={"output_format": "markdown", "use_vlm": "true", "detect_tables": "true"},
             timeout=300,
         )
-
+    except requests.exceptions.RequestException as e:
+        return "", f"Convert API unreachable: {str(e)[:150]}"
     if resp.status_code != 200:
-        return {"ok": False, "error": f"Convert API error {resp.status_code}: {resp.text[:200]}"}
-
+        return "", f"Convert API error {resp.status_code}: {resp.text[:200]}"
     result = resp.json()
-    return {"ok": True, "markdown": result.get("markdown", result.get("content", "")), "filename": filename}
+    if result.get("success") is False:
+        return "", f"Convert API: {result.get('error') or 'conversion failed'}"
+    return result.get("markdown") or result.get("content") or "", ""
+
+
+@frappe.whitelist()
+def convert_document(file_url=None):
+    """Convert a PDF/image/office file to markdown via the AIDA Convert API."""
+    if not file_url:
+        frappe.throw(_("file_url is required"))
+
+    file_doc = frappe.get_doc("File", {"file_url": file_url})
+    file_doc.check_permission("read")
+    with open(file_doc.get_full_path(), "rb") as f:
+        content = f.read()
+
+    filename = file_doc.file_name or file_url.split("/")[-1]
+    markdown, error = convert_bytes_to_markdown(content, filename)
+    if error:
+        return {"ok": False, "error": error}
+    return {"ok": True, "markdown": markdown, "filename": filename}
 
 
 @frappe.whitelist()

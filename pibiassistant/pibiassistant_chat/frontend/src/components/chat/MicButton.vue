@@ -35,6 +35,7 @@ async function postAudio(blob, durationMs) {
 	const json = await res.json();
 	const data = json.message || json;
 	if (!res.ok || !data || data.text === undefined) {
+		console.error("AIDA transcribe failed", res.status, json);
 		emit("error", "transcribe-failed");
 		return;
 	}

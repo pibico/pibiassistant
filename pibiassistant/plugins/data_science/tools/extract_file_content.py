@@ -117,6 +117,10 @@ class ExtractFileContent(BaseTool):
     def execute(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Execute file content extraction"""
         try:
+            converted = self._try_convert_api(arguments)
+            if converted:
+                return converted
+
             # Validate dependencies first
             dep_check = self._check_dependencies()
             if not dep_check["success"]:
@@ -176,6 +180,44 @@ class ExtractFileContent(BaseTool):
         except Exception as e:
             frappe.log_error(title="File Processing Error", message=f"Error processing file: {str(e)}")
             return {"success": False, "error": str(e)}
+
+    CONVERT_EXTENSIONS = (".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".tif", ".tiff", ".docx", ".doc", ".pptx", ".xlsx", ".xls")
+
+    def _try_convert_api(self, arguments: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Use the AIDA Convert API for documents/images; None means fall back to local extraction."""
+        if arguments.get("operation", "extract") not in ("extract", "ocr", "extract_tables"):
+            return None
+        try:
+            file_doc = self._get_file_document(arguments)
+            if not file_doc or not (file_doc.file_name or "").lower().endswith(self.CONVERT_EXTENSIONS):
+                return None
+            if not self._check_file_size(file_doc):
+                return None
+            content = self._get_file_content(file_doc)
+            if not content:
+                return None
+
+            from pibiassistant.pibiassistant_chat.api.aida import convert_bytes_to_markdown
+
+            markdown, error = convert_bytes_to_markdown(content, file_doc.file_name)
+            if error or not markdown.strip():
+                if error:
+                    frappe.log_error(title="AIDA Convert fallback", message=error)
+                return None
+            return {
+                "success": True,
+                "content": markdown,
+                "extraction_method": "aida_convert",
+                "file_info": {
+                    "name": file_doc.file_name,
+                    "type": "markdown",
+                    "size": file_doc.file_size or len(content),
+                    "url": file_doc.file_url,
+                },
+            }
+        except Exception as e:
+            frappe.log_error(title="AIDA Convert fallback", message=str(e))
+            return None
 
     def _check_dependencies(self) -> Dict[str, Any]:
         """Check if required dependencies are available"""
