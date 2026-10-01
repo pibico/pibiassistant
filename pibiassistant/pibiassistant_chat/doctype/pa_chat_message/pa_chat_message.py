@@ -115,6 +115,9 @@ class PAChatMessage(Document):
                 # Without these the per-message cost chip only ever exists on
                 # the live turn and vanishes on reload.
                 "credits_used",
+                "prompt_tokens",
+                "completion_tokens",
+                "duration_ms",
                 "model",
                 "model_breakdown",
                 "routing",

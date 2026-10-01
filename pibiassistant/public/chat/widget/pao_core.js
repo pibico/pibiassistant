@@ -481,7 +481,7 @@ window.PAOCore = {
 	 * @returns {string} HTML for assistant avatar
 	 */
 	get_assistant_avatar() {
-		return `<img src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" class="pao-avatar-img" style="width:32px;height:32px;border-radius:50%;">`;
+		return `<img src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" class="pao-avatar-img" style="width:100%;height:100%;border-radius:50%;">`;
 	},
 
 	// --- Context Extraction ---
@@ -603,22 +603,22 @@ window.PAOCore = {
 
 		switch (context.type) {
 			case "Form":
-				return `Viewing ${context.doctype}: ${context.name}`;
+				return __("Viewing {0}: {1}", [context.doctype, context.name]);
 			case "List":
-				return `Viewing ${context.doctype} list`;
+				return __("Viewing {0} list", [context.doctype]);
 			case "Report":
-				return `Viewing report: ${context.name}`;
+				return __("Viewing report: {0}", [context.name]);
 			case "Tree":
-				return `Viewing ${context.doctype} tree`;
+				return __("Viewing {0} tree", [context.doctype]);
 			case "Workspace":
-				return `Workspace: ${context.workspace_name}`;
+				return __("Workspace: {0}", [context.workspace_name]);
 			case "Dashboard":
-				return `Dashboard: ${context.dashboard_name}`;
+				return __("Dashboard: {0}", [context.dashboard_name]);
 			case "Print":
-				return `Print: ${context.doctype} - ${context.name}`;
+				return __("Print: {0} - {1}", [context.doctype, context.name]);
 			case "Custom Page":
 			case "Page":
-				return `Page: ${context.page_name}`;
+				return __("Page: {0}", [context.page_name]);
 			default:
 				return "";
 		}

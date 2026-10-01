@@ -7,6 +7,8 @@
 from __future__ import annotations
 
 import frappe
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_guard, _billing_unavailable_response
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_unavailable
 from frappe import _
 
 from .._helpers import (
@@ -18,6 +20,7 @@ from .._helpers import (
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(_billing_unavailable_response)
 def get_credit_balance():
     """
     Get prepaid credit balance and recent transactions.
@@ -53,6 +56,7 @@ def get_credit_balance():
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard(_billing_unavailable_response)
 def purchase_credits(credit_amount: int, gateway: str | None = None):
     """
     Initiate a prepaid credit purchase checkout.
@@ -75,8 +79,7 @@ def purchase_credits(credit_amount: int, gateway: str | None = None):
 
     client = get_pa_cloud_client()
     if not client:
-        frappe.throw(_("Not registered with the cloud service"))
-
+        return _aida_unavailable()
     try:
         return client.purchase_credits(int(credit_amount), gateway)
     except ARBillingUnavailableError:
@@ -88,6 +91,7 @@ def purchase_credits(credit_amount: int, gateway: str | None = None):
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(_billing_unavailable_response)
 def get_expiring_credits():
     """List unallocated credit batches expiring within 7 days.
 
@@ -120,6 +124,7 @@ def get_expiring_credits():
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(_billing_unavailable_response)
 def get_consumption_breakdown(days: int = 30):
     """Daily credit-consumption rollup grouped by source for the OverviewTab chart."""
     _require_system_manager()

@@ -21,9 +21,11 @@
   "aida_default_model",
   "aida_convert_section",
   "aida_convert_url",
-  "aida_convert_api_key",
   "aida_convert_column_break",
+  "aida_convert_api_key",
+  "aida_voice_section",
   "aida_voice_url",
+  "aida_voice_column_break",
   "aida_voice_api_key",
   "plugins_tab",
   "plugins_section",
@@ -69,7 +71,7 @@
   },
   {
    "default": "1",
-   "description": "Activar/desactivar el servidor MCP de pibiAssistant",
+   "description": "Enable/disable the pibiAssistant MCP server",
    "fieldname": "server_enabled",
    "fieldtype": "Check",
    "label": "Enable Assistant Core"
@@ -96,33 +98,33 @@
   {
    "fieldname": "pa_chat_description",
    "fieldtype": "HTML",
-   "options": "<p>AIDA — Asistente Inteligente de pibiCo. Activa el widget de chat en el Desk y la SPA en <code>/aida</code>. Conecta con las APIs de chat, conversión de documentos y transcripción de voz.</p>"
+   "options": "<p>AIDA — pibiCo's Intelligent Assistant. Enables the chat widget on the Desk and the SPA at <code>/aida</code>. It connects to the chat, document conversion and voice transcription APIs.</p>"
   },
   {
    "default": "0",
-   "description": "Activa/desactiva el widget y la SPA de AIDA inmediatamente, sin reinicio.",
+   "description": "Enables/disables the AIDA widget and SPA immediately, without a restart.",
    "fieldname": "enable_pa_chat",
    "fieldtype": "Check",
-   "label": "Activar AIDA Chat"
+   "label": "Enable AIDA Chat"
   },
   {
    "fieldname": "aida_section",
    "fieldtype": "Section Break",
    "label": "Chat API",
-   "description": "Conexión al servicio LLM para el chat de AIDA"
+   "description": "Connection to the LLM service for AIDA chat"
   },
   {
    "fieldname": "aida_api_url",
    "fieldtype": "Data",
    "label": "Chat API URL",
    "default": "https://api.espib.co/chat",
-   "description": "URL base de la API de chat (e.g. https://api.espib.co/chat)"
+   "description": "Base URL of the chat API (e.g. https://api.espib.co/chat)"
   },
   {
    "fieldname": "aida_api_key",
    "fieldtype": "Password",
    "label": "Chat API Key",
-   "description": "API key para el servicio de chat (header X-API-Key)"
+   "description": "API key for the chat service (X-API-Key header)"
   },
   {
    "fieldname": "aida_column_break",
@@ -131,52 +133,61 @@
   {
    "fieldname": "aida_default_provider",
    "fieldtype": "Select",
-   "label": "Provider por defecto",
+   "label": "Default Provider",
    "options": "\nollama\nopenai\nanthropic",
-   "description": "Proveedor LLM por defecto. Se actualiza al pulsar 'Refresh Models'."
+   "description": "Default LLM provider. Updated when you click 'Refresh Models'."
   },
   {
    "fieldname": "aida_default_model",
    "fieldtype": "Select",
-   "label": "Modelo por defecto",
+   "label": "Default Model",
    "options": "",
-   "description": "Modelos disponibles en el provider seleccionado"
+   "description": "Models available for the selected provider"
   },
   {
    "fieldname": "aida_convert_section",
    "fieldtype": "Section Break",
    "label": "Document Conversion API",
-   "description": "Servicio Docling para convertir PDF/imágenes a texto (markdown)"
+   "description": "Docling service to convert PDF/images to text (markdown)"
   },
   {
    "fieldname": "aida_convert_url",
    "fieldtype": "Data",
    "label": "Convert API URL",
    "default": "https://api.espib.co/convert",
-   "description": "URL base de la API de conversión de documentos"
-  },
-  {
-   "fieldname": "aida_convert_api_key",
-   "fieldtype": "Password",
-   "label": "Convert API Key",
-   "description": "API key para el servicio de conversión (header X-API-Key)"
+   "description": "Base URL of the document conversion API"
   },
   {
    "fieldname": "aida_convert_column_break",
    "fieldtype": "Column Break"
   },
   {
+   "fieldname": "aida_convert_api_key",
+   "fieldtype": "Password",
+   "label": "Convert API Key",
+   "description": "API key for the conversion service (X-API-Key header)"
+  },
+  {
+   "fieldname": "aida_voice_section",
+   "fieldtype": "Section Break",
+   "label": "Voice API"
+  },
+  {
    "fieldname": "aida_voice_url",
    "fieldtype": "Data",
    "label": "Voice API URL",
    "default": "https://api.espib.co/voice",
-   "description": "URL base de la API de transcripción de voz (Whisper)"
+   "description": "Base URL of the voice transcription API (Whisper)"
+  },
+  {
+   "fieldname": "aida_voice_column_break",
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "aida_voice_api_key",
    "fieldtype": "Password",
    "label": "Voice API Key",
-   "description": "API key para el servicio de transcripción de voz (header X-API-Key)"
+   "description": "API key for the voice transcription service (X-API-Key header)"
   },
   {
    "fieldname": "plugins_tab",

@@ -27,6 +27,8 @@ from ..chat.helpers import (
     _extract_file_attachments,
     _is_processing_restricted,
 )
+from ..chat.aida_stream import acquire_turn, is_aida_mode, release_turn
+from ..chat.cancel import clear as clear_cancel
 from ..chat.relay import (
     _relay_ar_interrupt_resume,
     _relay_ar_stream,
@@ -36,6 +38,7 @@ from ..chat.relay import (
 # unbounded ``threading.Thread`` spawning (AIDA-H14). Workers are daemon
 # so they don't block process shutdown. Overflow currently queues inside
 # the executor — bounded-queue rejection is a documented follow-up.
+_MAX_MESSAGE_CHARS = 32000
 _relay_pool = ThreadPoolExecutor(max_workers=20, thread_name_prefix="pao-relay")
 
 
@@ -189,7 +192,15 @@ def send_message(
     Returns:
             dict: Acknowledgment that processing has started
     """
+    turn_held = False
     try:
+        message = (message or "").strip()
+        if len(message) > _MAX_MESSAGE_CHARS:
+            frappe.throw(
+                _("The message is too long (maximum {0} characters).").format(_MAX_MESSAGE_CHARS),
+                frappe.ValidationError,
+            )
+
         # Parse context if provided as string (for backwards compatibility)
         if isinstance(context, str):
             context = json.loads(context) if context else {}
@@ -208,6 +219,11 @@ def send_message(
         if not attachments:
             attachments = []
 
+        if not message:
+            if not file_urls and not attachments:
+                frappe.throw(_("Write a message before sending."), frappe.ValidationError)
+            message = _("Please review the attached files.")
+
         _assert_session_owner(session_id)
 
         # Check if user can use AIDA
@@ -216,6 +232,15 @@ def send_message(
         access_check = can_use_pao()
         if not access_check.get("can_use"):
             frappe.throw(access_check.get("reason", _("Cannot use AIDA")))
+
+        aida_mode = is_aida_mode()
+        if aida_mode:
+            if not acquire_turn(session_id):
+                frappe.throw(
+                    _("AIDA is still answering the previous message. Wait for it to finish."),
+                    frappe.ValidationError,
+                )
+            turn_held = True
 
         # AIDA-M15: respect GDPR Article 18 processing restriction. When set,
         # skip message persistence entirely — the chat still runs (AR handles
@@ -257,7 +282,8 @@ def send_message(
                 file_addendum = wrap_untrusted(file_content, kind="user_attached_files")
                 system_prompt_addendum = (system_prompt_addendum or "") + file_addendum
 
-        signal_addendum = _render_client_signals(client_signals)
+        # Browser-diagnostics tools do not exist in AIDA, so the hint would only confuse the model.
+        signal_addendum = "" if aida_mode else _render_client_signals(client_signals)
         if signal_addendum:
             system_prompt_addendum = (system_prompt_addendum or "") + signal_addendum
 
@@ -270,10 +296,13 @@ def send_message(
             PAChatSessionState,
         )
 
-        session_state = None if restricted else PAChatSessionState.load_wire(session_id)
+        session_state = None if restricted or aida_mode else PAChatSessionState.load_wire(session_id)
 
         # Process in background via bounded pool (AIDA-H14) — relay from AR.
         # user_msg_name may be None under M15 restriction — relay tolerates.
+        # Cleared here, not in the relay thread, so a Stop pressed while the
+        # relay is still queued is not wiped.
+        clear_cancel(session_id)
         _relay_pool.submit(
             _relay_ar_stream,
             session_id,
@@ -305,9 +334,15 @@ def send_message(
     # handler below would mask the ownership refusal as a generic error.
     except frappe.PermissionError:
         raise
+    except frappe.ValidationError:
+        if turn_held:
+            release_turn(session_id)
+        raise
     except Exception as e:
+        if turn_held:
+            release_turn(session_id)
         frappe.log_error(title="AIDA Agent Error", message=f"Error in send_message: {e!s}")
-        frappe.throw(_("Error processing message: {0}").format(str(e)))
+        frappe.throw(_("AIDA could not process the message. Please try again."))
 
 
 @frappe.whitelist(methods=["POST"])
@@ -437,6 +472,7 @@ def continue_response(
     Returns:
             dict: Acknowledgment that continuation processing has started
     """
+    turn_held = False
     try:
         if not message_id:
             frappe.throw(_("message_id is required"))
@@ -452,6 +488,14 @@ def continue_response(
 
         effective_client_type = client_type or "spa"
 
+        if is_aida_mode():
+            if not acquire_turn(session_id):
+                frappe.throw(
+                    _("AIDA is still answering the previous message. Wait for it to finish."),
+                    frappe.ValidationError,
+                )
+            turn_held = True
+
         # Zero-retention: load the client-held session blob to round-trip on
         # continue. Skipped for GDPR-restricted users (AIDA-M15) — same rule
         # as send_message / resume_interrupt: never load or store their state.
@@ -465,6 +509,7 @@ def continue_response(
         # Continue in background via bounded pool (AIDA-H14) — reuses the
         # normal stream relay; continue_from_message_id tells it to skip
         # pushing a user message and ask AR to resume from message_id.
+        clear_cancel(session_id)
         _relay_pool.submit(
             _relay_ar_stream,
             session_id,
@@ -494,6 +539,12 @@ def continue_response(
     # handler below would mask the ownership refusal as a generic error.
     except frappe.PermissionError:
         raise
+    except frappe.ValidationError:
+        if turn_held:
+            release_turn(session_id)
+        raise
     except Exception as e:
+        if turn_held:
+            release_turn(session_id)
         frappe.log_error(title="AIDA Agent Error", message=f"Error in continue_response: {e!s}")
         frappe.throw(_("Error continuing response: {0}").format(str(e)))

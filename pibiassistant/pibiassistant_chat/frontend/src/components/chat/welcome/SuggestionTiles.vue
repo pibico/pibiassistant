@@ -1,6 +1,6 @@
 <template>
 	<div class="st">
-		<div class="st-label">{{ hasPersonalized ? "For you" : "Or try one of these" }}</div>
+		<div class="st-label">{{ hasPersonalized ? __("For you") : __("Or try one of these") }}</div>
 		<div class="st-grid">
 			<button
 				v-for="(tile, i) in tiles"
@@ -23,13 +23,14 @@
 
 <script setup>
 import { computed } from "vue";
+import { __ } from "@/utils/i18n";
 
 const props = defineProps({ tiles: { type: Array, default: () => [] } });
 defineEmits(["pick"]);
 
-const GLYPHS = ["₹", "⊕", "◷", "↗"];
+const GLYPHS = ["⊕", "◷", "↗", "▤"];
 const CATEGORY_GLYPHS = {
-	finance: "₹", data: "▤", docs: "✎", analysis: "↗", workflow: "⚙", general: "◷",
+	finance: "▤", data: "▤", docs: "✎", analysis: "↗", workflow: "⚙", general: "◷",
 };
 function glyphFor(tile, i) {
 	if (tile.personalized) return "✦";

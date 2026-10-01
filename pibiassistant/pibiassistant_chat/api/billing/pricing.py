@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import frappe
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_guard, _billing_unavailable_response
 from frappe import _
 
 from .._helpers import (
@@ -18,6 +19,7 @@ from .._helpers import (
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(_billing_unavailable_response)
 def preview_plan_pricing(plan: str, billing_cycle: str = "monthly"):
     """Return the tax-inclusive pricing breakdown for a plan.
 
@@ -61,6 +63,7 @@ def preview_plan_pricing(plan: str, billing_cycle: str = "monthly"):
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(_billing_unavailable_response)
 def validate_promo_code(promo_code: str | None = None, plan: str | None = None):
     """
     Validate a promotional or referral code for the current tenant.
@@ -74,7 +77,7 @@ def validate_promo_code(promo_code: str | None = None, plan: str | None = None):
                   or {"valid": False, "error": str}
     """
     if not promo_code:
-        return {"valid": False, "error": "Please enter a promo code"}
+        return {"valid": False, "error": _("Please enter a promo code")}
 
     try:
         from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
@@ -84,7 +87,7 @@ def validate_promo_code(promo_code: str | None = None, plan: str | None = None):
             return {"valid": False, "error": _("This site isn't registered with the cloud service.")}
 
         result = client.validate_promo_code(promo_code.upper().strip(), plan=plan)
-        return result or {"valid": False, "error": "Unable to validate promo code"}
+        return result or {"valid": False, "error": _("Unable to validate promo code")}
     except Exception as e:
         _log(title="AIDA Promo", message=f"Promo validation error: {e!s}")
-        return {"valid": False, "error": "Unable to validate promo code"}
+        return {"valid": False, "error": _("Unable to validate promo code")}

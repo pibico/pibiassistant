@@ -34,6 +34,7 @@
 
 				<!-- Help & Feedback -->
 				<button
+					v-if="!aidaMode"
 					@click="openHelp"
 					class="action-btn"
 					aria-label="Help and feedback"
@@ -80,6 +81,8 @@ import { useNavToggle } from "@/composables/useNavToggle";
 const supportStore = useSupportStore();
 const chatStore = useChatStore();
 const { onHamburger } = useNavToggle();
+
+const aidaMode = !!window.aida_mode;
 
 function openHelp() {
 	supportStore.open({ mode: "issue", conversationId: chatStore.currentSessionId || null });

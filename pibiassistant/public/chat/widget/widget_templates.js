@@ -54,18 +54,18 @@ window.PAOWidgetTemplates = {
 					<div class="pao-template-modal-header">
 						<div>
 							<h4>${title}</h4>
-							<p class="pao-template-modal-subtitle">Fill in the details</p>
+							<p class="pao-template-modal-subtitle">${this.escape(__("Fill in the details"))}</p>
 						</div>
-						<button class="pao-template-modal-close" type="button" aria-label="Close">&times;</button>
+						<button class="pao-template-modal-close" type="button" aria-label="${this.escape(__("Close"))}">&times;</button>
 					</div>
 					${subtitle}
 					<form class="pao-template-form">
 						<div class="pao-template-form-body">
-							${formHtml || '<p class="pao-arg-empty">This template has no parameters.</p>'}
+							${formHtml || `<p class="pao-arg-empty">${this.escape(__("This template has no parameters."))}</p>`}
 						</div>
 						<div class="pao-template-modal-actions">
-							<button type="button" class="pao-template-cancel">Cancel</button>
-							<button type="submit" class="pao-template-submit">Use</button>
+							<button type="button" class="pao-template-cancel">${this.escape(__("Cancel"))}</button>
+							<button type="submit" class="pao-template-submit">${this.escape(__("Use"))}</button>
 						</div>
 					</form>
 				</div>
@@ -150,7 +150,7 @@ window.PAOWidgetTemplates = {
 				<select id="pao-arg-${name}" name="${name}" class="pao-arg-input pao-arg-select" ${
 				required ? "required" : ""
 			}>
-					<option value="" disabled ${arg.default ? "" : "selected"}>Select an option…</option>
+					<option value="" disabled ${arg.default ? "" : "selected"}>${this.escape(__("Select an option…"))}</option>
 					${options}
 				</select>
 			`;

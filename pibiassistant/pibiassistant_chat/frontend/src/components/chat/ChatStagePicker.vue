@@ -1,7 +1,7 @@
 <template>
 	<!-- Onboarding for unregistered AIDA (site not registered) -->
 	<OnboardingScreen
-		v-if="registrationStatus === 'not_registered'"
+		v-if="registrationStatus === 'not_registered' && !aidaMode"
 		:is-admin="isAdmin"
 		@registered="$emit('registration-complete')"
 	/>
@@ -18,7 +18,7 @@
 	     re-accepts terms. Sits after the access checks so a non-member still
 	     gets the more actionable "ask to be added" message, and before user
 	     setup because no amount of connecting fixes a tenant-level block. -->
-	<TermsGate v-else-if="termsAcceptanceRequired" />
+	<TermsGate v-else-if="termsAcceptanceRequired && !aidaMode" />
 
 	<!-- User Setup Screen (site registered, but user not connected) -->
 	<UserSetupScreen
@@ -69,6 +69,7 @@
 </template>
 
 <script setup>
+import { isAidaMode } from "@/utils/i18n";
 import { defineAsyncComponent } from "vue";
 import ChatInterface from "@/components/chat/ChatInterface.vue";
 import ChatLoadingState from "@/components/chat/ChatLoadingState.vue";
@@ -89,6 +90,8 @@ const AccessDeniedScreen = defineAsyncComponent(
 );
 const TermsGate = defineAsyncComponent(() => import("@/components/onboarding/TermsGate.vue"));
 const WelcomeScreen = defineAsyncComponent(() => import("@/components/chat/WelcomeScreen.vue"));
+
+const aidaMode = isAidaMode();
 
 defineProps({
 	registrationStatus: { type: String, required: true },

@@ -65,7 +65,7 @@ def initialize_spa() -> dict:
             "quota": {"success": True, "plan": "AIDA", "quota_total": -1, "quota_used": 0,
                       "quota_remaining": -1, "percentage_used": 0, "is_unlimited": True,
                       "is_admin": is_admin, "registration_status": "Registered"},
-            "capabilities": _default_capabilities(),
+            "capabilities": _aida_capabilities(),
             "user_auth": {"success": True, "ready": True, "site_registered": True,
                           "user_registered": True, "has_mcp_servers": False,
                           "active_server_count": 0, "needs_reconnect": False},
@@ -433,6 +433,14 @@ def _format_user_auth(user_auth: dict | None, settings: Document) -> dict:
 # ============================================================================
 # Helper: Default capabilities (fail-safe)
 # ============================================================================
+
+
+def _aida_capabilities() -> dict:
+    caps = _default_capabilities()
+    caps["billing_enabled"] = False
+    caps["features"]["billing"] = False
+    caps["features"]["mcp_servers"] = False
+    return caps
 
 
 def _default_capabilities() -> dict:

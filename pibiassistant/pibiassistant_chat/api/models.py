@@ -8,6 +8,7 @@ import frappe
 from frappe import _
 
 from ._helpers import (
+    _aida_mode,
     _not_registered_error,
     _safe_error,
 )
@@ -15,6 +16,48 @@ from ._helpers import (
 
 @frappe.whitelist(methods=["GET"])
 def get_available_models():
+    if _aida_mode():
+        return _aida_models()
+    return _get_available_models()
+
+
+def _aida_models():
+    """AIDA mode: model list from the AIDA API. model_id is "provider/model"."""
+    from .aida import get_models
+
+    result = get_models() or {}
+    models = []
+    for provider, info in (result.get("providers") or {}).items():
+        if not info.get("available", True):
+            continue
+        for name in info.get("models") or []:
+            if "embedding" in name:
+                continue
+            models.append(
+                {
+                    "model_id": f"{provider}/{name}",
+                    "display_name": name,
+                    "provider": provider,
+                    "tier": "Standard",
+                    "tier_rank": 1,
+                }
+            )
+    return {
+        "success": True,
+        "models": models,
+        "models_by_tier": {"Standard": models} if models else {},
+        "max_tier_rank": 999,
+        "default_model": None,
+        "auto_mode": {
+            "enabled": True,
+            "description": _("Default AIDA model"),
+            "model_id": "auto",
+            "fallback_chain_length": 0,
+        },
+    }
+
+
+def _get_available_models():
     """
     Get available AI models from AR based on subscription tier.
 
@@ -98,7 +141,7 @@ def set_preferred_model(model_id: str | None = None):
 
         client = get_pa_cloud_client()
         if not client:
-            return {"success": False, "error": _not_registered_error()}
+            return {"success": _aida_mode()}
 
         success = client.set_preferred_model(model_id)
 

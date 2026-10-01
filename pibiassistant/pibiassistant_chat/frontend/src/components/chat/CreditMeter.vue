@@ -9,6 +9,7 @@
 
 <script setup>
 import { computed } from "vue";
+import { isAidaMode } from "@/utils/i18n";
 import { useUserStore } from "@/stores/userStore";
 import { useCreditScope } from "@/composables/useCreditScope";
 
@@ -21,7 +22,7 @@ const quota = computed(() => userStore.quotaInfo);
 const scope = useCreditScope();
 
 // An unlimited pool reports -1 and has nothing to meter.
-const hasQuota = computed(() => scope.value.total > 0);
+const hasQuota = computed(() => !isAidaMode() && scope.value.total > 0);
 
 const clampedPercent = computed(() => {
 	const { total, used } = scope.value;

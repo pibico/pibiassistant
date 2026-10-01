@@ -9,7 +9,52 @@ from __future__ import annotations
 import frappe
 from frappe import _
 
+from ._helpers import _aida_mode
 from .auth import _ar_user_id
+
+
+_LOCAL_PROFILE_KEY = "pibiassistant_profile"
+_PROFILE_FIELDS = (
+    "display_name",
+    "job_title",
+    "department",
+    "about",
+    "custom_instructions",
+    "locale",
+    "timezone",
+)
+
+
+def _local_profile() -> dict:
+    """AIDA mode: the profile lives in the user's defaults, no cloud involved."""
+    import json
+
+    try:
+        stored = json.loads(frappe.defaults.get_user_default(_LOCAL_PROFILE_KEY) or "{}")
+    except (ValueError, TypeError):
+        stored = {}
+    profile = {k: stored.get(k) for k in _PROFILE_FIELDS}
+    profile["display_name"] = profile["display_name"] or frappe.db.get_value(
+        "User", frappe.session.user, "full_name"
+    )
+    profile["locale"] = profile["locale"] or frappe.local.lang
+    profile["timezone"] = profile["timezone"] or frappe.db.get_value("User", frappe.session.user, "time_zone")
+    return profile
+
+
+def _update_local_profile(**fields) -> dict:
+    import json
+
+    fields = {k: v for k, v in fields.items() if v is not None}
+    if not fields:
+        return {"success": False, "error": _("No fields to update")}
+    try:
+        stored = json.loads(frappe.defaults.get_user_default(_LOCAL_PROFILE_KEY) or "{}")
+    except (ValueError, TypeError):
+        stored = {}
+    stored.update(fields)
+    frappe.defaults.set_user_default(_LOCAL_PROFILE_KEY, json.dumps(stored))
+    return {"success": True, "message": _("Profile updated")}
 
 
 @frappe.whitelist(methods=["GET"])
@@ -32,6 +77,8 @@ def get_profile() -> dict:
 
     client = get_pa_cloud_client()
     if not client:
+        if _aida_mode():
+            return _local_profile()
         frappe.throw(_("Not connected to the cloud service"))
 
     user_data = client.get_user(user_id=_ar_user_id(frappe.session.user))
@@ -79,6 +126,16 @@ def update_profile(
 
     client = get_pa_cloud_client()
     if not client:
+        if _aida_mode():
+            return _update_local_profile(
+                display_name=display_name,
+                job_title=job_title,
+                department=department,
+                about=about,
+                custom_instructions=custom_instructions,
+                locale=locale,
+                timezone=timezone,
+            )
         frappe.throw(_("Not connected to the cloud service"))
 
     # Build kwargs — only pass fields that were explicitly provided

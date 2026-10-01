@@ -62,7 +62,7 @@ window.PAOPlanStrip = {
 	stripHtml(plan) {
 		const tasks = (plan && plan.tasks) || [];
 		const rows = tasks.map((t) => this.rowHtml(t)).join("");
-		const heading = `Working through ${tasks.length} step${tasks.length === 1 ? "" : "s"}…`;
+		const heading = tasks.length === 1 ? __("Working through 1 step…") : __("Working through {0} steps…", [tasks.length]);
 		return (
 			`<div class="pao-plan-strip" data-plan-id="${this._escape(plan && plan.id)}">` +
 			`<div class="pao-plan-heading">${this._escape(heading)}</div>` +
@@ -76,7 +76,7 @@ window.PAOPlanStrip = {
 		const tasks = (plan && plan.tasks) || [];
 		const done = this._doneCount(tasks);
 		const rows = tasks.map((t) => this.rowHtml(t)).join("");
-		const label = `Completed ${done} of ${tasks.length} step${tasks.length === 1 ? "" : "s"}`;
+		const label = tasks.length === 1 ? __("Completed {0} of 1 step", [done]) : __("Completed {0} of {1} steps", [done, tasks.length]);
 		return (
 			`<div class="pao-plan-strip pao-plan-collapsed" data-plan-id="${this._escape(plan && plan.id)}">` +
 			`<button type="button" class="pao-plan-summary">✓ ${this._escape(label)} <span class="pao-plan-caret">›</span></button>` +

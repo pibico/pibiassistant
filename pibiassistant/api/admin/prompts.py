@@ -4,6 +4,7 @@
 # AGPL-3.0-or-later — see <https://www.gnu.org/licenses/>.
 
 import frappe
+from frappe import _
 
 
 @frappe.whitelist()
@@ -48,7 +49,7 @@ def toggle_prompt_template_status(name: str, publish: bool):
     frappe.only_for(["System Manager", "PA Admin"])
     try:
         if not frappe.db.exists("Prompt Template", name):
-            return {"success": False, "message": f"Prompt Template '{name}' not found"}
+            return {"success": False, "message": _("Prompt Template '{0}' not found").format(name)}
 
         publish = frappe.utils.cint(publish)
         new_status = "Published" if publish else "Draft"
@@ -60,13 +61,13 @@ def toggle_prompt_template_status(name: str, publish: bool):
 
         return {
             "success": True,
-            "message": f"Prompt Template '{doc.title}' set to {new_status}",
+            "message": _("Prompt Template '{0}' set to {1}").format(doc.title, _(new_status)),
             "new_status": new_status,
         }
     except Exception as e:
         frappe.db.rollback()
         frappe.log_error(f"Failed to toggle prompt template '{name}': {str(e)}")
-        return {"success": False, "message": f"Error: {str(e)}"}
+        return {"success": False, "message": _("Error: {0}").format(str(e))}
 
 
 @frappe.whitelist()
@@ -77,7 +78,7 @@ def preview_prompt_template(name: str):
     frappe.only_for(["System Manager", "PA Admin"])
     try:
         if not frappe.db.exists("Prompt Template", name):
-            return {"success": False, "message": f"Prompt Template '{name}' not found"}
+            return {"success": False, "message": _("Prompt Template '{0}' not found").format(name)}
 
         doc = frappe.get_doc("Prompt Template", name)
         arguments = [
@@ -100,4 +101,4 @@ def preview_prompt_template(name: str):
         }
     except Exception as e:
         frappe.log_error(f"Failed to preview prompt template '{name}': {str(e)}")
-        return {"success": False, "message": f"Error: {str(e)}"}
+        return {"success": False, "message": _("Error: {0}").format(str(e))}

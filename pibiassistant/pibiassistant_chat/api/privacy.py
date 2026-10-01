@@ -14,6 +14,7 @@ to HMAC-signed AR API calls.
 import frappe
 from frappe import _
 
+from ._helpers import _aida_guard, _aida_mode
 from .auth import _ar_user_id
 
 
@@ -27,6 +28,7 @@ def _get_client():
     return client
 
 
+
 @frappe.whitelist(methods=["GET"])
 def export_my_data() -> dict:
     """
@@ -36,10 +38,9 @@ def export_my_data() -> dict:
     plus local PA Chat data.
     """
     user = frappe.session.user
-    client = _get_client()
-
+    aida = _aida_mode()
     # AR keys users by email; resolve the docname before every AR call.
-    ar_data = client.export_user_data(user_id=_ar_user_id(user))
+    ar_data = None if aida else _get_client().export_user_data(user_id=_ar_user_id(user))
 
     # Append local PA Chat data
     pao_data = {
@@ -64,6 +65,15 @@ def export_my_data() -> dict:
 
     # Message count (content already exported from AR side)
     pao_data["pao_messages_count"] = frappe.db.count("PA Chat Message", {"user": user})
+
+    if aida:
+        pao_data["pao_messages"] = frappe.get_all(
+            "PA Chat Message",
+            filters={"user": user},
+            fields=["name", "session_id", "role", "content", "creation"],
+            order_by="creation asc",
+            limit_page_length=0,
+        )
 
     if ar_data and ar_data.get("data"):
         ar_data["data"]["pao"] = pao_data
@@ -94,10 +104,8 @@ def erase_my_data(password: str | None = None) -> dict:
     except frappe.AuthenticationError:
         frappe.throw(_("Incorrect password"))
 
-    client = _get_client()
-
-    # 1. Delete AR-side data (AR keys users by email)
-    ar_result = client.erase_user_data(user_id=_ar_user_id(user))
+    # 1. Delete AR-side data (AR keys users by email); AIDA mode has none
+    ar_result = None if _aida_mode() else _get_client().erase_user_data(user_id=_ar_user_id(user))
 
     # 2. Collect PA Chat Message names BEFORE deleting so we can cascade
     #    into attached File docs (security note — incomplete GDPR erasure).
@@ -124,6 +132,7 @@ def erase_my_data(password: str | None = None) -> dict:
     #    need to fire, and this avoids N document loads.
     local_deleted = len(message_names)
     frappe.db.delete("PA Chat Message", {"user": user})
+    frappe.db.delete("PA Chat Session State", {"user": user})
 
     prefs_name = frappe.db.get_value("PA Chat User Preferences", {"user": user}, "name")
     frappe.db.delete("PA Chat User Preferences", {"user": user})
@@ -197,6 +206,8 @@ def update_my_data(updates: str | None = None) -> dict:
     import json
 
     user = frappe.session.user
+    if _aida_mode():
+        return {"success": False, "unavailable": True, "error": _("This feature is not available in AIDA mode.")}
     client = _get_client()
 
     updates_dict = json.loads(updates) if isinstance(updates, str) else updates
@@ -215,13 +226,16 @@ def restrict_my_processing(restrict: bool = True) -> dict:
     skipped, but chat and billing continue normally.
     """
     user = frappe.session.user
-    client = _get_client()
 
     # Convert string "true"/"false" from form data
     if isinstance(restrict, str):
         restrict = restrict.lower() in ("true", "1", "yes")
 
-    result = client.restrict_user_processing(user_id=_ar_user_id(user), restrict=restrict)
+    if _aida_mode():
+        _set_processing_restricted_flag(user, bool(restrict))
+        return {"status": "success", "processing_restricted": bool(restrict)}
+
+    result = _get_client().restrict_user_processing(user_id=_ar_user_id(user), restrict=restrict)
 
     # mirror: mirror the flag onto PA Chat User Preferences so
     # ``_log_conversation`` can skip persistence without an AR round-trip on
@@ -258,6 +272,7 @@ def _set_processing_restricted_flag(user: str, restricted: bool) -> None:
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard()
 def update_my_consent(consent_type: str | None = None, granted: bool = True) -> dict:
     """
     Update consent for a specific processing activity.
@@ -279,7 +294,21 @@ def update_my_consent(consent_type: str | None = None, granted: bool = True) -> 
     return client.update_user_consent(user_id=_ar_user_id(user), consent_type=consent_type, granted=granted)
 
 
+def _local_privacy_config() -> dict:
+    from .chat.helpers import _is_processing_restricted
+
+    return {
+        "is_admin": "System Manager" in frappe.get_roles(frappe.session.user),
+        "tenant": None,
+        "user_privacy": {
+            "memory_consent": False,
+            "processing_restricted": _is_processing_restricted(frappe.session.user),
+        },
+    }
+
+
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(_local_privacy_config)
 def get_privacy_config() -> dict:
     """
     Get privacy configuration for the current tenant.
@@ -314,6 +343,7 @@ def get_privacy_config() -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard()
 def update_privacy_config(config: str | None = None) -> dict:
     """
     Update tenant-level privacy configuration. Admin only.
@@ -334,6 +364,7 @@ def update_privacy_config(config: str | None = None) -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard()
 def save_initial_consent(memory_consent: bool = False) -> dict:
     """
     Save initial privacy consent from the onboarding consent screen.

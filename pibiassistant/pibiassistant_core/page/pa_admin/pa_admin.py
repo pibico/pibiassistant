@@ -20,7 +20,7 @@ from frappe import _
 
 def get_context(context):
     context.title = _("AIDA Admin")
-    context.description = _("Panel de administración de AIDA — herramientas, plugins y configuración.")
+    context.description = _("AIDA administration panel — tools, plugins and settings.")
 
     # Fetch assistant Server Settings
     context.settings = frappe.get_single("assistant Server Settings")

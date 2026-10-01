@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import frappe
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_guard, _billing_unavailable_response
 
 from .._helpers import (
     ARBillingUnavailableError,
@@ -23,6 +24,7 @@ from ..billing._internal import (
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(_billing_unavailable_response)
 def get_billing_dashboard():
     """
     Get comprehensive billing dashboard data.
@@ -69,6 +71,7 @@ def get_billing_dashboard():
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(_billing_unavailable_response)
 def get_plan_options():
     """
     Get available plans for upgrade modal.
@@ -123,6 +126,7 @@ def get_plan_options():
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(_billing_unavailable_response)
 def get_available_gateways():
     """
     Get available payment gateways with pricing for all plans.

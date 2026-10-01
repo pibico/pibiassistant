@@ -36,6 +36,24 @@ def get_capabilities() -> dict:
                     }
             }
     """
+    from pibiassistant.pibiassistant_chat.api._helpers import _aida_mode
+
+    if _aida_mode():
+        return {
+            "billing_enabled": False,
+            "available_gateways": [],
+            "version": "aida",
+            "features": {
+                "streaming": True,
+                "mcp_servers": False,
+                "rag": False,
+                "memory": False,
+                "billing": False,
+                "workflows": False,
+                "web_search": False,
+            },
+        }
+
     from pibiassistant.pibiassistant_chat.pa_cloud_client import (
         get_capabilities as fetch_capabilities,
     )
@@ -84,6 +102,11 @@ def get_ar_terms() -> dict:
                     "grace_period_days": 30
             }
     """
+    from pibiassistant.pibiassistant_chat.api._helpers import _aida_mode
+
+    if _aida_mode():
+        return {"accepted": True, "version": "", "summary": ""}
+
     try:
         from pibiassistant.pibiassistant_chat.pa_cloud_client import get_terms
 

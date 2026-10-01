@@ -140,8 +140,22 @@ html[data-theme="dark"] .pao-widget {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	transition: all 0.3s ease;
+	transition: transform 0.3s ease;
 	position: relative;
+	touch-action: none;
+	cursor: grab;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+.pao-widget.pao-dragging .pao-toggle-btn {
+	cursor: grabbing;
+	transform: scale(1.05);
+}
+
+.pao-toggle-btn:focus-visible {
+	outline: 2px solid #4682B4;
+	outline-offset: 2px;
 }
 
 .pao-toggle-btn:hover {
@@ -286,6 +300,7 @@ html[data-theme="dark"] .pao-widget {
 }
 
 /* Expand Button - Prominent Style */
+.pao-new-btn,
 .pao-expand-btn {
 	background: transparent;
 	border: none;
@@ -299,11 +314,13 @@ html[data-theme="dark"] .pao-widget {
 	justify-content: center;
 }
 
+.pao-new-btn:hover,
 .pao-expand-btn:hover {
 	background: var(--pao-hover-bg, #f5f5f5);
 	color: var(--pao-text-primary, #36414c);
 }
 
+.pao-new-btn svg,
 .pao-expand-btn svg {
 	width: 16px;
 	height: 16px;
@@ -707,6 +724,22 @@ html[data-theme="dark"] .pao-widget .pao-send-btn:hover:not(:disabled) {
 		height: min(72dvh, calc(100svh - 92px)) !important;
 		max-height: min(72dvh, calc(100svh - 92px)) !important;
 		border-radius: 14px 14px 10px 10px;
+	}
+}
+
+@media (max-width: 480px) {
+	.pao-messages .pao-welcome {
+		padding: 12px 8px;
+	}
+	.pao-messages .pao-welcome h3 {
+		font-size: 20px;
+	}
+}
+
+@media (min-width: 600px) and (max-width: 1023px) {
+	.pao-widget.pao-open .pao-chat-window {
+		left: auto !important;
+		width: min(440px, calc(100vw - 16px)) !important;
 	}
 }
 

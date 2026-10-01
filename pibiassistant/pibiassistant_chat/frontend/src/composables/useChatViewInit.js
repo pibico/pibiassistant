@@ -74,7 +74,7 @@ export function useChatViewInit(stores, routing, state) {
 	watch(
 		() => route.params.sessionId,
 		async (newSessionId) => {
-			if (newSessionId) {
+			if (newSessionId && newSessionId !== chatStore.currentSessionId) {
 				await chatStore.loadMessages(newSessionId);
 				chatStore.hydratePendingInterrupt(newSessionId);
 			}

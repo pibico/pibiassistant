@@ -16,13 +16,13 @@
                     ns.renderSkillsList();
                 } else {
                     $('#skills-list').html(
-                        '<div style="padding:20px;text-align:center;color:var(--red-500);">Failed to load skills</div>'
+                        '<div style="padding:20px;text-align:center;color:var(--red-500);">' + __('Failed to load skills') + '</div>'
                     );
                 }
             },
             error: function() {
                 $('#skills-list').html(
-                    '<div style="padding:20px;text-align:center;color:var(--red-500);">Error loading skills</div>'
+                    '<div style="padding:20px;text-align:center;color:var(--red-500);">' + __('Error loading skills') + '</div>'
                 );
             }
         });
@@ -48,17 +48,17 @@
                 $('#skills-list').html(`
                     <div class="pa-empty-state">
                         <i class="fa fa-graduation-cap" aria-hidden="true"></i>
-                        <div class="pa-empty-title">No skills yet</div>
-                        <div class="pa-empty-subtitle">Skills are reusable workflows or tool-usage patterns exposed to MCP clients.</div>
-                        <a href="/app/pa-skill/new?status=Draft" class="btn btn-xs btn-primary">Create skill</a>
+                        <div class="pa-empty-title">${__("No skills yet")}</div>
+                        <div class="pa-empty-subtitle">${__("Skills are reusable workflows or tool-usage patterns exposed to MCP clients.")}</div>
+                        <a href="/app/pa-skill/new?status=Draft" class="btn btn-xs btn-primary">${__("Create skill")}</a>
                     </div>
                 `);
             } else {
                 $('#skills-list').html(`
                     <div class="pa-empty-state">
                         <i class="fa fa-search" aria-hidden="true"></i>
-                        <div class="pa-empty-title">No skills match the current filters</div>
-                        <button type="button" class="btn btn-xs btn-default pa-clear-skill-filters">Clear filters</button>
+                        <div class="pa-empty-title">${__("No skills match the current filters")}</div>
+                        <button type="button" class="btn btn-xs btn-default pa-clear-skill-filters">${__("Clear filters")}</button>
                     </div>
                 `);
                 $('.pa-clear-skill-filters').on('click', function() {
@@ -75,7 +75,7 @@
             const isToggling = ns.state.toggleInProgress[`skill_${s.name}`];
             const isPublished = s.status === 'Published';
             const statusClass = (s.status || 'draft').toLowerCase();
-            const lastUsed = s.last_used ? frappe.datetime.str_to_user(s.last_used) : 'Never';
+            const lastUsed = s.last_used ? frappe.datetime.str_to_user(s.last_used) : __('Never');
 
             return `
             <div class="pa-item-card ${isToggling ? 'toggle-in-progress' : ''}" data-name="${s.name}">
@@ -87,20 +87,20 @@
                     <div class="pa-item-actions">
                         <button class="pa-tool-settings-btn pa-skill-content-btn"
                                 data-name="${s.name}"
-                                aria-label="View content of skill ${frappe.utils.escape_html(s.title)}"
-                                title="View skill content">
+                                aria-label="${__("View skill content")}: ${frappe.utils.escape_html(s.title)}"
+                                title="${__("View skill content")}">
                             <i class="fa fa-book" aria-hidden="true"></i>
                         </button>
                         <a href="/app/pa-skill/${encodeURIComponent(s.name)}" target="_blank"
                            class="pa-tool-settings-btn"
-                           aria-label="Open ${frappe.utils.escape_html(s.title)} in DocType editor"
-                           title="Open in DocType">
+                           aria-label="${__("Open in DocType")}: ${frappe.utils.escape_html(s.title)}"
+                           title="${__("Open in DocType")}">
                             <i class="fa fa-external-link" aria-hidden="true"></i>
                         </a>
-                        <label class="switch" style="margin:0;" title="${isPublished ? 'Click to unpublish' : 'Click to publish'}">
+                        <label class="switch" style="margin:0;" title="${isPublished ? __('Click to unpublish') : __('Click to publish')}">
                             <input type="checkbox" class="pa-skill-toggle"
                                    data-name="${s.name}"
-                                   aria-label="Publish skill ${frappe.utils.escape_html(s.title)}"
+                                   aria-label="${__("Publish skill")} ${frappe.utils.escape_html(s.title)}"
                                    ${isPublished ? 'checked' : ''}
                                    ${isToggling ? 'disabled' : ''}>
                             <span class="slider round"></span>
@@ -111,9 +111,9 @@
                 <div class="pa-item-meta">
                     <span class="pa-meta-chip">${frappe.utils.escape_html(s.skill_type || '')}</span>
                     ${s.linked_tool ? `<span class="pa-meta-chip"><i class="fa fa-wrench"></i> ${frappe.utils.escape_html(s.linked_tool)}</span>` : ''}
-                    <span class="pa-meta-chip"><i class="fa fa-eye"></i> ${s.visibility || 'Private'}</span>
-                    ${s.is_system ? '<span class="pa-meta-chip system-chip">System</span>' : ''}
-                    <span class="pa-meta-chip">Used ${s.use_count || 0}x</span>
+                    <span class="pa-meta-chip"><i class="fa fa-eye"></i> ${__(s.visibility || 'Private')}</span>
+                    ${s.is_system ? '<span class="pa-meta-chip system-chip">${__("System")}</span>' : ''}
+                    <span class="pa-meta-chip">${__("Used {0}x", [s.use_count || 0])}</span>
                     <span class="pa-meta-chip"><i class="fa fa-clock-o"></i> ${lastUsed}</span>
                 </div>
                 <div class="pa-expand-panel" id="skill-content-${s.name}"></div>
@@ -161,7 +161,7 @@
                     checkbox.prop('checked', originalState);
                     checkbox.prop('disabled', false);
                     checkbox.closest('.pa-item-card').removeClass('toggle-in-progress');
-                    frappe.show_alert({ message: response.message?.message || 'Unknown error', indicator: 'red' });
+                    frappe.show_alert({ message: response.message?.message || __('Unknown error'), indicator: 'red' });
                 }
             },
             error: function() {
@@ -170,7 +170,7 @@
                 checkbox.prop('checked', originalState);
                 checkbox.prop('disabled', false);
                 checkbox.closest('.pa-item-card').removeClass('toggle-in-progress');
-                frappe.show_alert({ message: 'Error toggling skill status', indicator: 'red' });
+                frappe.show_alert({ message: __('Error toggling skill status'), indicator: 'red' });
             }
         });
     };
@@ -187,7 +187,7 @@
         }
 
         panel.addClass('open').html(
-            '<div style="color:var(--text-muted);font-size:12px;"><i class="fa fa-spinner fa-spin"></i> Loading content...</div>'
+            '<div style="color:var(--text-muted);font-size:12px;"><i class="fa fa-spinner fa-spin"></i> ' + __("Loading content...") + '</div>'
         );
         btn.addClass('active');
 
@@ -199,11 +199,11 @@
                     const rendered = ns.renderMarkdown(response.message.content);
                     panel.html(`<div style="font-size:13px;">${rendered}</div>`);
                 } else {
-                    panel.html('<div style="color:var(--text-muted);">No content available</div>');
+                    panel.html('<div style="color:var(--text-muted);">' + __('No content available') + '</div>');
                 }
             },
             error: function() {
-                panel.html('<div style="color:var(--red-500);">Error loading content</div>');
+                panel.html('<div style="color:var(--red-500);">' + __('Error loading content') + '</div>');
             }
         });
     };

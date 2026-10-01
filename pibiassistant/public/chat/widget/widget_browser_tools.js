@@ -76,16 +76,16 @@ const SCREENSHOT_IMAGE_TIMEOUT_MS = 3000;
 
 const TOOL_CONFIRMATION_COPY = {
 	take_screenshot: {
-		action: "Capture screenshot",
-		detail: "The AI wants to capture what you're looking at and send it to the assistant. The screenshot may contain any PII visible on screen.",
+		action: __("Capture screenshot"),
+		detail: __("The AI wants to capture what you're looking at and send it to the assistant. The screenshot may contain any PII visible on screen."),
 	},
 	get_form_data: {
-		action: "Read form data",
-		detail: "The AI wants to read every field on the open record (including child tables) and send it to the assistant.",
+		action: __("Read form data"),
+		detail: __("The AI wants to read every field on the open record (including child tables) and send it to the assistant."),
 	},
 	capture_diagnostics: {
-		action: "Collect page diagnostics",
-		detail: "The AI wants to collect this page's recent console errors, failed network requests and a screenshot, and send them to the assistant. These may contain any PII visible on screen or named in an error.",
+		action: __("Collect page diagnostics"),
+		detail: __("The AI wants to collect this page's recent console errors, failed network requests and a screenshot, and send them to the assistant. These may contain any PII visible on screen or named in an error."),
 	},
 };
 
@@ -295,7 +295,7 @@ window.PAOBrowserTools = {
 
 				// Show overlay so user knows capture is in progress
 				const $overlay = $(
-					'<div class="pao-screenshot-overlay">Capturing screenshot...</div>'
+					'<div class="pao-screenshot-overlay">' + __("Capturing screenshot...") + '</div>'
 				);
 				$(".pao-widget").append($overlay);
 
@@ -721,8 +721,8 @@ window.PAOBrowserTools = {
 			}
 
 			const copy = TOOL_CONFIRMATION_COPY[tool_name] || {
-				action: "Run browser tool",
-				detail: "The AI wants to run the `" + tool_name + "` browser tool.",
+				action: __("Run browser tool"),
+				detail: __("The AI wants to run the `{0}` browser tool.", [tool_name]),
 			};
 			const paramsText = this._describeParams(tool_name, params);
 			const $messages = widget.$widget.find(".pao-messages");
@@ -775,10 +775,10 @@ window.PAOBrowserTools = {
 				$card.find(".pao-interaction-actions").remove();
 				const resolvedLabel =
 					decision === "deny"
-						? "Rejected"
+						? __("Rejected")
 						: decision === "trust"
-						? "Approved — trusted for this session"
-						: "Approved";
+						? __("Approved — trusted for this session")
+						: __("Approved");
 				$card.append(
 					'<div class="pao-interaction-resolved">' +
 						this._escapeHtml(resolvedLabel) +
@@ -827,8 +827,8 @@ window.PAOBrowserTools = {
 		if (tool_name === "capture_diagnostics") {
 			const seconds = (params && params.since_seconds) || 120;
 			return params && params.include_screenshot === false
-				? `Console + network from the last ${seconds}s`
-				: `Console + network from the last ${seconds}s, plus a screenshot`;
+				? __("Console + network from the last {0}s", [seconds])
+				: __("Console + network from the last {0}s, plus a screenshot", [seconds]);
 		}
 		return "";
 	},

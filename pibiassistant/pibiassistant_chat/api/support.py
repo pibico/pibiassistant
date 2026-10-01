@@ -26,6 +26,7 @@ from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
 
 from ._attachment_validation import is_ticket_image, validate_ticket_attachment
 from ._rate_limits import rate_limit, session_user_or_ip
+from ._helpers import _aida_guard
 from .auth import _ar_user_id
 
 
@@ -351,6 +352,7 @@ def submit_feedback(
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard([])
 def list_my_tickets(status: str | None = None) -> list:
     """List the current user's support tickets."""
     client = _get_client()
@@ -362,6 +364,7 @@ def list_my_tickets(status: str | None = None) -> list:
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard([])
 def list_my_feedback() -> list:
     """List the current user's submitted feedback."""
     client = _get_client()

@@ -385,6 +385,10 @@ def get_registration_state() -> dict:
     first run with no AR reachable still gets the prefill.
     """
     frappe.only_for("System Manager")
+    from pibiassistant.pibiassistant_chat.api._helpers import _aida_mode
+
+    if _aida_mode():
+        return {"exists": True, "registered": True, "suggested_owner_email": None}
     # Resolved inside the guard: this endpoint promises never to break first
     # run, and that has to hold for the local lookup too.
     suggested = None

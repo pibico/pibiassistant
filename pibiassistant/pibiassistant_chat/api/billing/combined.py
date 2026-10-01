@@ -11,6 +11,8 @@ The combined endpoint replaces 7 sequential frontend HTTP calls
 from __future__ import annotations
 
 import frappe
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_guard, _billing_unavailable_response
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_unavailable
 from frappe import _
 
 from .._helpers import (
@@ -29,6 +31,7 @@ from ..billing._outstanding import resolve_outstanding
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(_billing_unavailable_response)
 def get_billing_page_data(
     usage_history_days: int = 30, invoice_limit: int = 10, billing_history_limit: int = 20
 ):
@@ -142,6 +145,7 @@ def get_billing_page_data(
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(_billing_unavailable_response)
 def get_billing_details():
     """Proxy to AR billing_details.get_billing_details via the SDK.
 
@@ -154,8 +158,7 @@ def get_billing_details():
 
     client = get_pa_cloud_client()
     if not client:
-        frappe.throw(_not_registered_error())
-
+        return _aida_unavailable()
     try:
         return client.get_billing_details()
     except ARBillingUnavailableError:
@@ -167,6 +170,7 @@ def get_billing_details():
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard(_billing_unavailable_response)
 def save_billing_details(
     billing_email: str,
     billing_country: str,
@@ -193,8 +197,7 @@ def save_billing_details(
 
     client = get_pa_cloud_client()
     if not client:
-        frappe.throw(_not_registered_error())
-
+        return _aida_unavailable()
     try:
         return client.save_billing_details(
             billing_email=billing_email,

@@ -81,7 +81,7 @@ def get_message_events(
         if result:
             return {"success": True, **result}
 
-        return {"success": False, "events": [], "error": "Failed to fetch events"}
+        return {"success": False, "events": [], "error": _("Failed to fetch events")}
 
     except frappe.PermissionError:
         # Let Frappe return a proper 403 rather than swallowing as a generic error
@@ -126,7 +126,7 @@ def get_tool_stats(
         if result:
             return {"success": True, **result}
 
-        return {"success": False, "error": "Failed to fetch tool stats"}
+        return {"success": False, "error": _("Failed to fetch tool stats")}
 
     except Exception as e:
         frappe.log_error(title="AIDA Stats Error", message=f"Error getting tool stats: {e!s}")

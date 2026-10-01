@@ -170,9 +170,9 @@ function copyMessage() {
 	display: flex;
 	align-items: flex-start;
 	gap: var(--ql-turn-gap);
-	padding: 2px 0 18px;
+	padding: 2px 0 8px;
 	border-bottom: 1px solid var(--ql-border);
-	margin-bottom: 18px;
+	margin-bottom: 8px;
 	font-family: var(--ql-font-ui);
 }
 
@@ -186,15 +186,15 @@ function copyMessage() {
 
 /* Ink-initial user avatar (07-chat-rail.html) */
 .ql-user-avatar {
-	width: 30px;
-	height: 30px;
-	border-radius: 9px;
+	width: 44px;
+	height: 44px;
+	border-radius: 50%;
 	background: var(--ql-text);
 	color: var(--ql-surface);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 12px;
+	font-size: 15px;
 	font-weight: 600;
 }
 

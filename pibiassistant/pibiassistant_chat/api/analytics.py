@@ -8,9 +8,67 @@ import frappe
 from frappe import _
 
 from ._helpers import (
+    _aida_mode,
     _not_registered_error,
     _safe_error,
 )
+
+
+def _local_analytics(days: int) -> dict:
+    """Usage summary from local PA Chat Message rows (AIDA mode has no cloud ledger)."""
+    from frappe.utils import add_days, today
+
+    days = days if days in (7, 30, 90) else 30
+    start = add_days(today(), -days)
+    where = "role = 'assistant' AND creation >= %(start)s AND IFNULL(errored, 0) = 0"
+    vals = {"start": start}
+    summary = frappe.db.sql(
+        f"""SELECT COUNT(*) AS request_count, COUNT(DISTINCT user) AS active_users,
+        COALESCE(SUM(credits_used), 0) AS credits_consumed
+        FROM `tabPA Chat Message` WHERE {where}""",
+        vals,
+        as_dict=True,
+    )[0]
+    daily = frappe.db.sql(
+        f"""SELECT DATE(creation) AS date, COUNT(*) AS request_count,
+        COALESCE(SUM(credits_used), 0) AS credits_consumed
+        FROM `tabPA Chat Message` WHERE {where} GROUP BY DATE(creation) ORDER BY date""",
+        vals,
+        as_dict=True,
+    )
+    for d in daily:
+        d["date"] = str(d["date"])
+    by_user = frappe.db.sql(
+        f"""SELECT user AS user_id, COUNT(*) AS request_count,
+        COALESCE(SUM(credits_used), 0) AS credits_consumed
+        FROM `tabPA Chat Message` WHERE {where} GROUP BY user ORDER BY request_count DESC""",
+        vals,
+        as_dict=True,
+    )
+    by_model = frappe.db.sql(
+        f"""SELECT COALESCE(NULLIF(model, ''), 'AIDA') AS model_id, COUNT(*) AS request_count,
+        COALESCE(SUM(credits_used), 0) AS credits_consumed
+        FROM `tabPA Chat Message` WHERE {where} GROUP BY 1 ORDER BY request_count DESC""",
+        vals,
+        as_dict=True,
+    )
+    summary.update({"tokens_input": 0, "tokens_output": 0, "tokens_actual": 0})
+    return {
+        "success": True,
+        "period": {"days": days, "start": str(start), "end": str(today())},
+        "summary": summary,
+        "daily": daily,
+        "by_user": by_user,
+        "by_model": by_model,
+        "by_source": [
+            {
+                "source": "chat",
+                "request_count": summary["request_count"],
+                "credits_consumed": summary["credits_consumed"],
+            }
+        ],
+        "is_admin": True,
+    }
 
 
 def _get_client():
@@ -45,6 +103,9 @@ def get_analytics_data(days: int = 30):
     _require_admin()
 
     try:
+        if _aida_mode():
+            return _local_analytics(int(days))
+
         client = _get_client()
         if not client:
             return {"error": _not_registered_error()}

@@ -1,10 +1,16 @@
 <template>
-	<!-- Message footer: timestamp + routing chip + credits -->
+	<!-- Message footer: model, tokens in/out, speed, time + routing chip + credits -->
 	<div
-		v-if="showTimestamps || showRouting || (!isUser && message.credits_used)"
+		v-if="showTimestamps || showRouting || (!isUser && (message.credits_used || hasUsage || message.timestamp))"
 		class="message-footer"
 	>
-		<span v-if="showTimestamps && message.timestamp" class="message-timestamp">{{ formattedTime }}</span>
+		<span v-if="!isUser && modelLabel" class="message-model" :title="__('Model used')">{{ modelLabel }}</span>
+		<span v-if="!isUser && hasUsage" class="message-usage">
+			<span :title="__('Input tokens')">↑{{ message.prompt_tokens ?? "–" }}</span>
+			<span :title="__('Output tokens')">↓{{ message.completion_tokens ?? "–" }}</span>
+		</span>
+		<span v-if="!isUser && tokensPerSecond" class="message-speed" :title="__('Output speed')">{{ tokensPerSecond }} {{ __("tokens/s") }}</span>
+		<span v-if="(showTimestamps || !isUser) && message.timestamp" class="message-timestamp">{{ formattedTime }}</span>
 		<button
 			v-if="chipText"
 			ref="routingTrigger"
@@ -40,6 +46,7 @@ import { computed, ref } from "vue";
 import { usePreferences } from "@/composables/usePreferences";
 import { useModelStore } from "@/stores/modelStore";
 import RoutingPanel from "./RoutingPanel.vue";
+import { __ } from "@/utils/i18n";
 import {
 	CHIP_DEFAULT,
 	creditsLabel as formatCredits,
@@ -57,6 +64,18 @@ const { preferences } = usePreferences();
 const modelStore = useModelStore();
 
 const showTimestamps = computed(() => preferences.showTimestamps);
+const modelLabel = computed(() => {
+	const id = props.message.model || props.message.model_id;
+	return id ? modelStore.modelDisplayName(id) || id : "";
+});
+const hasUsage = computed(
+	() => props.message.prompt_tokens != null || props.message.completion_tokens != null
+);
+const tokensPerSecond = computed(() => {
+	const out = Number(props.message.completion_tokens);
+	const ms = Number(props.message.duration_ms);
+	return out > 0 && ms > 0 ? (out / (ms / 1000)).toFixed(1) : "";
+});
 const routingOpen = ref(false);
 const routingTrigger = ref(null);
 
@@ -146,12 +165,25 @@ const creditsDoorTitle = computed(
 <style scoped>
 .message-footer {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
 	gap: 0.5rem;
-	margin-top: 0.25rem;
+	margin-top: 0.125rem;
 	font-size: 0.7rem;
 	color: var(--ql-text-muted);
 	opacity: 0.8;
+}
+
+.message-usage {
+	display: inline-flex;
+	gap: 0.4rem;
+}
+
+.message-model,
+.message-usage,
+.message-speed,
+.message-timestamp {
+	font-variant-numeric: tabular-nums;
 }
 
 .message-timestamp {

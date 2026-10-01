@@ -48,6 +48,11 @@ def get_notifications() -> dict:
     if not is_chat_enabled():
         return {"notifications": [], "user": ""}
 
+    from pibiassistant.pibiassistant_chat.api._helpers import _aida_mode
+
+    if _aida_mode():
+        return {"notifications": [], "user": frappe.session.user, "degraded": False}
+
     user = _ar_user_id(frappe.session.user)
     cached = frappe.cache.get_value(_cache_key(user), expires=True)
     if cached is not None:

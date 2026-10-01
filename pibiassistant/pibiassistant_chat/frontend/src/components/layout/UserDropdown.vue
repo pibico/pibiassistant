@@ -5,7 +5,7 @@
 			<div class="user-info">
 				<div class="user-avatar">
 					{{ userInitial }}
-					<span v-if="userStore.hasOutstanding" class="due-dot" :title="dueTitle" />
+					<span v-if="!aidaMode && userStore.hasOutstanding" class="due-dot" :title="dueTitle" />
 				</div>
 				<div class="user-details">
 					<div class="user-name">{{ userName }}</div>
@@ -30,7 +30,7 @@
 		<!-- Collapsed User Avatar -->
 		<div v-else class="user-avatar-collapsed" @click="toggleUserMenu">
 			{{ userInitial }}
-			<span v-if="userStore.hasOutstanding" class="due-dot" :title="dueTitle" />
+			<span v-if="!aidaMode && userStore.hasOutstanding" class="due-dot" :title="dueTitle" />
 		</div>
 
 		<!-- User Dropdown Menu -->
@@ -60,9 +60,10 @@
 					/>
 				</svg>
 				Settings
-				<span v-if="userStore.hasOutstanding" class="due-pill">{{ dueLabel }}</span>
+				<span v-if="!aidaMode && userStore.hasOutstanding" class="due-pill">{{ dueLabel }}</span>
 			</button>
 			<a
+				v-if="!aidaMode"
 				:href="DOCS_URL"
 				target="_blank"
 				rel="noopener noreferrer"
@@ -79,7 +80,7 @@
 				</svg>
 				Docs
 			</a>
-			<button @click="handleHelp" class="dropdown-menu-item">
+			<button v-if="!aidaMode" @click="handleHelp" class="dropdown-menu-item">
 				<svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path
 						stroke-linecap="round"
@@ -121,6 +122,7 @@ defineProps({
 
 const emit = defineEmits(["open-settings"]);
 
+const aidaMode = !!window.aida_mode;
 const DOCS_URL = "https://fac-suite.com/";
 
 // Admin-only by construction: the backend sends no outstanding to anyone who

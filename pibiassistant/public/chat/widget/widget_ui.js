@@ -62,21 +62,21 @@ window.PAOWidgetUI = {
 					<span class="pao-brand-text">AIDA</span>
 				</div>
 				<div class="pao-header-actions">
-					<button class="pao-hide-btn" title="Hide assistant (you can re-enable in My Preferences)">
+					<button class="pao-hide-btn" title="${__('Hide assistant (you can re-enable in My Preferences)')}">
 						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 							<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
 							<line x1="1" y1="1" x2="23" y2="23"></line>
 						</svg>
 					</button>
-					<button class="pao-expand-btn pao-expand-prominent" title="Open Full Assistant">
+					<button class="pao-expand-btn pao-expand-prominent" title="${__('Open full assistant')}">
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 							<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
 							<polyline points="15 3 21 3 21 9"></polyline>
 							<line x1="10" y1="14" x2="21" y2="3"></line>
 						</svg>
-						<span>Expand</span>
+						<span>${__('Expand')}</span>
 					</button>
-					<button class="pao-close-btn" title="Close">
+					<button class="pao-close-btn" title="${__('Close')}">
 						<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 							<line x1="18" y1="6" x2="6" y2="18"></line>
 							<line x1="6" y1="6" x2="18" y2="18"></line>
@@ -110,13 +110,13 @@ window.PAOWidgetUI = {
 				<div class="pao-avatar">
 					${this.get_robot_html("welcome")}
 				</div>
-				<h3>¡Hola! Soy AIDA</h3>
-				<p>Tu asistente inteligente de pibiCo. Puedo ayudarte a:</p>
+				<h3>${__("Hi! I am AIDA")}</h3>
+				<p>${__("Your intelligent assistant from pibiCo. I can help you with:")}</p>
 				<ul>
-					<li>Consultar datos y formularios</li>
-					<li>Crear y gestionar documentos</li>
-					<li>Resolver dudas sobre el sistema</li>
-					<li>Navegar y encontrar lo que necesitas</li>
+					<li>${__("Understanding forms and data")}</li>
+					<li>${__("Creating and managing documents")}</li>
+					<li>${__("Answering questions about your ERP")}</li>
+					<li>${__("Navigating the system")}</li>
 				</ul>
 			</div>
 		`;
@@ -136,14 +136,14 @@ window.PAOWidgetUI = {
 
 				<!-- Input Row -->
 				<div class="pao-input-row">
-					<button class="pao-file-upload-btn" title="Attach file">
+					<button class="pao-file-upload-btn" title="${__('Attach file')}">
 						<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 							<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
 						</svg>
 					</button>
 					<input type="file" class="pao-file-input" style="display: none;" accept=".pdf,.png,.jpg,.jpeg,.gif,.csv,.xlsx,.xls,.docx,.doc,.txt,.json,.xml">
-					<textarea class="pao-input" placeholder="Pregúntame lo que necesites..." rows="1"></textarea>
-					<button class="pao-send-btn" disabled title="Send message">
+					<textarea class="pao-input" placeholder="${__('Ask me anything you need...')}" rows="1"></textarea>
+					<button class="pao-send-btn" disabled title="${__('Send message')}">
 						<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 							<line x1="22" y1="2" x2="11" y2="13"></line>
 							<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
@@ -249,7 +249,7 @@ window.PAOWidgetUI = {
 			return $(`
 				<div class="pao-file-preview-item" data-url="${file.file_url}">
 					<img src="${file.file_url}" alt="${file.file_name}">
-					<button class="pao-file-remove" title="Remove">×</button>
+					<button class="pao-file-remove" title="${__('Remove')}">×</button>
 				</div>
 			`);
 		}
@@ -263,7 +263,7 @@ window.PAOWidgetUI = {
 					</svg>
 				</div>
 				<span class="pao-file-name">${file.file_name}</span>
-				<button class="pao-file-remove" title="Remove">×</button>
+				<button class="pao-file-remove" title="${__('Remove')}">×</button>
 			</div>
 		`);
 	},
@@ -277,7 +277,7 @@ window.PAOWidgetUI = {
 		return $(`
 			<div class="pao-tool-indicator">
 				<div class="pao-tool-spinner"></div>
-				<span>Using ${toolName}...</span>
+				<span>${frappe.utils.escape_html(__("Using {0}...", [toolName]))}</span>
 			</div>
 		`);
 	},
@@ -300,12 +300,12 @@ window.PAOWidgetUI = {
 			case "List":
 				iconSvg =
 					'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>';
-				contextText = `${context.doctype} list`;
+				contextText = __("{0} list", [context.doctype]);
 				break;
 			case "Report":
 				iconSvg =
 					'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>';
-				contextText = `Report: ${context.name}`;
+				contextText = __("Report: {0}", [context.name]);
 				break;
 			default:
 				iconSvg =
@@ -332,47 +332,48 @@ window.PAOWidgetUI = {
 			$chatWindow.css({ top: "", left: "", right: "", bottom: "", width: "", height: "" });
 			return;
 		}
-		const btnRect = $toggleBtn[0].getBoundingClientRect();
-		const viewportWidth = window.innerWidth;
-		const viewportHeight = window.innerHeight;
-		const chatWidth = 400;
-		const chatHeight = 650;
+		const vw = window.innerWidth;
+		const vh = window.innerHeight;
 		const margin = 15;
+		const edge = 10;
+		const chatWidth = Math.min(400, vw - 2 * edge);
+		const chatHeight = Math.min(650, vh - 2 * edge);
 
-		let left, top;
+		// The button is display:none while the chat is open, so fall back to
+		// the rect remembered by PAOWidgetPositioning.
+		let b = $toggleBtn[0].getBoundingClientRect();
+		if (!b.width && $widget._btn) b = $widget._btn;
+		else if (b.width) $widget._btn = { left: b.left, top: b.top, right: b.right, bottom: b.bottom };
 
-		// Calculate best position
-		const spaceAbove = btnRect.top;
-		const spaceBelow = viewportHeight - btnRect.bottom;
-		const spaceLeft = btnRect.left;
-		const spaceRight = viewportWidth - btnRect.right;
+		const clampL = (v) => Math.max(edge, Math.min(v, vw - chatWidth - edge));
+		const clampT = (v) => Math.max(edge, Math.min(v, vh - chatHeight - edge));
+		let left;
+		let top;
 
-		// Prefer positioning above the button
-		if (spaceAbove >= chatHeight + margin) {
-			top = btnRect.top - chatHeight - margin;
-		} else if (spaceBelow >= chatHeight + margin) {
-			top = btnRect.bottom + margin;
+		if (b.top >= chatHeight + margin + edge) {
+			// above the button, aligned to the side with more room
+			top = b.top - chatHeight - margin;
+			left = clampL(b.left + (b.right - b.left) / 2 > vw / 2 ? b.right - chatWidth : b.left);
+		} else if (vh - b.bottom >= chatHeight + margin + edge) {
+			top = b.bottom + margin;
+			left = clampL(b.left + (b.right - b.left) / 2 > vw / 2 ? b.right - chatWidth : b.left);
+		} else if (b.left >= chatWidth + margin + edge) {
+			left = b.left - chatWidth - margin;
+			top = clampT(b.bottom - chatHeight);
+		} else if (vw - b.right >= chatWidth + margin + edge) {
+			left = b.right + margin;
+			top = clampT(b.bottom - chatHeight);
 		} else {
-			top = Math.max(20, (viewportHeight - chatHeight) / 2);
+			left = clampL(b.left);
+			top = clampT(b.top - chatHeight - margin);
 		}
-
-		// Horizontal position - prefer left of button (since button is on right)
-		if (spaceLeft >= chatWidth + margin) {
-			left = btnRect.left - chatWidth - margin;
-		} else if (spaceRight >= chatWidth + margin) {
-			left = btnRect.right + margin;
-		} else {
-			left = Math.max(20, (viewportWidth - chatWidth) / 2);
-		}
-
-		// Apply bounds
-		left = Math.max(10, Math.min(left, viewportWidth - chatWidth - 10));
-		top = Math.max(10, Math.min(top, viewportHeight - chatHeight - 10));
 
 		$chatWindow.css({
 			position: "fixed",
 			left: left + "px",
-			top: top + "px",
+			top: clampT(top) + "px",
+			right: "auto",
+			bottom: "auto",
 			width: chatWidth + "px",
 			height: chatHeight + "px",
 		});

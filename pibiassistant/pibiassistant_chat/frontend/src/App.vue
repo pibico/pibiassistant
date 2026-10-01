@@ -20,7 +20,7 @@
 		<!-- Show loading while checking auth -->
 		<div v-else-if="isCheckingAuth" class="auth-loading">
 			<FacoRobot size="md" static-idle float show-arms show-shadow />
-			<p class="loading-text">Loading...</p>
+			<p class="loading-text">{{ __("Loading...") }}</p>
 		</div>
 
 		<!-- Show app when authenticated -->
@@ -40,6 +40,7 @@
 </template>
 
 <script setup>
+import { __ } from "@/utils/i18n";
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useVisualViewportFrame } from "@/composables/useVisualViewportFrame";

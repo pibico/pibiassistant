@@ -522,7 +522,14 @@ export const useChatStore = defineStore("chat", () => {
 			lastMsg._continuing = false;
 			// Store credits metadata
 			if (meta.credits_used) lastMsg.credits_used = meta.credits_used;
-			if (meta.model_id) lastMsg.model_id = meta.model_id;
+			if (meta.model_id) {
+				lastMsg.model_id = meta.model_id;
+				lastMsg.model = meta.model_id;
+			}
+			if (meta.prompt_tokens != null) lastMsg.prompt_tokens = meta.prompt_tokens;
+			if (meta.completion_tokens != null) lastMsg.completion_tokens = meta.completion_tokens;
+			if (meta.duration_ms != null) lastMsg.duration_ms = meta.duration_ms;
+			if (!lastMsg.timestamp) lastMsg.timestamp = new Date().toISOString();
 			if (meta.truncated) lastMsg.truncated = true;
 			// The receipt: routing.credits.actual supersedes the live estimate
 			// once the canonical stream_complete receipt has arrived.

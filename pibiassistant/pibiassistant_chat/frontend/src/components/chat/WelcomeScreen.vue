@@ -87,6 +87,7 @@ const eligiblePackCount = computed(() => packsStore.items.filter((p) => p.eligib
 const enabledPackCount = computed(() => packsStore.items.filter((p) => p.enabled).length);
 const showZeroPackBanner = computed(
 	() =>
+		!window.aida_mode &&
 		userStore.isAdmin &&
 		!bannerDismissed.value &&
 		!packsStore.loading &&
@@ -100,7 +101,7 @@ function dismissBanner() {
 
 onMounted(() => {
 	loadAttention();
-	if (userStore.isAdmin && !packsStore.items.length && !packsStore.loading) {
+	if (!window.aida_mode && userStore.isAdmin && !packsStore.items.length && !packsStore.loading) {
 		packsStore.load();
 	}
 });

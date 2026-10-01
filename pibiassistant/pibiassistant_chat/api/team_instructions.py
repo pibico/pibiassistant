@@ -5,6 +5,7 @@
 """Shared knowledge management — editable markdown document in the knowledge base."""
 
 import frappe
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_unavailable
 from frappe import _
 
 from .auth import _ar_user_id
@@ -76,8 +77,7 @@ def share_memory_to_knowledge(memory_id: str | None = None):
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         return client.share_memory_to_knowledge(user_id=_ar_user_id(frappe.session.user), memory_id=memory_id)
 
     except frappe.ValidationError:

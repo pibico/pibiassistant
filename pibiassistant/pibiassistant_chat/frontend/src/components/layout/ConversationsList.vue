@@ -1,7 +1,7 @@
 <template>
 	<div class="conversations-section">
 		<div class="section-header">
-			<h3 class="section-title">Recent Chats</h3>
+			<h3 class="section-title">{{ __("Recent Chats") }}</h3>
 			<button
 				v-if="showNewChat"
 				@click="$emit('new-session')"
@@ -145,7 +145,7 @@
 				@click="showAllSessions = !showAllSessions"
 				class="show-more-btn"
 			>
-				{{ showAllSessions ? "Show Less" : `Show All (${sessions.length})` }}
+				{{ showAllSessions ? __("Show Less") : __("Show All ({0})", [sessions.length]) }}
 			</button>
 
 			<!-- Archived toggle -->
@@ -200,6 +200,7 @@
 </template>
 
 <script setup>
+import { __ } from "@/utils/i18n";
 import { computed, ref } from "vue";
 
 const props = defineProps({

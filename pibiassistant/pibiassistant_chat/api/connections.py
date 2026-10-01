@@ -5,6 +5,7 @@
 """Per-user MCP connection management for the PA Chat SPA."""
 
 import frappe
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_unavailable
 from frappe import _
 
 from pibiassistant.pibiassistant_chat.api.auth import _ar_user_id
@@ -18,7 +19,7 @@ def _client():
 
     client = get_pa_cloud_client()
     if not client:
-        frappe.throw(_("Not connected to the cloud service"))
+        return _aida_unavailable()
     return client
 
 

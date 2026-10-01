@@ -5,6 +5,7 @@
 """Knowledge base / RAG document management."""
 
 import frappe
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_unavailable
 from frappe import _
 
 from .auth import _ar_user_id
@@ -57,8 +58,7 @@ def get_document(document_id: str | None = None):
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         return client.get_document(document_id)
 
     except Exception as e:
@@ -111,8 +111,7 @@ def upload_document():
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         file = frappe.request.files.get("file")
         if not file:
             frappe.throw(_("No file provided"), frappe.ValidationError)
@@ -152,8 +151,7 @@ def delete_document(document_id: str | None = None):
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         return client.delete_document(document_id, user_id=_ar_user_id(frappe.session.user))
 
     except Exception as e:
@@ -181,8 +179,7 @@ def update_document_access(
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         return client.update_document_access(
             document_id=document_id,
             user_id=_ar_user_id(frappe.session.user),
@@ -216,8 +213,7 @@ def get_document_content(document_id: str | None = None, download: str | None = 
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         file_bytes, content_type, filename = client.get_document_content(
             document_id=document_id,
             user_id=_ar_user_id(frappe.session.user),

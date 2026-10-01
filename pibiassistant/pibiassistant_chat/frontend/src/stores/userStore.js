@@ -181,6 +181,7 @@ export const useUserStore = defineStore("user", () => {
 	 * pool, which is the right number for members who share it.
 	 */
 	async function loadMyCreditStatus() {
+		if (window.aida_mode) return;
 		try {
 			const result = await api.users.getMyCreditStatus();
 			myCreditStatus.value = result && !result.error ? result : null;
@@ -391,7 +392,7 @@ export const useUserStore = defineStore("user", () => {
 			// Assigned unconditionally: the key is on every backend return path,
 			// and `if (data.outstanding)` would leave a settled balance showing
 			// until the next full reload.
-			outstanding.value = data.outstanding || null;
+			outstanding.value = window.aida_mode ? null : data.outstanding || null;
 
 			// Hydrate capabilities
 			if (data.capabilities) {

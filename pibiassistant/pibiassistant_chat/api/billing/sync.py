@@ -7,6 +7,8 @@
 from __future__ import annotations
 
 import frappe
+from frappe import _
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_guard, _billing_unavailable_response
 
 from .._helpers import (
     _log,
@@ -17,6 +19,7 @@ from .._helpers import (
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard(_billing_unavailable_response)
 def sync_subscription_status():
     """
     Sync subscription info from AR.
@@ -75,7 +78,7 @@ def sync_subscription_status():
                 "preferred_model": info.get("preferred_model"),
             }
 
-        return {"error": "Failed to fetch tenant info"}
+        return {"error": _("Failed to fetch tenant info")}
 
     except Exception as e:
         _log(title="AIDA Sync Error", message=f"Error syncing subscription: {e!s}")

@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import frappe
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_guard, _billing_unavailable_response
 from frappe import _
 
 from .._helpers import (
@@ -19,6 +20,7 @@ from .._helpers import (
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(_billing_unavailable_response)
 def download_invoice_pdf(ar_invoice_name: str):
     """Stream the GST invoice PDF for an AR Invoice to the browser.
 

@@ -182,14 +182,14 @@ window.PAOWidgetSlashMenu = {
 		state.rows = [];
 
 		if (pinned.length > 0) {
-			$body.append('<div class="pao-slash-section-label">Pinned</div>');
+			$body.append(`<div class="pao-slash-section-label">${this.escapeHtml(__("Pinned"))}</div>`);
 			pinned.forEach((t) =>
 				state.rows.push({ template: t, element: this.appendRow($body, t) })
 			);
 		}
 
 		if (others.length > 0) {
-			$body.append('<div class="pao-slash-section-label">All templates</div>');
+			$body.append(`<div class="pao-slash-section-label">${this.escapeHtml(__("All templates"))}</div>`);
 			others.forEach((t) =>
 				state.rows.push({ template: t, element: this.appendRow($body, t) })
 			);
@@ -198,7 +198,7 @@ window.PAOWidgetSlashMenu = {
 		if (state.rows.length === 0) {
 			const q = this.escapeHtml(query || "…");
 			$body.append(
-				`<div class="pao-slash-empty">No templates match <code>${q}</code></div>`
+				`<div class="pao-slash-empty">${__("No templates match {0}", [`<code>${q}</code>`])}</div>`
 			);
 		}
 

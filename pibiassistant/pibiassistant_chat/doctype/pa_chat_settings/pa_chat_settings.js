@@ -16,6 +16,29 @@
 
 frappe.ui.form.on("PA Chat Settings", {
 	refresh(frm) {
+		frappe.call({
+			method: "pibiassistant.pibiassistant_chat.api.aida.get_overview",
+			callback: (r) => {
+				const chat = r.message && r.message.services && r.message.services.Chat;
+				if (chat && chat.configured) {
+					frm.trigger("render_aida_mode");
+				} else {
+					frm.trigger("render_cloud_mode");
+				}
+			},
+			error: () => frm.trigger("render_cloud_mode"),
+		});
+	},
+
+	render_aida_mode(frm) {
+		["section_break_ar", "tenant_id", "pa_cloud_url", "registration_status", "tenant_secret"].forEach(
+			(f) => frm.toggle_display(f, false)
+		);
+		frm.dashboard.add_indicator(__("AIDA mode: connected to api.espib.co"), "green");
+		frm.set_intro(__("AIDA is connected to its own API services. No registration is required."), "blue");
+	},
+
+	render_cloud_mode(frm) {
 		if (frm.doc.registration_status !== "Registered") {
 			frm.add_custom_button(
 				__("Register in PA Chat"),

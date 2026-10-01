@@ -38,7 +38,7 @@
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
 						d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4L12 3z" />
 				</svg>
-				<span>Thinking</span>
+				<span>{{ __("Thinking") }}</span>
 				<span class="menu-state">{{ thinking ? "On" : "Off" }}</span>
 			</button>
 		</div>
@@ -46,6 +46,7 @@
 </template>
 
 <script setup>
+import { __ } from "@/utils/i18n";
 import { ref, onMounted, onUnmounted } from "vue";
 
 const props = defineProps({

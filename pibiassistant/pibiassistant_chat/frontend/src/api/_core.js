@@ -149,7 +149,7 @@ export const buildError = (
 
 export const friendlyError = (response, bodyText) => {
 	const status = response.status;
-	logger.error("API error", { status, raw: bodyText });
+	logger.error(`API error ${status}: ${String(bodyText || "").slice(0, 500)}`);
 
 	if (isSessionError(status, bodyText)) {
 		return buildError(MSG_SESSION, { status, raw: bodyText });

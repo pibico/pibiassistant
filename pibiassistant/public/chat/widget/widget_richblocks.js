@@ -421,15 +421,15 @@ window.PAOWidgetRichBlocks = {
 				self._icons.diagram +
 				"</span>" +
 				'<div class="pao-rb-placeholder-info">' +
-				'<div class="pao-rb-placeholder-label">Mermaid Diagram</div>' +
+				'<div class="pao-rb-placeholder-label">' + self._escapeHtml(__("Mermaid Diagram")) + "</div>" +
 				'<div class="pao-rb-placeholder-type">' +
 				self._escapeHtml(firstWord) +
 				"</div>" +
 				"</div>" +
-				'<button class="pao-rb-view-full" type="button">View in full assistant</button>' +
+				'<button class="pao-rb-view-full" type="button">' + self._escapeHtml(__("View in full assistant")) + "</button>" +
 				"</div>" +
 				'<details class="pao-rb-placeholder-code">' +
-				"<summary>Show source</summary>" +
+				"<summary>" + self._escapeHtml(__("Show source")) + "</summary>" +
 				"<pre><code>" +
 				self._escapeHtml(body) +
 				"</code></pre>" +
@@ -463,15 +463,15 @@ window.PAOWidgetRichBlocks = {
 				self._icons.chart +
 				"</span>" +
 				'<div class="pao-rb-placeholder-info">' +
-				'<div class="pao-rb-placeholder-label">Chart</div>' +
+				'<div class="pao-rb-placeholder-label">' + self._escapeHtml(__("Chart")) + "</div>" +
 				'<div class="pao-rb-placeholder-type">' +
 				typeLabel +
 				"</div>" +
 				"</div>" +
-				'<button class="pao-rb-view-full" type="button">View in full assistant</button>' +
+				'<button class="pao-rb-view-full" type="button">' + self._escapeHtml(__("View in full assistant")) + "</button>" +
 				"</div>" +
 				'<details class="pao-rb-placeholder-code">' +
-				"<summary>Show source</summary>" +
+				"<summary>" + self._escapeHtml(__("Show source")) + "</summary>" +
 				"<pre><code>" +
 				self._escapeHtml(body) +
 				"</code></pre>" +

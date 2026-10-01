@@ -5,6 +5,7 @@
 """Registration, OAuth, and MCP Server management APIs."""
 
 import frappe
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_mode, _aida_unavailable
 from frappe import _
 from frappe.rate_limiter import rate_limit
 
@@ -598,7 +599,6 @@ def _register_user_with_ar(frappe_user):
     client = get_pa_cloud_client()
     if not client:
         frappe.throw(_("Site not registered with the cloud service"))
-
     ar_user_id = _ar_user_id(frappe_user)
 
     # A seat is the billed unit and AR keys it by email forever, so this is
@@ -744,6 +744,8 @@ def get_user_mcp_servers() -> dict:
     try:
         client = get_pa_cloud_client()
         if not client:
+            if _aida_mode():
+                return {"success": True, "mcp_servers": []}
             return {
                 "success": False,
                 "mcp_servers": [],
@@ -793,7 +795,7 @@ def reconnect_mcp_server(server_name: str = "Main Frappe Site") -> dict:
     try:
         client = get_pa_cloud_client()
         if not client:
-            return {"success": False, "error": _("Site not registered with the cloud service")}
+            return _aida_unavailable() if _aida_mode() else {"success": False, "error": _("Site not registered with the cloud service")}
 
         frappe_user = frappe.session.user
 
@@ -842,7 +844,7 @@ def disconnect_mcp_server(server_name: str = "Main Frappe Site") -> dict:
     try:
         client = get_pa_cloud_client()
         if not client:
-            return {"success": False, "error": _("Site not registered with the cloud service")}
+            return _aida_unavailable() if _aida_mode() else {"success": False, "error": _("Site not registered with the cloud service")}
 
         result = client.remove_user_mcp_server(
             user_id=_ar_user_id(frappe.session.user), server_name=server_name

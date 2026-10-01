@@ -83,6 +83,7 @@
 </template>
 
 <script setup>
+import { __ } from "@/utils/i18n";
 import { ref, computed, nextTick, watch, onMounted, onBeforeUnmount, defineAsyncComponent } from "vue";
 import SlashMenu from "@/components/chat/SlashMenu.vue";
 import ComposerPlusMenu from "@/components/chat/ComposerPlusMenu.vue";
@@ -181,9 +182,9 @@ const canSend = computed(
 // question regime routes Enter to the card's answer; approval regime routes
 // it to abort-then-send (see resolveComposerRoute in the chat store).
 const placeholderText = computed(() => {
-	if (props.interactionMode === "question") return "Type your answer…";
-	if (props.isStreaming) return "Assistant is responding — Enter queues your message";
-	return "Ask me anything…";
+	if (props.interactionMode === "question") return __("Type your answer…");
+	if (props.isStreaming) return __("Assistant is responding — Enter queues your message");
+	return __("Ask me anything…");
 });
 
 const hasMarkdown = computed(() => {

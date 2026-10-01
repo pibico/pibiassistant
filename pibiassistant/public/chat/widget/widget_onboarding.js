@@ -23,22 +23,22 @@ window.PAOWidgetOnboarding = {
 
 		const messages = {
 			not_registered: {
-				title: __("Bienvenido a AIDA!"),
-				subtitle: __("Tu asistente inteligente de pibiCo"),
-				admin_action: __("Get Started Free"),
-				admin_hint: __("Opens AIDA to complete setup."),
+				title: __("Welcome to AIDA!"),
+				subtitle: __("Your intelligent assistant from pibiCo"),
+				admin_action: __("Open AIDA"),
+				admin_hint: __("Opens the full AIDA assistant."),
 				no_admin: __("Please ask your administrator to enable AIDA for this site."),
 			},
 			needs_setup: {
-				title: __("Connect Your Account"),
-				subtitle: __("Your site is connected. Complete setup to start chatting."),
-				admin_action: __("Complete Setup"),
-				admin_hint: __("Opens AIDA to connect your account."),
+				title: __("Welcome to AIDA!"),
+				subtitle: __("Your intelligent assistant from pibiCo"),
+				admin_action: __("Open AIDA"),
+				admin_hint: __("Opens the full AIDA assistant."),
 			},
 			needs_consent: {
-				title: __("Almost There!"),
-				subtitle: __("Complete a quick setup to start chatting."),
-				admin_action: __("Complete Setup"),
+				title: __("Welcome to AIDA!"),
+				subtitle: __("Open AIDA to start chatting."),
+				admin_action: __("Open AIDA"),
 				admin_hint: __("Takes less than a minute."),
 			},
 		};
@@ -132,12 +132,12 @@ window.PAOWidgetOnboarding = {
 				<div class="pao-avatar">
 					<img class="aida-avatar" src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" width="72" height="72" style="border-radius:50%;">
 				</div>
-				<h3>${__("Hi! Soy AIDA")}</h3>
-				<p>${__("Tu asistente inteligente de pibiCo. Puedo ayudarte con:")}</p>
+				<h3>${__("Hi! I am AIDA")}</h3>
+				<p>${__("Your intelligent assistant from pibiCo. I can help you with:")}</p>
 				<ul>
 					<li>${__("Understanding forms and data")}</li>
 					<li>${__("Creating and managing documents")}</li>
-					<li>${__("Answering questions about Frappe")}</li>
+					<li>${__("Answering questions about your ERP")}</li>
 					<li>${__("Navigating the system")}</li>
 				</ul>
 			</div>

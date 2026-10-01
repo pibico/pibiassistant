@@ -430,6 +430,14 @@ function onIndexJump(index) {
 	indexJumpTo(index);
 }
 
+// A chat started from the empty landing gets its session URL so a reload restores it.
+watch(
+	() => chatStore.currentSessionId,
+	(id) => {
+		if (id && !route.params.sessionId) router.replace(`/chat/${id}`);
+	},
+);
+
 const pinnedEntries = ref([]);
 watch(
 	() => chatStore.currentSessionId,

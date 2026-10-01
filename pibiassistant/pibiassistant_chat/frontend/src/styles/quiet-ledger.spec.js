@@ -30,9 +30,9 @@ describe("quiet-ledger.css light tokens (spec §2.1)", () => {
     "--ql-text": "#1A1A17",
     "--ql-text-secondary": "#57534C",
     "--ql-text-muted": "#8A857C",
-    "--ql-accent": "#0F6E5C",
-    "--ql-accent-hover": "#0B5A4B",
-    "--ql-accent-soft": "rgba(15, 110, 92, 0.08)",
+    "--ql-accent": "#4682B4",
+    "--ql-accent-hover": "#386890",
+    "--ql-accent-soft": "rgba(70, 130, 180, 0.08)",
     "--ql-gold": "#C9A227",
     "--ql-gold-soft": "rgba(201, 162, 39, 0.14)",
     "--ql-success": "#1E7A52",
@@ -54,7 +54,7 @@ describe("quiet-ledger.css dark tokens (spec §2.1 Ink Ledger)", () => {
     "--ql-border": "#2E2C22",
     "--ql-text": "#F2EFE6",
     "--ql-text-secondary": "#B7B2A4",
-    "--ql-accent": "#2DAA8F",
+    "--ql-accent": "#6FA3CF",
     "--ql-gold": "#D9B84A",
   };
   for (const [name, value] of Object.entries(expected)) {
@@ -85,7 +85,7 @@ describe("quiet-ledger.css spacing & radius scale (spec §2.3)", () => {
 
 describe("data-viz palette is teal-anchored (spec §2.4)", () => {
   it("viz-1 is the brand teal", () => {
-    expect(firstValue("--ql-viz-1")).toBe("#0F6E5C");
+    expect(firstValue("--ql-viz-1")).toBe("#4682B4");
   });
   it("defines at least 8 viz colors", () => {
     for (let i = 1; i <= 8; i++) {

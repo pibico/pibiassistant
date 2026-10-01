@@ -98,4 +98,4 @@ def ping() -> dict:
 
     except Exception as e:
         api_logger.error(f"Error in ping: {e}")
-        return {"success": False, "message": f"Ping failed: {str(e)}"}
+        return {"success": False, "message": _("Ping failed: {0}").format(str(e))}

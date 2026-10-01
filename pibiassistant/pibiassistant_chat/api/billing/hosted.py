@@ -13,6 +13,8 @@ here. This endpoint swaps a purchase intent for a one-shot link to it.
 from __future__ import annotations
 
 import frappe
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_guard, _billing_unavailable_response
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_unavailable
 from frappe import _
 
 from .._helpers import _require_system_manager, _safe_error
@@ -21,6 +23,7 @@ PURPOSES = ("Subscription", "Payment Method", "Credits", "Pack", "Seat")
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard(_billing_unavailable_response)
 def create_hosted_checkout(
     purpose: str,
     params: dict | str | None = None,
@@ -65,8 +68,7 @@ def create_hosted_checkout(
 
     client = get_pa_cloud_client()
     if not client:
-        frappe.throw(_("Not registered with the cloud service"))
-
+        return _aida_unavailable()
     try:
         return client.create_hosted_checkout(
             purpose,

@@ -38,9 +38,9 @@ class PAOWidget {
 		this.user_setup_complete = false; // Per-user AR registration status
 		this.privacy_consent_complete = false; // Privacy consent done in SPA
 		this.default_tooltip_messages = [
-			{ icon: "👋", text: "Hey! Need help with anything?" },
-			{ icon: "💬", text: "Click me to start chatting!" },
-			{ icon: "🔍", text: "Looking for something specific?" },
+			{ icon: "👋", text: __("Need help with anything?") },
+			{ icon: "💬", text: __("Click me to start chatting!") },
+			{ icon: "🔍", text: __("Looking for something specific?") },
 		];
 		this.tooltip_messages = [...this.default_tooltip_messages];
 		this.current_tooltip_index = 0;
@@ -445,7 +445,13 @@ class PAOWidget {
 								<span class="pao-brand-text">AIDA</span>
 						</div>
 						<div class="pao-header-actions">
-							<button class="pao-expand-btn" title="Open Full Page">
+							<button class="pao-new-btn" type="button" title="${__('New conversation')}" aria-label="${__('New conversation')}">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+									<path d="M12 20h9"></path>
+									<path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+								</svg>
+							</button>
+							<button class="pao-expand-btn" title="${__('Open full assistant')}">
 								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 									<polyline points="15 3 21 3 21 9"></polyline>
 									<polyline points="9 21 3 21 3 15"></polyline>
@@ -453,7 +459,7 @@ class PAOWidget {
 									<line x1="3" y1="21" x2="10" y2="14"></line>
 								</svg>
 							</button>
-							<button class="pao-close-btn" title="Close">
+							<button class="pao-close-btn" title="${__('Close')}">
 								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 									<line x1="18" y1="6" x2="6" y2="18"></line>
 									<line x1="6" y1="6" x2="18" y2="18"></line>
@@ -468,13 +474,13 @@ class PAOWidget {
 							<div class="pao-avatar">
 								<img src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" style="width:64px;height:64px;border-radius:50%;">
 							</div>
-							<h3>¡Hola! Soy AIDA</h3>
-							<p>Tu asistente inteligente de pibiCo. Puedo ayudarte con:</p>
+							<h3>${__("Hi! I am AIDA")}</h3>
+							<p>${__("Your intelligent assistant from pibiCo. I can help you with:")}</p>
 							<ul>
-								<li>Consultar datos y formularios</li>
-								<li>Crear y gestionar documentos</li>
-								<li>Responder preguntas sobre tu ERP</li>
-								<li>Navegar por el sistema</li>
+								<li>${__("Understanding forms and data")}</li>
+								<li>${__("Creating and managing documents")}</li>
+								<li>${__("Answering questions about your ERP")}</li>
+								<li>${__("Navigating the system")}</li>
 							</ul>
 						</div>
 					</div>
@@ -485,13 +491,13 @@ class PAOWidget {
 						<div class="pao-file-preview-list" style="display: none;"></div>
 
 						<div class="pao-input-wrapper">
-							<button class="pao-file-upload-btn" title="Attach file">
+							<button class="pao-file-upload-btn" title="${__('Attach file')}">
 								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 									<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
 								</svg>
 							</button>
 							<input type="file" class="pao-file-input" style="display: none;" accept=".pdf,.png,.jpg,.jpeg,.csv,.xlsx,.xls,.docx,.txt">
-							<button class="pao-mic-btn" type="button" title="Voice input (Ctrl+Shift+Space)" aria-label="Voice input (Ctrl+Shift+Space)">
+							<button class="pao-mic-btn" type="button" title="${__('Voice input')} (Ctrl+Shift+Space)" aria-label="${__('Voice input')} (Ctrl+Shift+Space)">
 								<svg class="pao-mic-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 									<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
 									<path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
@@ -502,10 +508,10 @@ class PAOWidget {
 							</button>
 							<textarea
 								class="pao-input"
-								placeholder="Pregúntame lo que necesites..."
+								placeholder="${__('Ask AIDA...')}"
 								rows="1"
 							></textarea>
-							<button class="pao-send-btn" title="Send" disabled>
+							<button class="pao-send-btn" title="${__('Send')}" disabled>
 								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 									<line x1="22" y1="2" x2="11" y2="13"></line>
 									<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
@@ -530,16 +536,9 @@ class PAOWidget {
 		// Append to body
 		$("body").append(this.$widget);
 
-		// Apply custom position if saved in localStorage (takes precedence over preset)
+		// Restore the dragged launcher position (clamped to the current viewport)
 		if (this.custom_position) {
-			// Handle both new anchor-based format and legacy absolute format
-			if (typeof this.custom_position.anchorRight !== "undefined") {
-				// New anchor-based format
-				this.apply_custom_position(this.custom_position);
-			} else if (this.custom_position.left !== undefined) {
-				// Legacy absolute position format
-				this.apply_custom_position(this.custom_position.left, this.custom_position.top);
-			}
+			this.apply_custom_position(this.custom_position);
 		}
 
 		// Bind events
@@ -565,6 +564,12 @@ class PAOWidget {
 		// Close button
 		this.$widget.find(".pao-close-btn").on("click", () => {
 			this.close();
+		});
+
+		// New conversation: keep the pristine welcome markup so it can be restored
+		this._welcome_html = this.$widget.find(".pao-messages").html();
+		this.$widget.find(".pao-new-btn").on("click", () => {
+			this.new_conversation();
 		});
 
 		// Expand button - open full page assistant
@@ -706,8 +711,8 @@ class PAOWidget {
 		PAOWidgetPositioning.setup_resize_handler(this);
 	}
 
-	apply_custom_position(leftOrPosition, top) {
-		PAOWidgetPositioning.apply_custom_position(this, leftOrPosition, top);
+	apply_custom_position(position) {
+		PAOWidgetPositioning.apply_custom_position(this, position);
 	}
 
 	async update_server_preference(field, value) {
@@ -735,12 +740,12 @@ class PAOWidget {
 			$elapsed.show();
 		} else if (state === "transcribing") {
 			$btn.addClass("is-transcribing");
-			$input.attr("placeholder", "Transcribing…");
+			$input.attr("placeholder", __("Transcribing…"));
 		} else if (state === "error") {
 			$btn.addClass("is-error");
 			setTimeout(() => $btn.removeClass("is-error"), 200);
 		} else {
-			$input.attr("placeholder", "Pregúntame lo que necesites...");
+			$input.attr("placeholder", __("Ask AIDA..."));
 		}
 	}
 
@@ -751,20 +756,8 @@ class PAOWidget {
 	}
 
 	async _resolveTranscribeLanguage() {
-		// Resolution order: AR Tenant User profile locale → browser locale → "en".
-		// Profile fetch is cached per widget instance after the first call.
-		if (this._profileLocale === undefined) {
-			try {
-				const resp = await frappe.call({
-					method: "pibiassistant.pibiassistant_chat.api.get_profile",
-					type: "GET",
-				});
-				this._profileLocale = (resp && resp.message && resp.message.locale) || null;
-			} catch {
-				this._profileLocale = null;
-			}
-		}
-		const candidates = [this._profileLocale, navigator.language, "en"];
+		// Browser locale, then frappe's language, then "en" (no cloud profile lookup).
+		const candidates = [navigator.language, (window.frappe && frappe.boot && frappe.boot.lang) || null, "en"];
 		for (const c of candidates) {
 			if (c) return String(c).split("-")[0].toLowerCase();
 		}
@@ -790,18 +783,18 @@ class PAOWidget {
 				let detail = "";
 				try { detail = (JSON.parse(json._server_messages || "[]").map((m) => JSON.parse(m).message).join(" ") || json.exception || "").replace(/<[^>]*>/g, "").slice(0, 160); } catch (e) {}
 				console.error("AIDA transcribe failed", res.status, json);
-				frappe.show_alert({ message: "No se pudo transcribir" + (detail ? ": " + detail : ""), indicator: "red" });
+				frappe.show_alert({ message: __("Could not transcribe") + (detail ? ": " + detail : ""), indicator: "red" });
 				return;
 			}
 			if (!data.text) {
-				frappe.show_alert({ message: "No te he entendido, inténtalo de nuevo.", indicator: "orange" });
+				frappe.show_alert({ message: __("I did not understand, please try again."), indicator: "orange" });
 				return;
 			}
 			// Auto-send the transcribed text. send_message() takes the text
 			// directly; we don't push it through the textarea first.
 			this.send_message(data.text);
 		} catch (err) {
-			frappe.show_alert({ message: "Couldn't transcribe — try again or type instead.", indicator: "red" });
+			frappe.show_alert({ message: __("Couldn't transcribe — try again or type instead."), indicator: "red" });
 		} finally {
 			if (this._voiceCapture) this._voiceCapture.finishedTranscribing();
 		}
@@ -809,12 +802,12 @@ class PAOWidget {
 
 	_handleVoiceError(reason, code) {
 		const messages = {
-			"permission-denied": "Microphone access denied. Enable it in your browser settings.",
-			"no-mic": "No microphone found.",
-			"too-short": "Didn't catch that.",
-			"recorder-error": "Couldn't start recording — try again.",
+			"permission-denied": __("Microphone access denied. Enable it in your browser settings."),
+			"no-mic": __("No microphone found."),
+			"too-short": __("Didn't catch that."),
+			"recorder-error": __("Couldn't start recording — try again."),
 		};
-		const message = messages[code] || "Voice error — try again.";
+		const message = messages[code] || __("Voice error — try again.");
 		frappe.show_alert({ message, indicator: code === "too-short" ? "orange" : "red" });
 	}
 
@@ -964,11 +957,17 @@ class PAOWidget {
 				message: full_message,
 				file_urls: JSON.stringify(file_urls),
 			};
+			const conversation_id = this.get_aida_conversation_id();
+			if (conversation_id) apiArgs.conversation_id = conversation_id;
 
 			const response = await frappe.call({
 				method: "pibiassistant.pibiassistant_chat.api.aida.send_message",
 				args: apiArgs,
 			});
+
+			if (response && response.message && response.message.conversation_id) {
+				this.set_aida_conversation_id(response.message.conversation_id);
+			}
 
 			// Clear attached files after sending
 			this.attached_files = [];
@@ -987,11 +986,60 @@ class PAOWidget {
 			$assistantMsg.remove();
 			$sendBtn.prop("disabled", false);
 
-			this.add_message_to_ui(
-				"assistant",
-				"Sorry, I encountered an error. Please try again or check your quota.",
-				true
-			);
+			let reason = "";
+			try {
+				const msgs = JSON.parse((error && error._server_messages) || "[]");
+				if (msgs.length) reason = $("<div>").html(JSON.parse(msgs[0]).message).text();
+			} catch (e) {
+				/* no readable server reason */
+			}
+			const text = __("Sorry, I could not send your message. Please try again.");
+			this.add_message_to_ui("assistant", reason ? `${text} ${reason}` : text, true);
+		}
+	}
+
+	new_conversation() {
+		if (this._isStreaming) {
+			frappe.show_alert({ message: __("Wait for the current answer to finish."), indicator: "orange" });
+			return;
+		}
+		const previous = this.session_id;
+		this.session_id = this.generate_session_id();
+		this._aida_conversation_id = null;
+		try {
+			if (previous) localStorage.removeItem("pao_aida_conv_" + previous);
+		} catch (e) {
+			/* storage blocked */
+		}
+		this.clear_stored_session();
+		this.set_persistent_session(this.session_id);
+		this.attached_files = [];
+		this.$widget.find(".pao-file-preview-list").hide().empty();
+		this.$widget.find(".pao-messages").html(this._welcome_html || "");
+		this.$widget.find(".pao-input").val("").trigger("input").focus();
+		this.session_restored = false;
+	}
+
+	_aida_conv_key() {
+		return "pao_aida_conv_" + this.session_id;
+	}
+
+	get_aida_conversation_id() {
+		if (this._aida_conversation_id) return this._aida_conversation_id;
+		try {
+			this._aida_conversation_id = localStorage.getItem(this._aida_conv_key()) || null;
+		} catch (e) {
+			/* storage blocked: memory lasts for this page only */
+		}
+		return this._aida_conversation_id || null;
+	}
+
+	set_aida_conversation_id(id) {
+		this._aida_conversation_id = id;
+		try {
+			localStorage.setItem(this._aida_conv_key(), id);
+		} catch (e) {
+			/* storage blocked */
 		}
 	}
 
@@ -1081,7 +1129,7 @@ class PAOWidget {
 					<div class="pao-file-name">${file.file_name}</div>
 					<div class="pao-file-size">${fileSize}</div>
 				</div>
-				<button class="pao-file-remove" title="Remove">
+				<button class="pao-file-remove" title="${__('Remove')}">
 					<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 						<line x1="18" y1="6" x2="6" y2="18"></line>
 						<line x1="6" y1="6" x2="18" y2="18"></line>
@@ -1353,100 +1401,11 @@ class PAOWidget {
 	}
 
 	position_chat_window() {
-		// Smart positioning to ensure chat window stays within viewport
-		const $chatWindow = this.$widget.find(".pao-chat-window");
-		const $toggleBtn = this.$widget.find(".pao-toggle-btn");
-
-		// Phone/tablet layout is CSS (bottom sheet). Clear inline desktop
-		// coordinates so they cannot pin a 400×650 box to the top.
-		if (window.innerWidth < 1024) {
-			$chatWindow.css({ top: "", left: "", right: "", bottom: "", width: "", height: "" });
-			return;
-		}
-
-		// Safety check - ensure button exists and is visible
-		if (!$toggleBtn.length || !$toggleBtn.is(":visible")) {
-			// Fallback to widget position
-			const widgetRect = this.$widget[0].getBoundingClientRect();
-			if (widgetRect.width === 0 || widgetRect.height === 0) {
-				return;
-			}
-		}
-
-		// Get button position
-		const btnRect = $toggleBtn[0].getBoundingClientRect();
-
-		// Additional safety check for invalid dimensions
-		if (btnRect.width === 0 || btnRect.height === 0) {
-			// Use center of screen as fallback
-			const chatWidth = 400;
-			const chatHeight = 650;
-			$chatWindow.css({
-				position: "fixed",
-				left: Math.max(20, (window.innerWidth - chatWidth) / 2) + "px",
-				top: Math.max(20, (window.innerHeight - chatHeight) / 2) + "px",
-				right: "auto",
-				bottom: "auto",
-			});
-			return;
-		}
-		const chatWidth = 400; // From CSS
-		const chatHeight = 650; // From CSS
-		const spacing = 16; // Gap between button and chat
-
-		// Get viewport dimensions
-		const viewportWidth = window.innerWidth;
-		const viewportHeight = window.innerHeight;
-
-		// Calculate optimal position
-		let left, top, bottom, right;
-
-		// Determine vertical position (prefer above button)
-		const spaceAbove = btnRect.top;
-		const spaceBelow = viewportHeight - btnRect.bottom;
-
-		if (spaceAbove >= chatHeight + spacing) {
-			// Position above button - align bottom of chat with top of button with minimal spacing
-			bottom = viewportHeight - btnRect.top + 10; // Reduced spacing to 10px
-			top = "auto";
-		} else if (spaceBelow >= chatHeight + spacing) {
-			// Position below button
-			top = btnRect.bottom + spacing;
-			bottom = "auto";
-		} else {
-			// Not enough space - anchor to viewport with minimal bottom padding
-			// Calculate to leave just enough room for the button
-			const buttonSpaceNeeded = viewportHeight - btnRect.top + 10; // 10px padding
-			bottom = buttonSpaceNeeded;
-			top = 20; // Add top padding to prevent overflow
-		}
-
-		// Determine horizontal position (prefer aligned with button)
-		const spaceRight = viewportWidth - btnRect.right;
-		const spaceLeft = btnRect.left;
-
-		if (spaceRight >= chatWidth) {
-			// Align left edge with button
-			left = btnRect.left;
-			right = "auto";
-		} else if (spaceLeft >= chatWidth) {
-			// Align right edge with button
-			right = viewportWidth - btnRect.right;
-			left = "auto";
-		} else {
-			// Center horizontally
-			left = Math.max(20, (viewportWidth - chatWidth) / 2);
-			right = "auto";
-		}
-
-		// Apply positioning
-		$chatWindow.css({
-			position: "fixed",
-			left: left !== "auto" ? left + "px" : "auto",
-			right: right !== "auto" ? right + "px" : "auto",
-			top: top !== "auto" ? top + "px" : "auto",
-			bottom: bottom !== "auto" ? bottom + "px" : "auto",
-		});
+		PAOWidgetUI.position_chat_window(
+			this.$widget,
+			this.$widget.find(".pao-toggle-btn"),
+			this.$widget.find(".pao-chat-window")
+		);
 	}
 
 	// --- Streaming — delegated to PAOWidgetStreaming ---

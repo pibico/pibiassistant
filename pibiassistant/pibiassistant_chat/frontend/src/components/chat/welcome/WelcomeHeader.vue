@@ -3,7 +3,7 @@
 		<div class="wh-text">
 			<div class="wh-date">{{ dateLabel }}</div>
 			<h1 class="wh-greeting">{{ greeting }}, {{ displayName }}.</h1>
-			<p class="wh-sub">What should we work through today?</p>
+			<p class="wh-sub">{{ __("What should we work through today?") }}</p>
 		</div>
 		<FacoRobot size="sm" float show-arms track extra-class="wh-robot" />
 	</header>
@@ -13,6 +13,7 @@
 <script setup>
 import { computed } from "vue";
 import FacoRobot from "@/components/common/FacoRobot.vue";
+import { __ } from "@/utils/i18n";
 import { formatDateLabel } from "@/components/chat/welcomeGreeting";
 
 defineProps({

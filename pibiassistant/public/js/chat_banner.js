@@ -12,16 +12,16 @@
 // must be currently disabled, and the user must not have previously dismissed
 // the banner. Once dismissed, the banner never reappears for that user.
 
-frappe.provide("pibiassistant.chat");
+frappe.provide("pibiassistant.pibiassistant_chat");
 
 pibiassistant.pibiassistant_chat._render_banner = function () {
 	const banner_html = `
 		<div class="pa-chat-banner alert alert-info" style="margin: 10px 20px; display: flex; align-items: center; gap: 12px;">
 			<div style="flex: 1;">
-				<strong>New in PA 3.0: PA Chat</strong> — an in-Frappe AI chat assistant.
+				<strong>${__("New: AIDA Chat")}</strong> — ${__("an AI chat assistant inside Frappe.")}
 			</div>
-			<a href="/app/pa-admin" class="btn btn-primary btn-xs">Enable it</a>
-			<button type="button" class="btn btn-default btn-xs pa-chat-banner-dismiss">Dismiss</button>
+			<a href="/app/pa-admin" class="btn btn-primary btn-xs">${__("Enable it")}</a>
+			<button type="button" class="btn btn-default btn-xs pa-chat-banner-dismiss">${__("Dismiss")}</button>
 		</div>
 	`;
 

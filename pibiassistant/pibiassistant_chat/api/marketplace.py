@@ -10,6 +10,7 @@ template marketplace endpoints in api/workflows.py. They route through
 """
 
 import frappe
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_unavailable
 from frappe import _
 
 from ._helpers import _marketplace_enabled
@@ -21,7 +22,7 @@ def _get_client():
 
     client = get_pa_cloud_client()
     if not client:
-        frappe.throw(_("Not connected to the cloud service"))
+        return _aida_unavailable()
     return client
 
 

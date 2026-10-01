@@ -9,6 +9,7 @@ from __future__ import annotations
 import frappe
 
 from .._helpers import (
+    _aida_mode,
     _log,
     _safe_error,
 )
@@ -59,6 +60,22 @@ def get_quota_status():
 
         settings = frappe.get_single("PA Chat Settings")
         is_admin = "System Manager" in frappe.get_roles(frappe.session.user)
+
+        if _aida_mode():
+            return {
+                "success": True,
+                "plan": "AIDA",
+                "quota_total": -1,
+                "quota_used": 0,
+                "quota_remaining": -1,
+                "percentage_used": 0,
+                "is_unlimited": True,
+                "credit_balance": 0,
+                "in_overage": False,
+                "credits_exhausted": False,
+                "is_admin": is_admin,
+                "registration_status": "Registered",
+            }
 
         # Fetch live from AR to get current plan/quota (avoids cache staleness)
         live = _fetch_live_quota_dispatch()

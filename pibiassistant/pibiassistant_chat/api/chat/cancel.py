@@ -223,7 +223,7 @@ def _abort_pending_interactions(session_id: str, message_id: str | None) -> None
     for block in blocks:
         if block.get("type") == "interaction" and block.get("status") == "pending":
             block["status"] = "aborted"
-            block["result"] = {"message": "Stopped by user"}
+            block["result"] = {"message": _("Stopped by user")}
             changed = True
 
     # `aborted` is NOT a safe "already handled" signal here — relay.py's own

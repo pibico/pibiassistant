@@ -53,7 +53,7 @@
 
 			<!-- Summary Text -->
 			<span class="thinking-summary">
-				<template v-if="block.isStreaming">Thinking...</template>
+				<template v-if="block.isStreaming">{{ __("Thinking...") }}</template>
 				<template v-else>{{ summaryText }}</template>
 			</span>
 
@@ -85,6 +85,7 @@
 </template>
 
 <script setup>
+import { __ } from "@/utils/i18n";
 import { computed } from "vue";
 import { marked } from "marked";
 import DOMPurify from "dompurify";

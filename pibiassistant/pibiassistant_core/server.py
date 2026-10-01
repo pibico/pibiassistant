@@ -78,7 +78,7 @@ class assistantServer:
             settings = frappe.get_single("PA Core Settings")
 
             if not settings.server_enabled:
-                return {"success": False, "message": "MCP API is disabled in settings"}
+                return {"success": False, "message": _("MCP API is disabled in settings")}
 
             # Mark as enabled (API endpoints are always available when enabled)
             self.running = True
@@ -86,27 +86,27 @@ class assistantServer:
             frappe.logger().info("assistant PA API endpoints enabled")
             return {
                 "success": True,
-                "message": "PA API enabled - available at /api/method/pibiassistant.api.pa_endpoint.handle_mcp",
+                "message": _("PA API enabled - available at /api/method/pibiassistant.api.pa_endpoint.handle_mcp"),
             }
 
         except Exception as e:
-            frappe.log_error(f"Failed to enable MCP API: {str(e)}")
-            return {"success": False, "message": f"Failed to enable MCP API: {str(e)}"}
+            frappe.log_error(_("Failed to enable MCP API: {0}").format(str(e)))
+            return {"success": False, "message": _("Failed to enable MCP API: {0}").format(str(e))}
 
     def disable(self):
         """Disable the assistant MCP API endpoints"""
         if not self.running:
-            return {"success": False, "message": "MCP API is not enabled"}
+            return {"success": False, "message": _("MCP API is not enabled")}
 
         try:
             self.running = False
 
             frappe.logger().info("assistant MCP API endpoints disabled")
-            return {"success": True, "message": "MCP API endpoints disabled"}
+            return {"success": True, "message": _("MCP API endpoints disabled")}
 
         except Exception as e:
-            frappe.log_error(f"Failed to disable MCP API: {str(e)}")
-            return {"success": False, "message": f"Failed to disable MCP API: {str(e)}"}
+            frappe.log_error(_("Failed to disable MCP API: {0}").format(str(e)))
+            return {"success": False, "message": _("Failed to disable MCP API: {0}").format(str(e))}
 
     def get_status(self):
         """Get server status"""

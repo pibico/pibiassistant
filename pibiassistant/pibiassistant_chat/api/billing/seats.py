@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import frappe
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_guard, _billing_unavailable_response
 from frappe import _
 
 from .._helpers import (
@@ -20,6 +21,7 @@ from .._helpers import (
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard(_billing_unavailable_response)
 def add_user_seat():
     """Begin the one-time seat-purchase checkout flow.
 
@@ -58,6 +60,7 @@ def add_user_seat():
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard(_billing_unavailable_response)
 def verify_seat_payment(razorpay_payment_id: str, razorpay_order_id: str, razorpay_signature: str):
     """Verify a Razorpay seat-purchase payment from the embedded widget.
 
@@ -99,6 +102,7 @@ def verify_seat_payment(razorpay_payment_id: str, razorpay_order_id: str, razorp
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard(_billing_unavailable_response)
 def remove_user_seat():
     """Remove one seat. No refund; next renewal reflects the lower count."""
     _require_system_manager()
@@ -123,6 +127,7 @@ def remove_user_seat():
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(_billing_unavailable_response)
 def preview_seat_charge():
     """Preview the prorated cost of adding one seat.
 

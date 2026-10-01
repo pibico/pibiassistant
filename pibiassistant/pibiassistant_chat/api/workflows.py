@@ -5,6 +5,7 @@
 """Workflow CRUD, execution, scheduling, templates, and tool resolution."""
 
 import frappe
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_mode, _aida_unavailable
 from frappe import _
 
 from .auth import _ar_user_id
@@ -114,8 +115,7 @@ def create_workflow(
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         return client.create_workflow(
             workflow_name=workflow_name,
             graph_json=graph_json,
@@ -148,8 +148,7 @@ def get_workflow(name: str | None = None, workflow_name: str | None = None):
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         return client.get_workflow(name=name, workflow_name=workflow_name)
 
     except frappe.ValidationError:
@@ -184,8 +183,7 @@ def update_workflow(
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         kwargs = {"name": name}
         if graph_json is not None:
             kwargs["graph_json"] = graph_json
@@ -232,8 +230,7 @@ def delete_workflow(name: str | None = None):
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         return client.delete_workflow(name)
 
     except frappe.PermissionError:
@@ -258,8 +255,7 @@ def execute_workflow(name: str | None = None, input_data: str | None = None, use
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         return client.execute_workflow(
             name=name,
             input_data=input_data,
@@ -288,8 +284,7 @@ def cancel_workflow_run(run_name: str | None = None):
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         return client.cancel_workflow_run(run_name)
 
     except frappe.ValidationError:
@@ -312,8 +307,7 @@ def get_workflow_run(run_name: str | None = None):
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         return client.get_workflow_run(run_name)
 
     except frappe.ValidationError:
@@ -371,8 +365,7 @@ def get_workflow_audit_summary(workflow_id: str | None = None, window: str = "la
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         return client.get_workflow_audit_summary(workflow_id=workflow_id, window=window)
 
     except frappe.ValidationError:
@@ -403,8 +396,7 @@ def set_workflow_schedule(
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         # Convert string 'true'/'false' from frontend
         if isinstance(enabled, str):
             enabled = enabled.lower() in ("true", "1", "yes")
@@ -439,8 +431,7 @@ def validate_workflow_graph(graph_json: str | None = None):
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         return client.validate_workflow_graph(graph_json)
 
     except frappe.ValidationError:
@@ -468,8 +459,7 @@ def test_workflow_node(
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         return client.test_workflow_node(
             node_json=node_json,
             input_text=input_text,
@@ -506,8 +496,7 @@ def run_workflow_node(
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         # AR keys tenant users by email, and on this endpoint user_id OVERRIDES
         # the workflow's configured runtime user — so it is normalised when the
         # caller sends one, and left absent when they do not.
@@ -558,6 +547,8 @@ def list_user_tools():
 
         client = get_pa_cloud_client()
         if not client:
+            if _aida_mode():
+                return {"success": True, "tools": [], "servers_queried": [], "errors": None}
             return _tool_failure(
                 _("This site is not connected to the cloud service."),
                 error_code="NOT_REGISTERED",
@@ -645,8 +636,7 @@ def resolve_workflow_tools(tool_directives: str | list | None = None):
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         if isinstance(tool_directives, str):
             tool_directives = _json.loads(tool_directives)
 

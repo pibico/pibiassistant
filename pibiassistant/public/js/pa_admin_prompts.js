@@ -16,13 +16,13 @@
                     ns.renderPromptTemplatesList();
                 } else {
                     $('#prompt-templates-list').html(
-                        '<div style="padding:20px;text-align:center;color:var(--red-500);">Failed to load prompt templates</div>'
+                        '<div style="padding:20px;text-align:center;color:var(--red-500);">' + __('Failed to load prompt templates') + '</div>'
                     );
                 }
             },
             error: function() {
                 $('#prompt-templates-list').html(
-                    '<div style="padding:20px;text-align:center;color:var(--red-500);">Error loading prompt templates</div>'
+                    '<div style="padding:20px;text-align:center;color:var(--red-500);">' + __('Error loading prompt templates') + '</div>'
                 );
             }
         });
@@ -46,17 +46,17 @@
                 $('#prompt-templates-list').html(`
                     <div class="pa-empty-state">
                         <i class="fa fa-file-text-o" aria-hidden="true"></i>
-                        <div class="pa-empty-title">No prompt templates yet</div>
-                        <div class="pa-empty-subtitle">Create a prompt template to expose it to MCP clients.</div>
-                        <a href="/app/prompt-template/new?status=Draft" class="btn btn-xs btn-primary">Create template</a>
+                        <div class="pa-empty-title">${__("No prompt templates yet")}</div>
+                        <div class="pa-empty-subtitle">${__("Create a prompt template to expose it to MCP clients.")}</div>
+                        <a href="/app/prompt-template/new?status=Draft" class="btn btn-xs btn-primary">${__("Create template")}</a>
                     </div>
                 `);
             } else {
                 $('#prompt-templates-list').html(`
                     <div class="pa-empty-state">
                         <i class="fa fa-search" aria-hidden="true"></i>
-                        <div class="pa-empty-title">No templates match the current filters</div>
-                        <button type="button" class="btn btn-xs btn-default pa-clear-prompt-filters">Clear filters</button>
+                        <div class="pa-empty-title">${__("No templates match the current filters")}</div>
+                        <button type="button" class="btn btn-xs btn-default pa-clear-prompt-filters">${__("Clear filters")}</button>
                     </div>
                 `);
                 $('.pa-clear-prompt-filters').on('click', function() {
@@ -72,7 +72,7 @@
             const isToggling = ns.state.toggleInProgress[`prompt_${t.name}`];
             const isPublished = t.status === 'Published';
             const statusClass = (t.status || 'draft').toLowerCase();
-            const lastUsed = t.last_used ? frappe.datetime.str_to_user(t.last_used) : 'Never';
+            const lastUsed = t.last_used ? frappe.datetime.str_to_user(t.last_used) : __('Never');
 
             return `
             <div class="pa-item-card ${isToggling ? 'toggle-in-progress' : ''}" data-name="${t.name}">
@@ -84,20 +84,20 @@
                     <div class="pa-item-actions">
                         <button class="pa-tool-settings-btn pa-prompt-preview-btn"
                                 data-name="${t.name}"
-                                aria-label="Preview template ${frappe.utils.escape_html(t.title)}"
-                                title="Preview template">
+                                aria-label="${__("Preview template")} ${frappe.utils.escape_html(t.title)}"
+                                title="${__("Preview template")}">
                             <i class="fa fa-eye" aria-hidden="true"></i>
                         </button>
                         <a href="/app/prompt-template/${encodeURIComponent(t.name)}" target="_blank"
                            class="pa-tool-settings-btn"
-                           aria-label="Open ${frappe.utils.escape_html(t.title)} in DocType editor"
-                           title="Open in DocType">
+                           aria-label="${__("Open in DocType")}: ${frappe.utils.escape_html(t.title)}"
+                           title="${__("Open in DocType")}">
                             <i class="fa fa-external-link" aria-hidden="true"></i>
                         </a>
-                        <label class="switch" style="margin:0;" title="${isPublished ? 'Click to unpublish' : 'Click to publish'}">
+                        <label class="switch" style="margin:0;" title="${isPublished ? __('Click to unpublish') : __('Click to publish')}">
                             <input type="checkbox" class="pa-prompt-toggle"
                                    data-name="${t.name}"
-                                   aria-label="Publish prompt ${frappe.utils.escape_html(t.title)}"
+                                   aria-label="${__("Publish prompt")} ${frappe.utils.escape_html(t.title)}"
                                    ${isPublished ? 'checked' : ''}
                                    ${isToggling ? 'disabled' : ''}>
                             <span class="slider round"></span>
@@ -107,9 +107,9 @@
                 <div class="pa-item-subtitle">${frappe.utils.escape_html(t.prompt_id || t.name)}</div>
                 <div class="pa-item-meta">
                     ${t.category ? `<span class="pa-meta-chip"><i class="fa fa-folder-o"></i> ${frappe.utils.escape_html(t.category)}</span>` : ''}
-                    <span class="pa-meta-chip"><i class="fa fa-eye"></i> ${t.visibility || 'Private'}</span>
-                    ${t.is_system ? '<span class="pa-meta-chip system-chip">System</span>' : ''}
-                    <span class="pa-meta-chip">Used ${t.use_count || 0}x</span>
+                    <span class="pa-meta-chip"><i class="fa fa-eye"></i> ${__(t.visibility || 'Private')}</span>
+                    ${t.is_system ? '<span class="pa-meta-chip system-chip">${__("System")}</span>' : ''}
+                    <span class="pa-meta-chip">${__("Used {0}x", [t.use_count || 0])}</span>
                     <span class="pa-meta-chip"><i class="fa fa-clock-o"></i> ${lastUsed}</span>
                 </div>
                 <div class="pa-expand-panel" id="prompt-preview-${t.name}"></div>
@@ -157,7 +157,7 @@
                     checkbox.prop('checked', originalState);
                     checkbox.prop('disabled', false);
                     checkbox.closest('.pa-item-card').removeClass('toggle-in-progress');
-                    frappe.show_alert({ message: response.message?.message || 'Unknown error', indicator: 'red' });
+                    frappe.show_alert({ message: response.message?.message || __('Unknown error'), indicator: 'red' });
                 }
             },
             error: function() {
@@ -166,7 +166,7 @@
                 checkbox.prop('checked', originalState);
                 checkbox.prop('disabled', false);
                 checkbox.closest('.pa-item-card').removeClass('toggle-in-progress');
-                frappe.show_alert({ message: 'Error toggling template status', indicator: 'red' });
+                frappe.show_alert({ message: __('Error toggling template status'), indicator: 'red' });
             }
         });
     };
@@ -183,7 +183,7 @@
         }
 
         panel.addClass('open').html(
-            '<div style="color:var(--text-muted);font-size:12px;"><i class="fa fa-spinner fa-spin"></i> Loading preview...</div>'
+            '<div style="color:var(--text-muted);font-size:12px;"><i class="fa fa-spinner fa-spin"></i> ' + __("Loading preview...") + '</div>'
         );
         btn.addClass('active');
 
@@ -197,24 +197,24 @@
                         ? d.arguments.map(a =>
                             `<span class="pa-tool-badge" title="${frappe.utils.escape_html(a.description || '')}">${frappe.utils.escape_html(a.argument_name)}${a.is_required ? '*' : ''}</span>`
                         ).join(' ')
-                        : '<em style="color:var(--text-muted);">No arguments</em>';
+                        : '<em style="color:var(--text-muted);">' + __('No arguments') + '</em>';
 
                     const content = d.template_content || '';
                     const renderedContent = ns.renderMarkdown(content);
 
                     panel.html(`
                         <div style="margin-bottom:10px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-                            <span><strong style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Engine:</strong> ${frappe.utils.escape_html(d.rendering_engine || '')}</span>
-                            <span><strong style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Arguments:</strong> ${argsHtml}</span>
+                            <span><strong style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">${__("Engine")}:</strong> ${frappe.utils.escape_html(d.rendering_engine || '')}</span>
+                            <span><strong style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">${__("Arguments")}:</strong> ${argsHtml}</span>
                         </div>
                         <div class="pa-preview-content" style="font-size:13px;">${renderedContent}</div>
                     `);
                 } else {
-                    panel.html(`<div style="color:var(--red-500);">${response.message?.message || 'Failed to load preview'}</div>`);
+                    panel.html(`<div style="color:var(--red-500);">${response.message?.message || __('Failed to load preview')}</div>`);
                 }
             },
             error: function() {
-                panel.html('<div style="color:var(--red-500);">Error loading preview</div>');
+                panel.html('<div style="color:var(--red-500);">' + __('Error loading preview') + '</div>');
             }
         });
     };

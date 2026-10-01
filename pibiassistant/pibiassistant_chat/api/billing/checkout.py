@@ -7,6 +7,8 @@
 from __future__ import annotations
 
 import frappe
+from frappe import _
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_guard, _billing_unavailable_response
 
 from .._helpers import (
     ARBillingUnavailableError,
@@ -23,6 +25,7 @@ from ..billing.sync import sync_subscription_status
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard(_billing_unavailable_response)
 def initiate_plan_upgrade(
     plan: str,
     billing_cycle: str = "monthly",
@@ -71,15 +74,15 @@ def initiate_plan_upgrade(
 
         # Validate billing cycle
         if billing_cycle not in ("monthly", "annual"):
-            return {"error": "Invalid billing cycle. Use 'monthly' or 'annual'"}
+            return {"error": _("Invalid billing cycle. Use 'monthly' or 'annual'")}
 
         # Validate gateway if provided
         if gateway and gateway not in ("stripe", "razorpay"):
-            return {"error": "Invalid gateway. Use 'stripe' or 'razorpay'"}
+            return {"error": _("Invalid gateway. Use 'stripe' or 'razorpay'")}
 
         # Validate payment_method if provided
         if payment_method and payment_method not in ("upi", "card"):
-            return {"error": "Invalid payment_method. Use 'upi' or 'card'"}
+            return {"error": _("Invalid payment_method. Use 'upi' or 'card'")}
 
         # Defense in depth: AR also rejects this. Short-circuit here so PA
         # callers get a clear error before any gateway session is created.
@@ -96,7 +99,7 @@ def initiate_plan_upgrade(
                     return {
                         "success": False,
                         "error": "cancel_at_period_end",
-                        "message": (
+                        "message": _(
                             "Your subscription is scheduled to cancel at the end of "
                             "the billing period. Keep your current plan first, then "
                             "change plans."
@@ -179,6 +182,7 @@ def initiate_plan_upgrade(
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard(_billing_unavailable_response)
 def reauthorize_mandate(
     billing_name: str | None = None,
     payment_method: str | None = None,
@@ -206,7 +210,7 @@ def reauthorize_mandate(
             return {"error": _not_registered_error()}
 
         if payment_method and payment_method not in ("upi", "card"):
-            return {"error": "Invalid payment_method. Use 'upi' or 'card'"}
+            return {"error": _("Invalid payment_method. Use 'upi' or 'card'")}
 
         frappe.logger("pao.billing").info(f"reauthorize_mandate: method={payment_method or 'default'}")
 
@@ -253,6 +257,7 @@ def reauthorize_mandate(
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard(_billing_unavailable_response)
 def verify_payment(session_id: str | None = None):
     """
     Verify payment completion after checkout redirect.
@@ -324,6 +329,7 @@ def verify_payment(session_id: str | None = None):
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard(_billing_unavailable_response)
 def verify_razorpay_payment(razorpay_payment_id: str, razorpay_subscription_id: str, razorpay_signature: str):
     """
     Verify Razorpay payment from embedded checkout widget.
@@ -381,6 +387,7 @@ def verify_razorpay_payment(razorpay_payment_id: str, razorpay_subscription_id: 
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard(_billing_unavailable_response)
 def verify_razorpay_credit_payment(razorpay_payment_id: str, razorpay_order_id: str, razorpay_signature: str):
     """
     Verify Razorpay payment for a credit purchase.

@@ -1416,3 +1416,26 @@ mark.pa-hl {
         min-height: 44px;
     }
 }
+@media (max-width: 480px) {
+    .pa-top-tab {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+}
+
+/* AIDA services card: one service per row, status pill above its URL */
+#pa-aida-services li {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 6px 0;
+}
+#pa-aida-services .svc-detail {
+    max-width: 100%;
+    overflow-wrap: break-word;
+}
+#pa-aida-model {
+    margin: 6px 0 8px;
+    overflow-wrap: break-word;
+}

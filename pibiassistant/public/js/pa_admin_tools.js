@@ -26,23 +26,23 @@
                     const toggleText = $('#toggle-server-text');
 
                     const statusPill = $('#server-status-pill');
-                    statusText.text('PA');
+                    statusText.text('AIDA');
                     if (isEnabled) {
                         statusIcon.removeClass('inactive').addClass('active');
                         statusPill
                             .removeClass('pa-status-pill--stopped')
                             .addClass('pa-status-pill--running')
-                            .html('<span class="pa-status-dot" aria-hidden="true"></span> Running');
+                            .html('<span class="pa-status-dot" aria-hidden="true"></span> ' + __('Running'));
                         toggleBtn.removeClass('btn-primary').addClass('btn-danger');
-                        toggleText.html('<i class="fa fa-stop" aria-hidden="true"></i> Disable');
+                        toggleText.html('<i class="fa fa-stop" aria-hidden="true"></i> ' + __('Disable'));
                     } else {
                         statusIcon.removeClass('active').addClass('inactive');
                         statusPill
                             .removeClass('pa-status-pill--running')
                             .addClass('pa-status-pill--stopped')
-                            .html('<span class="pa-status-dot" aria-hidden="true"></span> Stopped');
+                            .html('<span class="pa-status-dot" aria-hidden="true"></span> ' + __('Stopped'));
                         toggleBtn.removeClass('btn-danger').addClass('btn-primary');
-                        toggleText.html('<i class="fa fa-play" aria-hidden="true"></i> Enable');
+                        toggleText.html('<i class="fa fa-play" aria-hidden="true"></i> ' + __('Enable'));
                     }
 
                     // Update MCP Endpoint URL from settings (with fallback)
@@ -56,7 +56,7 @@
             },
             error: function(r) {
                 PAOLogger.error('Failed to load server status:', r);
-                $('#pa-mcp-endpoint').text('Error loading endpoint');
+                $('#pa-mcp-endpoint').text(__('Error loading endpoint'));
             }
         });
     };
@@ -77,7 +77,7 @@
                         callback: function(result) {
                             if (result.message) {
                                 frappe.show_alert({
-                                    message: newState ? 'PA Server Enabled' : 'PA Server Disabled',
+                                    message: newState ? __('AIDA Server Enabled') : __('AIDA Server Disabled'),
                                     indicator: newState ? 'green' : 'orange'
                                 });
                                 setTimeout(function() { ns.loadServerStatus(); }, 300);
@@ -88,7 +88,7 @@
 
                 if (newState === 0) {
                     frappe.confirm(
-                        'Disable the PA server? All MCP clients will lose access until it is re-enabled.',
+                        __('Disable the AIDA server? All MCP clients will lose access until it is re-enabled.'),
                         doToggle
                     );
                 } else {
@@ -127,16 +127,16 @@
             pill
                 .removeClass('pa-status-pill--stopped')
                 .addClass('pa-status-pill--running')
-                .html('<span class="pa-status-dot" aria-hidden="true"></span> Enabled');
+                .html('<span class="pa-status-dot" aria-hidden="true"></span> ' + __('Enabled'));
             btn.removeClass('btn-primary').addClass('btn-danger');
-            btnText.html('<i class="fa fa-power-off" aria-hidden="true"></i> Disable Chat');
+            btnText.html('<i class="fa fa-power-off" aria-hidden="true"></i> ' + __('Disable Chat'));
         } else {
             pill
                 .removeClass('pa-status-pill--running')
                 .addClass('pa-status-pill--stopped')
-                .html('<span class="pa-status-dot" aria-hidden="true"></span> Disabled');
+                .html('<span class="pa-status-dot" aria-hidden="true"></span> ' + __('Disabled'));
             btn.removeClass('btn-danger').addClass('btn-primary');
-            btnText.html('<i class="fa fa-play" aria-hidden="true"></i> Enable Chat');
+            btnText.html('<i class="fa fa-play" aria-hidden="true"></i> ' + __('Enable Chat'));
         }
     };
 
@@ -165,7 +165,7 @@
                             window.paoWidgetRemount();
                         }
                         frappe.show_alert({
-                            message: 'PA Chat enabled.',
+                            message: __('AIDA Chat enabled.'),
                             indicator: 'green'
                         });
                     } else {
@@ -174,7 +174,7 @@
                             window.paoWidgetTeardown();
                         }
                         frappe.show_alert({
-                            message: 'PA Chat disabled.',
+                            message: __('AIDA Chat disabled.'),
                             indicator: 'orange'
                         });
                     }
@@ -199,7 +199,7 @@
 
         if (newState === 0) {
             frappe.confirm(
-                'Disable PA Chat? The in-Frappe chat widget and /aida SPA will become unavailable to users.',
+                __('Disable AIDA Chat? The in-Frappe chat widget and /aida SPA will become unavailable to users.'),
                 doToggle
             );
         } else {
@@ -355,7 +355,7 @@
                                         <label class="switch" style="margin: 0;">
                                             <input type="checkbox" class="pa-plugin-toggle"
                                                    data-plugin="${plugin.plugin_id}"
-                                                   aria-label="Enable plugin ${frappe.utils.escape_html(plugin.name)}"
+                                                   aria-label="${__("Enable plugin")} ${frappe.utils.escape_html(plugin.name)}"
                                                    ${plugin.enabled ? 'checked' : ''}
                                                    ${isToggling ? 'disabled' : ''}>
                                             <span class="slider round"></span>
@@ -376,15 +376,15 @@
                         $('#tool-registry').html(`
                             <div class="pa-empty-state">
                                 <i class="fa fa-cube" aria-hidden="true"></i>
-                                <div class="pa-empty-title">No plugins installed</div>
-                                <div class="pa-empty-subtitle">Install plugins to start registering tools with the MCP server.</div>
+                                <div class="pa-empty-title">${__("No plugins installed")}</div>
+                                <div class="pa-empty-subtitle">${__("Install plugins to start registering tools with the MCP server.")}</div>
                             </div>
                         `);
                     }
                 }
             },
             error: function() {
-                $('#tool-registry').html('<div style="padding: 20px; text-align: center; color: var(--red-500);">Failed to load plugins</div>');
+                $('#tool-registry').html('<div style="padding: 20px; text-align: center; color: var(--red-500);">' + __('Failed to load plugins') + '</div>');
             }
         });
     };
@@ -414,11 +414,11 @@
                     ns.renderToolsList();
                     ns.updateBulkScopeCount();
                 } else {
-                    $('#tool-registry').html('<div style="padding: 20px; text-align: center; color: var(--red-500);">Failed to load tools</div>');
+                    $('#tool-registry').html('<div style="padding: 20px; text-align: center; color: var(--red-500);">' + __('Failed to load tools') + '</div>');
                 }
             },
             error: function() {
-                $('#tool-registry').html('<div style="padding: 20px; text-align: center; color: var(--red-500);">Failed to load tools</div>');
+                $('#tool-registry').html('<div style="padding: 20px; text-align: center; color: var(--red-500);">' + __('Failed to load tools') + '</div>');
             }
         });
     };
@@ -464,16 +464,16 @@
                 $('#tool-registry').html(`
                     <div class="pa-empty-state">
                         <i class="fa fa-wrench" aria-hidden="true"></i>
-                        <div class="pa-empty-title">No tools registered</div>
-                        <div class="pa-empty-subtitle">Enable a plugin in the Plugins tab to register tools.</div>
+                        <div class="pa-empty-title">${__("No tools registered")}</div>
+                        <div class="pa-empty-subtitle">${__("Enable a plugin in the Plugins tab to register tools.")}</div>
                     </div>
                 `);
             } else {
                 $('#tool-registry').html(`
                     <div class="pa-empty-state">
                         <i class="fa fa-search" aria-hidden="true"></i>
-                        <div class="pa-empty-title">No tools match the current filters</div>
-                        <button type="button" class="btn btn-xs btn-default pa-clear-filters-btn">Clear filters</button>
+                        <div class="pa-empty-title">${__("No tools match the current filters")}</div>
+                        <button type="button" class="btn btn-xs btn-default pa-clear-filters-btn">${__("Clear filters")}</button>
                     </div>
                 `);
                 $('.pa-clear-filters-btn').on('click', ns.clearToolFilters);
@@ -488,7 +488,7 @@
             const roleTagsHtml = (tool.role_access || []).map(r =>
                 `<span class="pa-role-tag" data-role="${r.role}">
                     ${r.role}
-                    <button type="button" class="pa-role-remove-btn" aria-label="Remove role ${frappe.utils.escape_html(r.role)}" data-tool="${tool.name}" data-role="${r.role}">
+                    <button type="button" class="pa-role-remove-btn" aria-label="${__("Remove role")} ${frappe.utils.escape_html(r.role)}" data-tool="${tool.name}" data-role="${r.role}">
                         <i class="fa fa-times remove-role" data-tool="${tool.name}" data-role="${r.role}" aria-hidden="true"></i>
                     </button>
                 </span>`
@@ -496,7 +496,7 @@
 
             const q = searchTerm;
             const titleHtml = ns.highlight(tool.display_name, q);
-            const descHtml = ns.highlight(tool.description || 'No description available', q);
+            const descHtml = ns.highlight(tool.description || __('No description available'), q);
             return `
                 <div class="pa-tool-item-detailed ${isToggling ? 'toggle-in-progress' : ''} ${pluginDisabled ? 'pa-disabled-overlay' : ''}" data-tool-name="${tool.name}">
                     <div class="pa-tool-header">
@@ -507,15 +507,15 @@
                         <div class="pa-tool-actions">
                             <button class="pa-tool-settings-btn ${isPanelOpen ? 'active' : ''}"
                                     data-tool="${tool.name}"
-                                    aria-label="Configure role access for ${frappe.utils.escape_html(tool.display_name)}"
+                                    aria-label="${__("Configure role access")}: ${frappe.utils.escape_html(tool.display_name)}"
                                     aria-expanded="${isPanelOpen ? 'true' : 'false'}"
-                                    title="Configure role access">
+                                    title="${__("Configure role access")}">
                                 <i class="fa fa-cog" aria-hidden="true"></i>
                             </button>
                             <label class="switch" style="margin: 0;">
                                 <input type="checkbox" class="pa-tool-toggle"
                                        data-tool="${tool.name}"
-                                       aria-label="Enable tool ${frappe.utils.escape_html(tool.display_name)}"
+                                       aria-label="${__("Enable tool")} ${frappe.utils.escape_html(tool.display_name)}"
                                        ${tool.tool_enabled ? 'checked' : ''}
                                        ${isToggling || pluginDisabled ? 'disabled' : ''}>
                                 <span class="slider round"></span>
@@ -524,48 +524,48 @@
                     </div>
                     <div class="pa-tool-description-wrap">
                         <div class="pa-tool-description">${descHtml}</div>
-                        <button type="button" class="pa-desc-toggle" aria-expanded="false">Show more</button>
+                        <button type="button" class="pa-desc-toggle" aria-expanded="false">${__("Show more")}</button>
                     </div>
                     <div class="pa-tool-footer">
                         <span class="pa-tool-badge">${tool.plugin_display_name}</span>
-                        ${pluginDisabled ? '<span class="pa-plugin-disabled-notice"><i class="fa fa-exclamation-circle"></i> Plugin disabled</span>' : ''}
-                        ${tool.role_access_mode !== 'Allow All' ? '<span class="pa-tool-badge" style="background: var(--blue-100); color: var(--blue-600);"><i class="fa fa-lock"></i> Role restricted</span>' : ''}
+                        ${pluginDisabled ? '<span class="pa-plugin-disabled-notice"><i class="fa fa-exclamation-circle"></i> ' + __('Plugin disabled') + '</span>' : ''}
+                        ${tool.role_access_mode !== 'Allow All' ? '<span class="pa-tool-badge" style="background: var(--blue-100); color: var(--blue-600);"><i class="fa fa-lock"></i> ${__("Role restricted")}</span>' : ''}
                     </div>
 
                     <!-- Configuration Panel -->
                     <div class="pa-tool-config-panel ${isPanelOpen ? 'open' : ''}" id="config-panel-${tool.name}">
                         <div class="pa-config-row">
                             <div class="pa-config-group">
-                                <label class="pa-config-label">Role Access Mode</label>
+                                <label class="pa-config-label">${__("Role Access Mode")}</label>
                                 <select class="pa-config-select pa-role-mode-select" data-tool="${tool.name}">
-                                    <option value="Allow All" ${tool.role_access_mode === 'Allow All' ? 'selected' : ''}>Allow All Users</option>
-                                    <option value="Restrict to Listed Roles" ${tool.role_access_mode === 'Restrict to Listed Roles' ? 'selected' : ''}>Restrict to Listed Roles</option>
+                                    <option value="Allow All" ${tool.role_access_mode === 'Allow All' ? 'selected' : ''}>${__("Allow All Users")}</option>
+                                    <option value="Restrict to Listed Roles" ${tool.role_access_mode === 'Restrict to Listed Roles' ? 'selected' : ''}>${__("Restrict to Listed Roles")}</option>
                                 </select>
                             </div>
                             <div class="pa-config-group">
-                                <label class="pa-config-label">Category</label>
+                                <label class="pa-config-label">${__("Category")}</label>
                                 <select class="pa-config-select pa-category-select" data-tool="${tool.name}">
-                                    <option value="read_only" ${tool.category === 'read_only' ? 'selected' : ''}>Read Only</option>
-                                    <option value="write" ${tool.category === 'write' ? 'selected' : ''}>Write</option>
-                                    <option value="read_write" ${tool.category === 'read_write' ? 'selected' : ''}>Read & Write</option>
-                                    <option value="privileged" ${tool.category === 'privileged' || tool.category === 'dangerous' ? 'selected' : ''}>Privileged</option>
+                                    <option value="read_only" ${tool.category === 'read_only' ? 'selected' : ''}>${__("Read Only")}</option>
+                                    <option value="write" ${tool.category === 'write' ? 'selected' : ''}>${__("Write")}</option>
+                                    <option value="read_write" ${tool.category === 'read_write' ? 'selected' : ''}>${__("Read & Write")}</option>
+                                    <option value="privileged" ${tool.category === 'privileged' || tool.category === 'dangerous' ? 'selected' : ''}>${__("Privileged")}</option>
                                 </select>
                             </div>
                         </div>
                         <div class="pa-config-row pa-roles-section" data-tool="${tool.name}" style="${tool.role_access_mode !== 'Restrict to Listed Roles' ? 'display: none;' : ''}">
                             <div class="pa-config-group">
-                                <label class="pa-config-label">Allowed Roles</label>
+                                <label class="pa-config-label">${__("Allowed Roles")}</label>
                                 <div class="pa-role-tags" id="role-tags-${tool.name}">
                                     ${roleTagsHtml}
-                                    <button type="button" class="pa-add-role-btn" data-tool="${tool.name}" aria-label="Add role to ${frappe.utils.escape_html(tool.display_name)}">
+                                    <button type="button" class="pa-add-role-btn" data-tool="${tool.name}" aria-label="${__("Add role")}: ${frappe.utils.escape_html(tool.display_name)}">
                                         <i class="fa fa-plus" aria-hidden="true"></i> Add Role
                                     </button>
                                 </div>
                             </div>
                         </div>
                         <div class="pa-config-actions">
-                            <button class="btn btn-xs btn-default pa-config-cancel" data-tool="${tool.name}">Cancel</button>
-                            <button class="btn btn-xs btn-primary pa-config-save" data-tool="${tool.name}">Save Changes</button>
+                            <button class="btn btn-xs btn-default pa-config-cancel" data-tool="${tool.name}">${__("Cancel")}</button>
+                            <button class="btn btn-xs btn-primary pa-config-save" data-tool="${tool.name}">${__("Save Changes")}</button>
                         </div>
                     </div>
                 </div>
@@ -588,7 +588,7 @@
             const $wrap = $(this).closest('.pa-tool-description-wrap');
             const expanded = $wrap.toggleClass('expanded').hasClass('expanded');
             $(this)
-                .text(expanded ? 'Show less' : 'Show more')
+                .text(expanded ? __('Show less') : __('Show more'))
                 .attr('aria-expanded', expanded ? 'true' : 'false');
         });
 
@@ -685,24 +685,24 @@
 
         if (availableRoles.length === 0) {
             frappe.show_alert({
-                message: 'All available roles have been added',
+                message: __('All available roles have been added'),
                 indicator: 'orange'
             });
             return;
         }
 
         const dialog = new frappe.ui.Dialog({
-            title: 'Add Role',
+            title: __('Add Role'),
             fields: [
                 {
                     fieldname: 'role',
                     fieldtype: 'Select',
-                    label: 'Role',
+                    label: __('Role'),
                     options: availableRoles.map(r => r.name).join('\n'),
                     reqd: 1
                 }
             ],
-            primary_action_label: 'Add',
+            primary_action_label: __('Add'),
             primary_action: function(values) {
                 ns.addRole(toolName, values.role);
                 dialog.hide();
@@ -725,7 +725,7 @@
         addBtn.before(`
             <span class="pa-role-tag" data-role="${role}">
                 ${role}
-                <button type="button" class="pa-role-remove-btn" aria-label="Remove role ${frappe.utils.escape_html(role)}" data-tool="${toolName}" data-role="${role}">
+                <button type="button" class="pa-role-remove-btn" aria-label="${__("Remove role")} ${frappe.utils.escape_html(role)}" data-tool="${toolName}" data-role="${role}">
                     <i class="fa fa-times remove-role" data-tool="${toolName}" data-role="${role}" aria-hidden="true"></i>
                 </button>
             </span>
@@ -780,7 +780,7 @@
                         callback: function(catResponse) {
                             if (catResponse.message && catResponse.message.success) {
                                 frappe.show_alert({
-                                    message: 'Tool configuration saved',
+                                    message: __('Tool configuration saved'),
                                     indicator: 'green'
                                 });
 
@@ -793,29 +793,29 @@
                                 ns.loadToolsView();
                             } else {
                                 frappe.show_alert({
-                                    message: catResponse.message?.message || 'Failed to update category',
+                                    message: catResponse.message?.message || __('Failed to update category'),
                                     indicator: 'red'
                                 });
                             }
                         },
                         always: function() {
-                            saveBtn.prop('disabled', false).html('Save Changes');
+                            saveBtn.prop('disabled', false).html(__('Save Changes'));
                         }
                     });
                 } else {
                     frappe.show_alert({
-                        message: response.message?.message || 'Failed to save configuration',
+                        message: response.message?.message || __('Failed to save configuration'),
                         indicator: 'red'
                     });
-                    saveBtn.prop('disabled', false).html('Save Changes');
+                    saveBtn.prop('disabled', false).html(__('Save Changes'));
                 }
             },
             error: function() {
                 frappe.show_alert({
-                    message: 'Error saving configuration',
+                    message: __('Error saving configuration'),
                     indicator: 'red'
                 });
-                saveBtn.prop('disabled', false).html('Save Changes');
+                saveBtn.prop('disabled', false).html(__('Save Changes'));
             }
         });
     };
@@ -857,7 +857,7 @@
                     // Reset checkbox to original state on error
                     checkbox.prop('checked', originalState);
                     frappe.show_alert({
-                        message: response.message?.message || 'Unknown error',
+                        message: response.message?.message || __('Unknown error'),
                         indicator: 'red'
                     });
                 }
@@ -866,7 +866,7 @@
                 // Reset checkbox to original state on error
                 checkbox.prop('checked', originalState);
                 frappe.show_alert({
-                    message: 'Error toggling plugin',
+                    message: __('Error toggling plugin'),
                     indicator: 'red'
                 });
             },
@@ -924,7 +924,7 @@
                     // Reset checkbox to original state on error
                     checkbox.prop('checked', originalState);
                     frappe.show_alert({
-                        message: response.message?.message || 'Unknown error',
+                        message: response.message?.message || __('Unknown error'),
                         indicator: 'red'
                     });
                 }
@@ -933,7 +933,7 @@
                 // Reset checkbox to original state on error
                 checkbox.prop('checked', originalState);
                 frappe.show_alert({
-                    message: 'Error toggling tool',
+                    message: __('Error toggling tool'),
                     indicator: 'red'
                 });
             },
@@ -961,11 +961,11 @@
                             <table class="pa-table">
                                 <thead>
                                     <tr>
-                                        <th>Action</th>
-                                        <th>Tool</th>
-                                        <th>User</th>
-                                        <th>Status</th>
-                                        <th>Time</th>
+                                        <th>${__("Action")}</th>
+                                        <th>${__("Tool")}</th>
+                                        <th>${__("User")}</th>
+                                        <th>${__("Status")}</th>
+                                        <th>${__("Time")}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -996,15 +996,15 @@
                         $('#recent-activity').html(`
                             <div class="pa-empty-state pa-empty-state--compact">
                                 <i class="fa fa-history" aria-hidden="true"></i>
-                                <div class="pa-empty-title">No activity yet</div>
-                                <div class="pa-empty-subtitle">Tool calls will appear here.</div>
+                                <div class="pa-empty-title">${__("No activity yet")}</div>
+                                <div class="pa-empty-subtitle">${__("Tool calls will appear here.")}</div>
                             </div>
                         `);
                     }
                 }
             },
             error: function() {
-                $('#recent-activity').html('<div style="padding: 20px; text-align: center; color: var(--red-500);">Failed to load activity</div>');
+                $('#recent-activity').html('<div style="padding: 20px; text-align: center; color: var(--red-500);">' + __('Failed to load activity') + '</div>');
             }
         });
     };
@@ -1028,9 +1028,9 @@
         const n = ns.countBulkScope(category, plugin);
         const $hint = $('#bulk-scope-count');
         if (n === 0) {
-            $hint.text('No tools match');
+            $hint.text(__('No tools match'));
         } else {
-            $hint.text(`${n} tool${n === 1 ? '' : 's'} match`);
+            $hint.text(n === 1 ? __('1 tool matches') : __('{0} tools match', [n]));
         }
         $('#bulk-enable-btn, #bulk-disable-btn').prop('disabled', n === 0);
     };
@@ -1045,7 +1045,7 @@
 
         if (!enabled && n > 0) {
             frappe.confirm(
-                `Disable ${n} tool${n === 1 ? '' : 's'}? Users will no longer be able to invoke ${n === 1 ? 'it' : 'them'} via MCP.`,
+                n === 1 ? __('Disable 1 tool? Users will no longer be able to invoke it via MCP.') : __('Disable {0} tools? Users will no longer be able to invoke them via MCP.', [n]),
                 doBulk
             );
         } else {
@@ -1060,7 +1060,7 @@
         $('#bulk-enable-btn, #bulk-disable-btn').prop('disabled', true);
         const btn = enabled ? $('#bulk-enable-btn') : $('#bulk-disable-btn');
         const originalHtml = btn.html();
-        btn.html(`<i class="fa fa-spinner fa-spin" aria-hidden="true"></i> ${enabled ? 'Enabling' : 'Disabling'}...`);
+        btn.html(`<i class="fa fa-spinner fa-spin" aria-hidden="true"></i> ${enabled ? __('Enabling...') : __('Disabling...')}`);
 
         frappe.call({
             method: "pibiassistant.api.admin_api.bulk_toggle_tools_by_category",
@@ -1080,14 +1080,14 @@
                     ns.loadStats();
                 } else {
                     frappe.show_alert({
-                        message: response.message?.message || `Failed to ${actionText} tools`,
+                        message: response.message?.message || (enabled ? __('Failed to enable tools') : __('Failed to disable tools')),
                         indicator: 'red'
                     });
                 }
             },
             error: function() {
                 frappe.show_alert({
-                    message: `Error: Failed to ${actionText} tools`,
+                    message: (enabled ? __('Error: Failed to enable tools') : __('Error: Failed to disable tools')),
                     indicator: 'red'
                 });
             },
@@ -1113,7 +1113,7 @@
             callback: function(r) {
                 const o = r.message || {};
                 const model = [o.provider, o.model].filter(Boolean).join(' / ');
-                $('#pa-aida-model').text(model ? 'Modelo: ' + model : 'Sin modelo por defecto');
+                $('#pa-aida-model').text(model ? __('Model: {0}', [model]) : __('No default model'));
                 $('#analytics-model').text(o.model || '—');
                 $list.empty();
                 Object.keys(o.services || {}).forEach(function(name) {
@@ -1121,7 +1121,7 @@
                     $list.append(
                         `<li data-svc="${esc(name)} API"><span class="pa-status-pill ${s.configured ? '' : 'pa-status-pill--stopped'}">` +
                         `<span class="pa-status-dot" aria-hidden="true"></span> ${esc(name)}</span> ` +
-                        `<span class="pa-sidebar-subtle svc-detail">${s.configured ? esc(s.url) : 'Sin configurar'}</span></li>`
+                        `<span class="pa-sidebar-subtle svc-detail">${s.configured ? esc(s.url) : esc(__('Not configured'))}</span></li>`
                     );
                 });
                 frappe.call({
@@ -1136,11 +1136,11 @@
                             const $pill = $li.find('.pa-status-pill');
                             $pill.toggleClass('pa-status-pill--running', !!st.ok)
                                  .toggleClass('pa-status-pill--stopped', !st.ok);
-                            if (!st.ok) { failed++; $li.find('.svc-detail').text(st.error || 'Sin respuesta'); }
+                            if (!st.ok) { failed++; $li.find('.svc-detail').text(st.error || __('No response')); }
                         });
                         if (showToast) {
                             frappe.show_alert({
-                                message: failed ? `${failed} servicio(s) AIDA con problemas` : 'Servicios AIDA operativos',
+                                message: failed ? __('{0} AIDA service(s) with problems', [failed]) : __('AIDA services operational'),
                                 indicator: failed ? 'orange' : 'green'
                             });
                         }

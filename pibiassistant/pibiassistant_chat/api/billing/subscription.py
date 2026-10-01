@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import frappe
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_guard, _billing_unavailable_response
 from frappe import _
 
 from .._helpers import (
@@ -21,6 +22,7 @@ from ..billing.sync import sync_subscription_status
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(_billing_unavailable_response)
 def get_usage_history(days: int = 30):
     """
     Get daily usage history for charts.
@@ -67,6 +69,7 @@ def get_usage_history(days: int = 30):
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(_billing_unavailable_response)
 def get_invoices(limit: int = 10):
     """
     Get invoice history.
@@ -111,6 +114,7 @@ def get_invoices(limit: int = 10):
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(_billing_unavailable_response)
 def get_subscription_status():
     """
     Get subscription status including scheduled plan changes.
@@ -163,6 +167,7 @@ def get_subscription_status():
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(_billing_unavailable_response)
 def get_billing_history(limit: int = 20):
     """
     Get billing/payment history.
@@ -215,6 +220,7 @@ def get_billing_history(limit: int = 20):
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard(_billing_unavailable_response)
 def downgrade_to_free():
     """
     Schedule downgrade to Free plan at end of billing period.
@@ -254,6 +260,7 @@ def downgrade_to_free():
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard(_billing_unavailable_response)
 def cancel_scheduled_change():
     """
     Cancel a pending downgrade that was scheduled for the end of the billing period.
@@ -292,6 +299,7 @@ def cancel_scheduled_change():
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard(_billing_unavailable_response)
 def cancel_subscription(cancel_immediately: bool = False):
     """
     Cancel subscription.
@@ -349,6 +357,7 @@ def cancel_subscription(cancel_immediately: bool = False):
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard(_billing_unavailable_response)
 def reactivate_subscription():
     """
     Reactivate a cancelled subscription (before period end).
@@ -392,6 +401,7 @@ def reactivate_subscription():
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(_billing_unavailable_response)
 def get_payment_methods():
     """
     Get saved payment methods for the tenant.
@@ -428,6 +438,7 @@ def get_payment_methods():
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(_billing_unavailable_response)
 def get_payment_instrument():
     """
     Get the instrument on file for automatic payments.
@@ -468,6 +479,7 @@ def get_payment_instrument():
 
 
 @frappe.whitelist(methods=["POST"])
+@_aida_guard(_billing_unavailable_response)
 def update_payment_method(
     payment_method: str | None = None,
     billing_name: str | None = None,

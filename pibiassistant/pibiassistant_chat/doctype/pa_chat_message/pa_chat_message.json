@@ -19,6 +19,9 @@
   "section_break_llm",
   "model",
   "credits_used",
+  "prompt_tokens",
+  "completion_tokens",
+  "duration_ms",
   "model_breakdown",
   "routing",
   "column_break_tools",
@@ -113,6 +116,24 @@
    "fieldtype": "Float",
    "precision": "2",
    "label": "Credits Used"
+  },
+  {
+   "fieldname": "prompt_tokens",
+   "fieldtype": "Int",
+   "label": "Input Tokens",
+   "read_only": 1
+  },
+  {
+   "fieldname": "completion_tokens",
+   "fieldtype": "Int",
+   "label": "Output Tokens",
+   "read_only": 1
+  },
+  {
+   "fieldname": "duration_ms",
+   "fieldtype": "Int",
+   "label": "Generation Time (ms)",
+   "read_only": 1
   },
   {
    "description": "Per-model usage for delegating (multi-model) turns: [{model_id, role, credits, input_tokens, output_tokens}]. Null for single-model turns.",

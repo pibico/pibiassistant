@@ -5,6 +5,7 @@
 """User memory management — view and delete AI-extracted memories."""
 
 import frappe
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_unavailable
 from frappe import _
 
 from .auth import _ar_user_id
@@ -50,8 +51,7 @@ def delete_memory(memory_id: str | None = None):
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         return client.delete_memory(user_id=_ar_user_id(frappe.session.user), memory_id=memory_id)
 
     except frappe.ValidationError:
@@ -74,8 +74,7 @@ def update_memory(memory_id: str | None = None, content: str | None = None):
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         return client.update_memory(
             user_id=_ar_user_id(frappe.session.user),
             memory_id=memory_id,
@@ -97,8 +96,7 @@ def delete_all_memories():
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
-
+            return _aida_unavailable()
         return client.delete_all_memories(user_id=_ar_user_id(frappe.session.user))
 
     except Exception as e:

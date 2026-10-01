@@ -1,7 +1,7 @@
 // Quiet Ledger data-viz palette (spec §2.4) — teal-anchored, gold + warm neutrals.
 // Defined ONCE; every chart imports from here. No echarts rainbow.
 export const QL_VIZ_SEQUENCE = [
-	"#0F6E5C", // teal (brand accent)
+	"#4682B4", // steelblue (brand accent)
 	"#3C8C72", // teal-light
 	"#6BAA8C", // teal-muted
 	"#C9A227", // gold (money/consequence)
@@ -13,7 +13,7 @@ export const QL_VIZ_SEQUENCE = [
 
 // Dark-theme variant (brightened teal + gold per §2.1 dark overrides).
 export const QL_VIZ_SEQUENCE_DARK = [
-	"#2DAA8F", // teal brightened
+	"#6FA3CF", // steelblue brightened
 	"#4FBFA4",
 	"#7FD0BB",
 	"#D9B84A", // gold brightened
@@ -24,7 +24,7 @@ export const QL_VIZ_SEQUENCE_DARK = [
 ];
 
 // Single-series highlight (e.g. peak day bar): full accent vs faded same-hue.
-export const QL_VIZ_PEAK = { light: "#0F6E5C", dark: "#2DAA8F" };
+export const QL_VIZ_PEAK = { light: "#4682B4", dark: "#6FA3CF" };
 export const QL_VIZ_FADE = { light: "#9CC3B7", dark: "#3F6E61" };
 
 export function vizSequence(isDark) {

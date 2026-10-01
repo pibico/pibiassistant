@@ -46,8 +46,55 @@ def _billing_unavailable_response():
     return {"billing_available": False, "error": _("Billing is not available on this server.")}
 
 
+def _aida_mode() -> bool:
+    """True when the native AIDA API key is set (PA Cloud is never used)."""
+    try:
+        from frappe.utils.password import get_decrypted_password
+
+        return bool(
+            get_decrypted_password(
+                "PA Core Settings", "PA Core Settings", "aida_api_key", raise_exception=False
+            )
+        )
+    except Exception:
+        return False
+
+
+def _aida_unavailable() -> dict:
+    """Neutral payload for cloud-only features in AIDA mode (never throws)."""
+    return {
+        "success": False,
+        "unavailable": True,
+        "error": _("This feature is not available in AIDA mode."),
+    }
+
+
+def _aida_guard(default=None):
+    """Decorator: in AIDA mode skip a cloud-only endpoint and return ``default``.
+
+    ``default`` may be a value or a zero-arg callable; ``None`` yields the
+    standard unavailable payload.
+    """
+    import functools
+
+    def deco(fn):
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            if _aida_mode():
+                if default is None:
+                    return _aida_unavailable()
+                return default() if callable(default) else default
+            return fn(*args, **kwargs)
+
+        return wrapper
+
+    return deco
+
+
 def _not_registered_error() -> str:
     """Friendly message when AIDA isn't registered with the cloud service."""
+    if _aida_mode():
+        return _("This feature is not available in AIDA mode.")
     return _(
         "This site isn't registered yet. Please register from PA Chat Settings and try again."
     )

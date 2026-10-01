@@ -1,7 +1,13 @@
 import json
+import os
+import time
+
 import frappe
 import requests
 from frappe import _
+
+_AUDIO_EXTENSIONS = {".mp3", ".wav", ".m4a", ".ogg", ".oga", ".webm", ".mp4", ".flac", ".aac", ".opus"}
+_AUDIO_MAX_BYTES = 25 * 1024 * 1024
 
 
 def _get_settings():
@@ -88,10 +94,12 @@ def get_overview():
 @frappe.whitelist()
 def test_connections():
     """Test connectivity to all configured AIDA APIs. Returns status for each."""
+    if "System Manager" not in frappe.get_roles():
+        frappe.throw(_("Not permitted"), frappe.PermissionError)
     results = {}
 
     # Test Chat API
-    chat_url, chat_key, _, _ = _get_aida_config()
+    chat_url, chat_key, _p, _m = _get_aida_config()
     if chat_url and chat_key:
         try:
             r = requests.get(f"{chat_url}/api/v1/health", headers={"X-API-Key": chat_key}, timeout=10)
@@ -101,7 +109,7 @@ def test_connections():
         except Exception as e:
             results["Chat API"] = {"ok": False, "error": str(e)[:100]}
     else:
-        results["Chat API"] = {"ok": False, "error": "Not configured"}
+        results["Chat API"] = {"ok": False, "error": _("Not configured")}
 
     # Test Convert API
     conv_url, conv_key = _get_convert_config()
@@ -114,7 +122,7 @@ def test_connections():
         except Exception as e:
             results["Convert API"] = {"ok": False, "error": str(e)[:100]}
     else:
-        results["Convert API"] = {"ok": False, "error": "Not configured"}
+        results["Convert API"] = {"ok": False, "error": _("Not configured")}
 
     # Test Voice API
     voice_url, voice_key = _get_voice_config()
@@ -127,7 +135,7 @@ def test_connections():
         except Exception as e:
             results["Voice API"] = {"ok": False, "error": str(e)[:100]}
     else:
-        results["Voice API"] = {"ok": False, "error": "Not configured"}
+        results["Voice API"] = {"ok": False, "error": _("Not configured")}
 
     return results
 
@@ -151,16 +159,30 @@ def send_message(session_id=None, message=None, **kwargs):
     if file_urls:
         from pibiassistant.plugins.data_science.tools.extract_file_content import ExtractFileContent
 
+        from ._untrusted import wrap_untrusted
+
         extractor = ExtractFileContent()
+        owned = {
+            f.file_url: f.file_name
+            for f in frappe.get_all(
+                "File",
+                filters={"file_url": ["in", list(file_urls)], "owner": frappe.session.user},
+                fields=["file_url", "file_name"],
+                limit_page_length=0,
+            )
+        }
         parts = []
         for url in file_urls:
+            if url not in owned:
+                continue
             result = extractor.execute({"file_url": url, "operation": "extract"})
-            name = url.split("/")[-1]
+            name = owned[url] or url.split("/")[-1]
             if result.get("success") and result.get("content"):
                 parts.append(f"[Archivo adjunto: {name}]\n{result['content']}")
             else:
                 parts.append(f"[Archivo adjunto: {name}] No se pudo extraer el contenido: {result.get('error', 'desconocido')}")
-        message = "\n\n".join(parts) + "\n\n" + message
+        if parts:
+            message = wrap_untrusted("\n\n".join(parts), kind="user_attached_files") + "\n\n" + message
 
     endpoint = f"{api_url}/api/v1/chat/completions"
     headers = {
@@ -183,12 +205,14 @@ def send_message(session_id=None, message=None, **kwargs):
         body["conversation_id"] = conversation_id
 
     full_response = ""
+    usage = {}
+    started_at = time.monotonic()
 
     try:
         with requests.post(endpoint, json=body, headers=headers, stream=True, timeout=120) as resp:
             if resp.status_code != 200:
                 error_text = resp.text[:200]
-                _emit(session_id, "stream_error", error=f"AIDA API error {resp.status_code}: {error_text}")
+                _emit(session_id, "stream_error", error=_("AIDA API error {0}: {1}").format(resp.status_code, error_text))
                 return {"ok": False, "error": error_text}
 
             for line in resp.iter_lines(decode_unicode=True):
@@ -201,6 +225,13 @@ def send_message(session_id=None, message=None, **kwargs):
                     try:
                         chunk_data = json.loads(data_str)
                         content = ""
+                        if chunk_data.get("type") == "tokens":
+                            usage["model_id"] = chunk_data.get("model")
+                            usage["prompt_tokens"] = chunk_data.get("prompt_tokens")
+                            usage["completion_tokens"] = chunk_data.get("completion_tokens")
+                            usage["tokens_used"] = chunk_data.get("total_tokens")
+                        elif chunk_data.get("conversation_id"):
+                            usage["conversation_id"] = chunk_data["conversation_id"]
                         if "choices" in chunk_data:
                             delta = chunk_data["choices"][0].get("delta", {})
                             content = delta.get("content", "")
@@ -217,14 +248,21 @@ def send_message(session_id=None, message=None, **kwargs):
                     except json.JSONDecodeError:
                         pass
 
-        _emit(session_id, "stream_complete", full_response=full_response, tokens_used=0)
+        _emit(
+            session_id,
+            "stream_complete",
+            full_response=full_response,
+            tokens_used=usage.pop("tokens_used", None) or 0,
+            duration_ms=int((time.monotonic() - started_at) * 1000),
+            **usage,
+        )
         return {"ok": True, "session_id": session_id}
 
     except requests.exceptions.Timeout:
-        _emit(session_id, "stream_error", error="AIDA API request timed out")
+        _emit(session_id, "stream_error", error=_("AIDA API request timed out"))
         return {"ok": False, "error": "timeout"}
     except requests.exceptions.ConnectionError:
-        _emit(session_id, "stream_error", error="Cannot connect to AIDA API")
+        _emit(session_id, "stream_error", error=_("Cannot connect to AIDA API"))
         return {"ok": False, "error": "connection_error"}
     except Exception as e:
         _emit(session_id, "stream_error", error=str(e)[:200])
@@ -235,7 +273,7 @@ def convert_bytes_to_markdown(content, filename):
     """Send file bytes to the AIDA Convert API. Returns (markdown, error)."""
     convert_url, convert_key = _get_convert_config()
     if not convert_url or not convert_key:
-        return "", "AIDA Convert API is not configured"
+        return "", _("AIDA Convert API is not configured")
     try:
         resp = requests.post(
             f"{convert_url}/api/v1/convert",
@@ -245,12 +283,12 @@ def convert_bytes_to_markdown(content, filename):
             timeout=300,
         )
     except requests.exceptions.RequestException as e:
-        return "", f"Convert API unreachable: {str(e)[:150]}"
+        return "", _("Convert API unreachable: {0}").format(str(e)[:150])
     if resp.status_code not in (200, 201):
-        return "", f"Convert API error {resp.status_code}: {resp.text[:200]}"
+        return "", _("Convert API error {0}: {1}").format(resp.status_code, resp.text[:200])
     result = resp.json()
     if result.get("success") is False:
-        return "", f"Convert API: {result.get('error') or 'conversion failed'}"
+        return "", _("Convert API: {0}").format(result.get("error") or _("conversion failed"))
     return result.get("markdown") or result.get("content") or "", ""
 
 
@@ -286,10 +324,18 @@ def transcribe_audio(file_url=None):
     if not voice_url or not voice_key:
         frappe.throw(_("AIDA Voice API is not configured. Go to PA Core Settings > AIDA Chat."))
 
-    file_doc = frappe.get_doc("File", {"file_url": file_url})
-    file_path = file_doc.get_full_path()
+    roles = frappe.get_roles(frappe.session.user)
+    if not {"PA User", "PA Admin", "System Manager"} & set(roles):
+        frappe.throw(_("You do not have permission to use AIDA."), frappe.PermissionError)
 
-    filename = file_url.split("/")[-1]
+    file_doc = frappe.get_doc("File", {"file_url": file_url})
+    file_doc.check_permission("read")
+    filename = file_doc.file_name or file_url.split("/")[-1]
+    if os.path.splitext(filename)[1].lower() not in _AUDIO_EXTENSIONS:
+        frappe.throw(_("Unsupported audio file type."))
+    file_path = file_doc.get_full_path()
+    if os.path.getsize(file_path) > _AUDIO_MAX_BYTES:
+        frappe.throw(_("The audio file is too large."))
     with open(file_path, "rb") as f:
         resp = requests.post(
             f"{voice_url}/api/v1/transcriptions",
@@ -300,7 +346,7 @@ def transcribe_audio(file_url=None):
         )
 
     if resp.status_code not in (200, 201):
-        return {"ok": False, "error": f"Voice API error {resp.status_code}: {resp.text[:200]}"}
+        return {"ok": False, "error": _("Voice API error {0}: {1}").format(resp.status_code, resp.text[:200])}
 
     result = resp.json()
     text = result.get("text", result.get("transcription", ""))

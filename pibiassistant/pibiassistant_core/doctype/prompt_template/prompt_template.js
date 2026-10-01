@@ -98,7 +98,7 @@ frappe.ui.form.on('Prompt Template', {
                                 `<span class="badge badge-light" style="margin: 2px;">${c[0]}</span>`
                             ).join(' ');
                         } else {
-                            changes_html = '<span class="text-muted">No field changes recorded</span>';
+                            changes_html = `<span class="text-muted">${__('No field changes recorded')}</span>`;
                         }
 
                         html += `
@@ -108,7 +108,7 @@ frappe.ui.form.on('Prompt Template', {
                                     <span class="text-muted">${v.modified_by}</span>
                                 </div>
                                 <div class="mt-2">
-                                    <small class="text-muted">Changed fields:</small><br>
+                                    <small class="text-muted">${__('Changed fields:')}</small><br>
                                     ${changes_html}
                                 </div>
                                 <button class="btn btn-xs btn-default mt-2"

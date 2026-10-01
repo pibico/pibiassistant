@@ -7,7 +7,7 @@
 import frappe
 from frappe import _
 
-from ._helpers import _not_registered_error, _require_system_manager, _safe_error
+from ._helpers import _aida_guard, _not_registered_error, _require_system_manager, _safe_error
 from .auth import _ar_user_id
 
 
@@ -169,7 +169,7 @@ def suspend_user(user_id: str | None = None):
     _require_system_manager()
 
     if not user_id:
-        return {"error": "user_id is required"}
+        return {"error": _("user_id is required")}
 
     try:
         from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
@@ -204,18 +204,18 @@ def deregister_user(user_id: str | None = None):
                     "success": true,
                     "user_id": "user@example.com",
                     "deleted_mcp_servers": 2,
-                    "message": "User deregistered successfully"
+                    "message": _("User deregistered successfully")
             }
     """
     _require_system_manager()
 
     if not user_id:
-        return {"error": "user_id is required"}
+        return {"error": _("user_id is required")}
 
     # Prevent self-deletion (compare on the AR email identity, since the target
     # user_id is an email while session.user may be a docname like Administrator)
     if _ar_user_id(user_id) == _ar_user_id(frappe.session.user):
-        return {"error": "Cannot delete your own user account"}
+        return {"error": _("Cannot delete your own user account")}
 
     try:
         from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
@@ -280,7 +280,7 @@ def add_user(user_id: str | None = None):
         context = _get_user_context(ar_user_id)
         user_result = client.register_user(user_id=ar_user_id, registered_by=registered_by, **context)
         if not user_result or not user_result.get("user_id"):
-            return {"success": False, "error": "Failed to register user with cloud service"}
+            return {"success": False, "error": _("Failed to register user with cloud service")}
 
         # Step 2: Create OAuth tokens for this user (keyed by Frappe docname)
         oauth_client = _get_or_create_ar_oauth_client()
@@ -383,7 +383,7 @@ def set_user_credit_limit(user_id: str | None = None, monthly_credit_limit: floa
     _require_system_manager()
 
     if not user_id:
-        return {"error": "user_id is required"}
+        return {"error": _("user_id is required")}
 
     try:
         from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
@@ -406,6 +406,7 @@ def set_user_credit_limit(user_id: str | None = None, monthly_credit_limit: floa
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard(lambda: {"quota_total": -1, "is_unlimited": True, "monthly_credit_limit": None})
 def get_my_credit_status():
     """
     Get credit usage status for the current user.
@@ -540,6 +541,7 @@ def resend_invite(user_id: str | None = None):
 
 
 @frappe.whitelist(methods=["GET"])
+@_aida_guard({"invites": []})
 def list_invites():
     """
     Admin-only: list all Pending invites for this tenant.

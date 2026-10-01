@@ -22,13 +22,13 @@ window.PAOWidgetStreaming = {
 
 	// Processing indicator state (per-widget, stored on widget instance)
 	PROCESSING_TIPS: [
-		"Tip: Use Shift+Enter for multi-line messages",
-		"Tip: You can attach files for context-aware assistance",
-		"Tip: Click the expand button to open in a larger window",
-		'"The best way to predict the future is to create it." — Alan Kay',
-		'"Simplicity is the ultimate sophistication." — Leonardo da Vinci',
-		'"First, solve the problem. Then, write the code." — John Johnson',
-		'"Any fool can write code that a computer can understand. Good programmers write code that humans can understand." — Martin Fowler',
+		__("Tip: Use Shift+Enter for multi-line messages"),
+		__("Tip: You can attach files for context-aware assistance"),
+		__("Tip: Click the expand button to open in a larger window"),
+		__("\"The best way to predict the future is to create it.\" — Alan Kay"),
+		__("\"Simplicity is the ultimate sophistication.\" — Leonardo da Vinci"),
+		__("\"First, solve the problem. Then, write the code.\" — John Johnson"),
+		__("\"Any fool can write code that a computer can understand. Good programmers write code that humans can understand.\" — Martin Fowler"),
 	],
 
 	/**
@@ -181,12 +181,14 @@ window.PAOWidgetStreaming = {
 					// state so the next turn starts fresh.
 					widget._pendingInterrupts = [];
 					widget._isSubmittingInterrupts = false;
+					if (data.conversation_id) widget.set_aida_conversation_id(data.conversation_id);
 					this.clear_approval_attention(widget);
 					this.finalize_streaming_message(
 						widget,
 						data.full_response,
 						data.tokens_used,
-						data.quota_remaining
+						data.quota_remaining,
+						data
 					);
 					break;
 
@@ -1321,7 +1323,23 @@ window.PAOWidgetStreaming = {
 	 * @param {number} tokensUsed - Tokens consumed
 	 * @param {number} quotaRemaining - Remaining quota
 	 */
-	finalize_streaming_message(widget, fullResponse, tokensUsed, quotaRemaining) {
+	/** Small footer under an answer: model, tokens in/out, speed and time. */
+	build_message_meta(meta) {
+		const parts = [];
+		if (meta && meta.model_id) parts.push(frappe.utils.escape_html(meta.model_id));
+		const tin = meta && meta.prompt_tokens;
+		const tout = meta && meta.completion_tokens;
+		if (tin != null || tout != null) {
+			parts.push(`<span title="${__("Input tokens")}">↑${tin != null ? tin : "–"}</span> <span title="${__("Output tokens")}">↓${tout != null ? tout : "–"}</span>`);
+		}
+		if (tout && meta.duration_ms > 0) {
+			parts.push(`<span title="${__("Output speed")}">${(tout / (meta.duration_ms / 1000)).toFixed(1)} ${__("tokens/s")}</span>`);
+		}
+		parts.push(PAOCore.format_time(new Date()));
+		return `<div class="pao-message-time pao-message-meta">${parts.join(" · ")}</div>`;
+	},
+
+	finalize_streaming_message(widget, fullResponse, tokensUsed, quotaRemaining, meta) {
 		widget._isStreaming = false;
 		this.stop_processing_indicator(widget);
 		this.pulse_robot_mood(widget, "delighted");
@@ -1343,10 +1361,7 @@ window.PAOWidgetStreaming = {
 			$content.html(PAOCore.format_message(finalText, "assistant"));
 			$content.removeData("raw-markdown");
 
-			const $timestamp = $(
-				`<div class="pao-message-time">${PAOCore.format_time(new Date())}</div>`
-			);
-			$streamingMsg.find(".pao-message-content").append($timestamp);
+			$streamingMsg.find(".pao-message-content").append($(this.build_message_meta(meta)));
 
 			$streamingMsg.removeClass("pao-message-streaming");
 
@@ -1404,10 +1419,8 @@ window.PAOWidgetStreaming = {
 					},
 				},
 			});
-		} else if (data.action_required === "register") {
-			frappe.msgprint(__("AIDA is not registered. Please contact your administrator."));
 		} else {
-			widget.add_message_to_ui("assistant", `Error: ${data.error}`, true);
+			widget.add_message_to_ui("assistant", __("Error: {0}", [data.error || __("Unknown error")]), true);
 		}
 	},
 

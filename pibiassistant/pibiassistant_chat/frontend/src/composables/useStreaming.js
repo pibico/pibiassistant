@@ -302,6 +302,9 @@ export function useStreaming() {
 					chatStore.completeStreaming(data.full_response, {
 						credits_used: data.credits_used,
 						model_id: data.model_id,
+						prompt_tokens: data.prompt_tokens,
+						completion_tokens: data.completion_tokens,
+						duration_ms: data.duration_ms,
 						truncated: true,
 						blocks: data.blocks,
 						routing: data.routing,
@@ -313,6 +316,9 @@ export function useStreaming() {
 					chatStore.completeStreaming(data.full_response, {
 						credits_used: data.credits_used,
 						model_id: data.model_id,
+						prompt_tokens: data.prompt_tokens,
+						completion_tokens: data.completion_tokens,
+						duration_ms: data.duration_ms,
 						interrupted: true,
 						blocks: data.blocks,
 						routing: data.routing,
@@ -321,6 +327,9 @@ export function useStreaming() {
 					chatStore.completeStreaming(data.full_response, {
 						credits_used: data.credits_used,
 						model_id: data.model_id,
+						prompt_tokens: data.prompt_tokens,
+						completion_tokens: data.completion_tokens,
+						duration_ms: data.duration_ms,
 						blocks: data.blocks,
 						routing: data.routing,
 					});

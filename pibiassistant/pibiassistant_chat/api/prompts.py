@@ -9,7 +9,7 @@ import json
 import frappe
 from frappe import _
 
-from ._helpers import _safe_error
+from ._helpers import _aida_mode, _safe_error
 from .auth import _ar_user_id, _do_user_recovery, _ensure_user_registered
 
 # Per-user cache of the merged AR prompt catalog. The TTL covers sources we
@@ -481,6 +481,8 @@ def get_prompt_templates():
 
         client = get_pa_cloud_client()
         if not client:
+            if _aida_mode():
+                return {"templates": [], "categories": [], "pinned": []}
             return {
                 "templates": [],
                 "categories": [],
@@ -567,11 +569,11 @@ def update_pinned_templates(pinned_templates: str | list):
             try:
                 pinned_templates = json.loads(pinned_templates)
             except json.JSONDecodeError:
-                return {"success": False, "error": "Invalid JSON format"}
+                return {"success": False, "error": _("Invalid JSON format")}
 
         # Validate - should be a list of strings
         if not isinstance(pinned_templates, list):
-            return {"success": False, "error": "Expected a list of template names"}
+            return {"success": False, "error": _("Expected a list of template names")}
 
         # Validate each item is a string
         pinned_templates = [str(t) for t in pinned_templates if t]
@@ -615,18 +617,23 @@ def get_rendered_prompt(prompt_name: str, arguments: str | None = None):
         )
 
         if not prompt_name:
-            return {"success": False, "error": "prompt_name is required"}
+            return {"success": False, "error": _("prompt_name is required")}
 
         # Parse arguments if string
         if isinstance(arguments, str) and arguments:
             try:
                 arguments = json.loads(arguments)
             except json.JSONDecodeError:
-                return {"success": False, "error": "Invalid JSON format for arguments"}
+                return {"success": False, "error": _("Invalid JSON format for arguments")}
 
         client = get_pa_cloud_client()
         if not client:
-            return {"success": False, "error": "Not registered with the cloud service"}
+            return {
+                "success": False,
+                "error": _("This feature is not available in AIDA mode.")
+                if _aida_mode()
+                else "Not registered with the cloud service",
+            }
 
         frappe_user = frappe.session.user
         ar_user_id = _ar_user_id(frappe_user)
@@ -637,7 +644,7 @@ def get_rendered_prompt(prompt_name: str, arguments: str | None = None):
         if isinstance(reg_status, dict) and reg_status.get("needs_admin"):
             return {
                 "success": False,
-                "error": "Your account has not been set up yet. Ask your admin to add you from Settings > Users.",
+                "error": _("Your account has not been set up yet. Ask your admin to add you from Settings > Users."),
             }
 
         # Get rendered prompt from AR (with reactive retry on auth failure)
@@ -664,11 +671,11 @@ def get_rendered_prompt(prompt_name: str, arguments: str | None = None):
                 frappe.local.message_log = []
                 return {
                     "success": False,
-                    "error": "Your account has not been set up. Ask your admin to add you.",
+                    "error": _("Your account has not been set up. Ask your admin to add you."),
                 }
 
         if not result:
-            return {"success": False, "error": "Failed to get prompt from AR"}
+            return {"success": False, "error": _("Failed to get prompt from AR")}
 
         # Extract the prompt text from the messages
         messages = result.get("messages", [])

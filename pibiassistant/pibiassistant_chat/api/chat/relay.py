@@ -404,6 +404,20 @@ def _relay_ar_interrupt_resume(
     block_builder = None
 
     try:
+        from .aida_stream import is_aida_mode
+
+        if is_aida_mode():
+            # AIDA has no tool approvals; a stale resume just closes the turn.
+            _emit_socket_event(
+                session_id,
+                {
+                    "event": "stream_error",
+                    "session_id": session_id,
+                    "error": _("There is nothing pending to approve in this conversation."),
+                },
+            )
+            return
+
         from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
 
         client = get_pa_cloud_client()
@@ -947,11 +961,8 @@ def _relay_ar_stream(
 
     ar_user = _ar_user_id(user)
 
-    # A cancel flag set before this turn started (Stop pressed during a
-    # prior HITL pause, or racing a turn that was already completing)
-    # can never legitimately apply to a turn that hasn't started yet.
-    # Without this, a stale flag would abort the user's very next message.
-    clear_cancel(session_id)
+    # The stale cancel flag is cleared by send_message/continue_response in the
+    # request thread; clearing it here would wipe a Stop pressed while queued.
 
     full_response = ""
     model_used = ""
@@ -960,6 +971,22 @@ def _relay_ar_stream(
     block_builder = None
 
     try:
+        from .aida_stream import _relay_aida_stream, is_aida_mode
+
+        if is_aida_mode():
+            _relay_aida_stream(
+                session_id,
+                original_message,
+                message_name,
+                user,
+                restricted=restricted,
+                system_prompt_addendum=system_prompt_addendum,
+                context=context,
+                continue_from_message_id=continue_from_message_id,
+                model_id=model_id,
+            )
+            return
+
         from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
 
         client = get_pa_cloud_client()

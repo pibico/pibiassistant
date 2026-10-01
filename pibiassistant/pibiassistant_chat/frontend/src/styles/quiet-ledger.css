@@ -24,10 +24,10 @@
   --ql-text-secondary: #57534C;
   --ql-text-muted: #8A857C;
 
-  /* ---- Brand accent (teal-green) ---- */
-  --ql-accent: #0F6E5C;
-  --ql-accent-hover: #0B5A4B;
-  --ql-accent-soft: rgba(15, 110, 92, 0.08);
+  /* ---- Brand accent (pibiCo steelblue) ---- */
+  --ql-accent: #4682B4;
+  --ql-accent-hover: #386890;
+  --ql-accent-soft: rgba(70, 130, 180, 0.08);
 
   /* ---- Gold: trust/consequence + money ONLY ---- */
   --ql-gold: #C9A227;
@@ -60,8 +60,8 @@
   --ql-font-mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
 
   /* ---- Data-viz palette (teal-anchored sequence, §2.4) ---- */
-  --ql-viz-1: #0F6E5C; /* brand teal */
-  --ql-viz-2: #2DAA8F; /* brightened teal */
+  --ql-viz-1: #4682B4; /* brand steelblue */
+  --ql-viz-2: #6FA3CF; /* brightened steelblue */
   --ql-viz-3: #C9A227; /* muted gold */
   --ql-viz-4: #B8791A; /* warm amber */
   --ql-viz-5: #8A857C; /* warm neutral */
@@ -73,7 +73,7 @@
   --ql-read-width: 720px;        /* centered reading column max-width */
   --ql-read-pad-x: 24px;         /* horizontal padding of the column */
   --ql-turn-gap: 14px;           /* avatar rail → content gap */
-  --ql-avatar-size: 34px;        /* avatar rail width */
+  --ql-avatar-size: 48px;        /* avatar rail width */
   --ql-label-size: 10px;         /* uppercase turn label */
   --ql-label-tracking: 0.08em;   /* turn label letter-spacing */
   --ql-prompt-size: 16px;        /* user prompt font-size */
@@ -106,9 +106,9 @@
   --ql-text-secondary: #B7B2A4;
   --ql-text-muted: #8A857C;
 
-  --ql-accent: #2DAA8F; /* brightened for dark */
-  --ql-accent-hover: #3FBBA0;
-  --ql-accent-soft: rgba(45, 170, 143, 0.12);
+  --ql-accent: #6FA3CF; /* brightened for dark */
+  --ql-accent-hover: #8DB6DB;
+  --ql-accent-soft: rgba(111, 163, 207, 0.14);
 
   --ql-gold: #D9B84A; /* brightened for dark */
   --ql-gold-soft: rgba(217, 184, 74, 0.16);
@@ -118,7 +118,7 @@
   --ql-danger: #D66A5E;
 
   /* data-viz brightened for dark ground */
-  --ql-viz-1: #2DAA8F;
+  --ql-viz-1: #6FA3CF;
   --ql-viz-2: #4FB585;
   --ql-viz-3: #D9B84A;
   --ql-viz-4: #D6A14A;
@@ -145,9 +145,9 @@
   --ql-text-secondary: #1A1A17;
   --ql-text-muted: #333333;
 
-  --ql-accent: #0B5A4B;
-  --ql-accent-hover: #083F35;
-  --ql-accent-soft: rgba(11, 90, 75, 0.16);
+  --ql-accent: #2F6694;
+  --ql-accent-hover: #234E73;
+  --ql-accent-soft: rgba(47, 102, 148, 0.16);
 
   --ql-gold: #8A6E0F;
   --ql-gold-soft: rgba(138, 110, 15, 0.18);
