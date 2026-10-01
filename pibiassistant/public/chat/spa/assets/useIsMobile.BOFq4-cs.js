@@ -1,1 +1,0 @@
-import{r as t,o as r,a}from"./index.Clwksdui.js";function c(o=768){const s=t(!1),i=t(!1);function e(){const n=window.innerWidth;s.value=n<o,i.value=n>=o&&n<1024}return r(()=>{e(),window.addEventListener("resize",e)}),a(()=>{window.removeEventListener("resize",e)}),{isMobile:s,isTablet:i}}export{c as u};
