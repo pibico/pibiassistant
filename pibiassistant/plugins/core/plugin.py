@@ -52,6 +52,9 @@ class CorePlugin(BasePlugin):
             "list_documents",
             "delete_document",
             "submit_document",
+            # Attachments (existing Frappe file, small base64 payload, or a one-time upload link)
+            "attach_file",
+            "create_upload_link",
             # Search tools (one unified entry point; routes on doctype/purpose)
             "search_documents",
             # ChatGPT-compatible tools (wrappers for ChatGPT MCP requirements)

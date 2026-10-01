@@ -282,6 +282,24 @@ def send_message(
                 file_addendum = wrap_untrusted(file_content, kind="user_attached_files")
                 system_prompt_addendum = (system_prompt_addendum or "") + file_addendum
 
+        if file_urls and aida_mode:
+            stored = frappe.get_all(
+                "File",
+                filters={"file_url": ["in", file_urls], "owner": frappe.session.user},
+                fields=["file_name", "file_url"],
+                limit_page_length=20,
+            )
+            if stored:
+                from pibiassistant.utils.attachments import clean_filename
+
+                lines = "\n".join(f"- {clean_filename(f.file_name)}: {f.file_url}" for f in stored)
+                system_prompt_addendum = (
+                    (system_prompt_addendum or "")
+                    + "\n\nFiles the user attached to this message (stored in Frappe). If you create a document from "
+                    "one of them, attach the source file to it afterwards with attach_file, using exactly this file_url:\n"
+                    + lines
+                )
+
         # Browser-diagnostics tools do not exist in AIDA, so the hint would only confuse the model.
         signal_addendum = "" if aida_mode else _render_client_signals(client_signals)
         if signal_addendum:

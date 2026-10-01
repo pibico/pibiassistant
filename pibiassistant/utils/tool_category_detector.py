@@ -92,6 +92,10 @@ WRITE_TOOLS = {
     "create_document",
     "update_document",
     "submit_document",
+    # Attachments add a File record to a document
+    "attach_file",
+    # Issues a one-time upload URL bound to a document
+    "create_upload_link",
     # Document generation (saves a private Frappe File — a create side effect)
     "generate_document",  # Markdown -> PDF saved as a File record; NOT read-only
     # Workflow tools
