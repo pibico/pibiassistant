@@ -56,17 +56,23 @@
   --aida-r-circle: 50%;
 
   --aida-nav-width: 260px;
-  --aida-topbar-h: 56px;
+  --aida-topbar-h: 44px;
   --aida-read-width: 720px;
   --aida-welcome-width: 840px;
   --aida-read-pad-x: 24px;
-  --aida-turn-gap: 14px;
-  --aida-turn-gap-y: 8px;
-  --aida-avatar-ai: 48px;
-  --aida-avatar-user: 44px;
+  --aida-turn-gap: 10px;
+  --aida-turn-gap-y: 4px;
+  --aida-avatar-ai: 36px;
+  --aida-avatar-user: 32px;
   --aida-avatar-hero: 96px;
-  --aida-avatar-nav: 32px;
-  --aida-tap: 44px;
+  --aida-avatar-nav: 28px;
+  --aida-tap: 30px;
+  --aida-hit: 44px;
+  --pad-y-xs: 2px;
+  --pad-y-sm: 4px;
+  --pad-y-md: 6px;
+  --pad-y-lg: 8px;
+  --pad-y-xl: 12px;
 
   --aida-z-topbar: 20;
   --aida-z-latest: 15;
