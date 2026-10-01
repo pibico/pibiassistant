@@ -1,0 +1,185 @@
+{
+    "name": "Sales Performance Dashboard",
+    "description": "Comprehensive sales analytics and performance tracking dashboard with revenue trends, customer analysis, and sales team performance metrics",
+    "category": "Sales",
+    "doctype": "Sales Invoice",
+    "icon": "sales",
+    "tags": ["sales", "revenue", "customers", "performance"],
+    "charts": [
+        {
+            "type": "line",
+            "title": "Revenue Trend",
+            "description": "Track revenue growth over time",
+            "x_field": "posting_date",
+            "y_field": "grand_total",
+            "aggregate": "sum",
+            "time_span": "last_12_months",
+            "chart_options": {
+                "color": "#28a745",
+                "show_trend_line": true,
+                "show_data_points": true
+            },
+            "position": {"row": 1, "col": 1, "width": 8, "height": 6}
+        },
+        {
+            "type": "kpi_card",
+            "title": "Total Revenue",
+            "description": "Current month revenue with comparison",
+            "field": "grand_total",
+            "aggregate": "sum",
+            "comparison": "previous_month",
+            "time_span": "current_month",
+            "chart_options": {
+                "color": "#007bff",
+                "show_percentage_change": true,
+                "format": "currency"
+            },
+            "position": {"row": 1, "col": 9, "width": 4, "height": 3}
+        },
+        {
+            "type": "kpi_card",
+            "title": "Total Orders",
+            "description": "Number of sales orders this month",
+            "field": "name",
+            "aggregate": "count",
+            "comparison": "previous_month",
+            "time_span": "current_month",
+            "chart_options": {
+                "color": "#ffc107",
+                "show_percentage_change": true,
+                "format": "number"
+            },
+            "position": {"row": 1, "col": 9, "width": 4, "height": 3}
+        },
+        {
+            "type": "bar",
+            "title": "Top 10 Customers by Revenue",
+            "description": "Highest revenue generating customers",
+            "x_field": "customer",
+            "y_field": "grand_total",
+            "aggregate": "sum",
+            "limit": 10,
+            "time_span": "current_quarter",
+            "chart_options": {
+                "orientation": "horizontal",
+                "color_scheme": "blues",
+                "show_values": true
+            },
+            "position": {"row": 2, "col": 1, "width": 6, "height": 6}
+        },
+        {
+            "type": "pie",
+            "title": "Revenue by Territory",
+            "description": "Revenue distribution across territories",
+            "x_field": "territory",
+            "y_field": "grand_total",
+            "aggregate": "sum",
+            "time_span": "current_quarter",
+            "chart_options": {
+                "show_percentages": true,
+                "color_scheme": "category20"
+            },
+            "position": {"row": 2, "col": 7, "width": 6, "height": 6}
+        },
+        {
+            "type": "funnel",
+            "title": "Sales Conversion Funnel",
+            "description": "Lead to customer conversion analysis",
+            "stages": [
+                {"stage": "Leads", "doctype": "Lead", "count_field": "name"},
+                {"stage": "Opportunities", "doctype": "Opportunity", "count_field": "name"},
+                {"stage": "Quotations", "doctype": "Quotation", "count_field": "name"},
+                {"stage": "Sales Orders", "doctype": "Sales Order", "count_field": "name"},
+                {"stage": "Invoices", "doctype": "Sales Invoice", "count_field": "name"}
+            ],
+            "time_span": "current_quarter",
+            "position": {"row": 3, "col": 1, "width": 6, "height": 6}
+        },
+        {
+            "type": "table",
+            "title": "Recent High-Value Sales",
+            "description": "Latest high-value transactions",
+            "fields": ["customer", "posting_date", "grand_total", "status"],
+            "filters": {"grand_total": [">", 10000]},
+            "order_by": "posting_date desc",
+            "limit": 10,
+            "chart_options": {
+                "striped": true,
+                "highlight_rows": true
+            },
+            "position": {"row": 3, "col": 7, "width": 6, "height": 6}
+        },
+        {
+            "type": "gauge",
+            "title": "Monthly Target Achievement",
+            "description": "Progress towards monthly sales target",
+            "field": "grand_total",
+            "aggregate": "sum",
+            "target_value": 1000000,
+            "time_span": "current_month",
+            "chart_options": {
+                "color_ranges": [
+                    {"min": 0, "max": 60, "color": "#dc3545"},
+                    {"min": 60, "max": 80, "color": "#ffc107"},
+                    {"min": 80, "max": 100, "color": "#28a745"}
+                ]
+            },
+            "position": {"row": 4, "col": 1, "width": 4, "height": 4}
+        },
+        {
+            "type": "heatmap",
+            "title": "Sales Performance by Month & Territory",
+            "description": "Heat map showing sales intensity",
+            "x_field": "territory",
+            "y_field": "posting_date",
+            "value_field": "grand_total",
+            "aggregate": "sum",
+            "time_span": "last_12_months",
+            "chart_options": {
+                "date_grouping": "month",
+                "color_scheme": "reds"
+            },
+            "position": {"row": 4, "col": 5, "width": 8, "height": 4}
+        }
+    ],
+    "filters": {
+        "status": ["Paid", "Unpaid"],
+        "docstatus": 1
+    },
+    "global_filters": [
+        {
+            "field": "posting_date",
+            "type": "date_range",
+            "label": "Date Range",
+            "default": "current_quarter"
+        },
+        {
+            "field": "territory",
+            "type": "multiselect",
+            "label": "Territory",
+            "options_from": "territory"
+        },
+        {
+            "field": "customer_group",
+            "type": "select",
+            "label": "Customer Group",
+            "options_from": "customer_group"
+        }
+    ],
+    "refresh_interval": "1_hour",
+    "auto_refresh": true,
+    "mobile_layout": {
+        "enabled": true,
+        "stack_charts": true,
+        "priority_charts": ["Total Revenue", "Total Orders", "Revenue Trend"]
+    },
+    "export_options": {
+        "pdf": true,
+        "excel": true,
+        "png": true
+    },
+    "sharing": {
+        "default_roles": ["Sales Manager", "Sales User"],
+        "public_access": false
+    }
+}

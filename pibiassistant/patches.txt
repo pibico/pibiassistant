@@ -1,0 +1,51 @@
+# Patches for pibiassistant
+# Format: patches.patch_file
+
+[pre_model_sync]
+
+# Version 1.0.0 - Initial setup
+pibiassistant.patches.v1_0.add_user_assistant_enabled_field
+pibiassistant.patches.v1_0.cleanup_duplicate_permissions
+pibiassistant.patches.v1_0.update_doctype_permissions
+
+# Version 2.0.0 - Enhanced Plugin Architecture
+pibiassistant.patches.v2_0_0.remove_deprecated_doctypes
+
+# Version 2.1.0 - Improved Onboarding UX
+pibiassistant.patches.v2_1.update_assistant_enabled_default
+pibiassistant.patches.v2_1.remove_old_assistant_admin_page
+
+# Version 2.2.0 - Plugin Configuration Migration
+pibiassistant.patches.v2_2.migrate_plugin_settings_to_doctype
+
+# Version 2.3.0 - MCP 2025-06-18 Spec Support
+pibiassistant.patches.v2_3.update_mcp_protocol_version
+
+# Version 2.3.2 - Settings defaults fix
+pibiassistant.patches.v2_3.set_settings_defaults
+
+# Version 2.4.0 - Skills feature
+pibiassistant.patches.v2_4.install_system_skills
+pibiassistant.patches.v2_4.bump_code_execution_max_recursion
+pibiassistant.patches.v2_4.repair_hrms_skill_link_corruption
+pibiassistant.patches.v2_4.resync_tool_categories
+
+# Version 2.5.0 - Skill publish/visibility permission fix (issue #225)
+pibiassistant.patches.v2_5.report_non_admin_published_skills
+
+# Version 3.0.0 - Recategorize generate_document (read_only -> write)
+pibiassistant.patches.v3_0.recategorize_generate_document
+
+# Version 3.0.0 - Widen PA Chat Message.credits_used Int -> Float (fractional credits)
+pibiassistant.patches.v3_0.widen_credits_used_to_float
+
+[post_model_sync]
+
+# Version 3.0.0 - Backfill enable_browser_diagnostics default on the pre-existing
+# PA Chat Settings Single (Frappe only applies a field's default on document
+# creation; this Single already existed when the field was added)
+pibiassistant.patches.v3_0.backfill_browser_diagnostics_default
+
+# Version 3.0.0 - Bind PA Workflow Triggers to the AR workflow docname instead
+# of the mutable display name (a rename used to orphan every trigger silently)
+pibiassistant.patches.v3_0.backfill_workflow_trigger_docname

@@ -1,0 +1,227 @@
+{
+    "name": "Inventory Management Dashboard",
+    "description": "Comprehensive inventory monitoring including stock levels, movement trends, warehouse utilization, and ABC analysis for optimal inventory control",
+    "category": "Inventory",
+    "doctype": "Stock Ledger Entry", 
+    "icon": "warehouse",
+    "tags": ["inventory", "stock", "warehouse", "movement", "abc_analysis"],
+    "charts": [
+        {
+            "type": "bar",
+            "title": "Stock Levels by Item",
+            "description": "Current stock quantities for top items",
+            "x_field": "item_code",
+            "y_field": "qty_after_transaction",
+            "aggregate": "last_value",
+            "limit": 20,
+            "order_by": "qty_after_transaction desc",
+            "chart_options": {
+                "color": "#007bff",
+                "show_values": true,
+                "threshold_lines": [
+                    {"value": 100, "color": "#ffc107", "label": "Reorder Level"},
+                    {"value": 50, "color": "#dc3545", "label": "Critical Level"}
+                ]
+            },
+            "position": {"row": 1, "col": 1, "width": 8, "height": 6}
+        },
+        {
+            "type": "kpi_card",
+            "title": "Low Stock Items",
+            "description": "Items below reorder level",
+            "calculation": "count_below_reorder_level",
+            "comparison": "previous_week",
+            "chart_options": {
+                "color": "#dc3545",
+                "show_percentage_change": true,
+                "format": "number",
+                "alert_threshold": 10
+            },
+            "position": {"row": 1, "col": 9, "width": 4, "height": 2}
+        },
+        {
+            "type": "kpi_card",
+            "title": "Total Stock Value",
+            "description": "Current inventory valuation",
+            "calculation": "total_stock_value",
+            "comparison": "previous_month",
+            "chart_options": {
+                "color": "#28a745",
+                "show_percentage_change": true,
+                "format": "currency"
+            },
+            "position": {"row": 1, "col": 9, "width": 4, "height": 2}
+        },
+        {
+            "type": "kpi_card",
+            "title": "Stock Turnover Ratio",
+            "description": "Inventory turnover rate",
+            "calculation": "stock_turnover_ratio",
+            "comparison": "previous_quarter",
+            "chart_options": {
+                "color": "#17a2b8",
+                "show_percentage_change": true,
+                "format": "decimal",
+                "target_value": 6
+            },
+            "position": {"row": 1, "col": 9, "width": 4, "height": 2}
+        },
+        {
+            "type": "line",
+            "title": "Stock Movement Trends",
+            "description": "Inbound vs outbound stock movements",
+            "x_field": "posting_date",
+            "y_field": "actual_qty",
+            "aggregate": "sum",
+            "group_by": "voucher_type",
+            "time_span": "last_6_months",
+            "chart_options": {
+                "multi_series": true,
+                "colors": ["#28a745", "#dc3545"],
+                "show_data_points": true,
+                "area_fill": false
+            },
+            "position": {"row": 2, "col": 1, "width": 6, "height": 6}
+        },
+        {
+            "type": "pie",
+            "title": "Warehouse Utilization",
+            "description": "Stock distribution across warehouses",
+            "x_field": "warehouse",
+            "y_field": "stock_value",
+            "aggregate": "sum",
+            "chart_options": {
+                "show_percentages": true,
+                "color_scheme": "category20"
+            },
+            "position": {"row": 2, "col": 7, "width": 6, "height": 6}
+        },
+        {
+            "type": "scatter",
+            "title": "ABC Analysis",
+            "description": "Item analysis by value and movement",
+            "x_field": "total_value",
+            "y_field": "movement_frequency",
+            "size_field": "stock_quantity",
+            "calculation": "abc_analysis",
+            "chart_options": {
+                "color_categories": {
+                    "A": "#dc3545",
+                    "B": "#ffc107", 
+                    "C": "#28a745"
+                },
+                "show_categories": true,
+                "bubble_size_range": [5, 50]
+            },
+            "position": {"row": 3, "col": 1, "width": 6, "height": 6}
+        },
+        {
+            "type": "table",
+            "title": "Items Requiring Attention",
+            "description": "Items with low stock or high movement",
+            "fields": ["item_code", "item_name", "actual_qty", "reserved_qty", "reorder_level", "warehouse"],
+            "filters": {"requires_attention": true},
+            "order_by": "reorder_level desc",
+            "limit": 15,
+            "chart_options": {
+                "highlight_critical": true,
+                "color_coding": {
+                    "critical": "#dc3545",
+                    "warning": "#ffc107",
+                    "normal": "#28a745"
+                }
+            },
+            "position": {"row": 3, "col": 7, "width": 6, "height": 6}
+        },
+        {
+            "type": "heatmap",
+            "title": "Seasonal Stock Patterns",
+            "description": "Stock levels by month and item category",
+            "x_field": "item_group",
+            "y_field": "posting_date",
+            "value_field": "actual_qty",
+            "aggregate": "avg",
+            "time_span": "last_12_months",
+            "chart_options": {
+                "date_grouping": "month",
+                "color_scheme": "blues"
+            },
+            "position": {"row": 4, "col": 1, "width": 8, "height": 4}
+        },
+        {
+            "type": "gauge",
+            "title": "Stockout Risk",
+            "description": "Risk of stockouts based on current levels",
+            "calculation": "stockout_risk_percentage",
+            "chart_options": {
+                "unit": "%",
+                "color_ranges": [
+                    {"min": 0, "max": 20, "color": "#28a745"},
+                    {"min": 20, "max": 50, "color": "#ffc107"},
+                    {"min": 50, "max": 100, "color": "#dc3545"}
+                ]
+            },
+            "position": {"row": 4, "col": 9, "width": 4, "height": 4}
+        }
+    ],
+    "filters": {
+        "docstatus": 1,
+        "is_cancelled": 0
+    },
+    "global_filters": [
+        {
+            "field": "posting_date",
+            "type": "date_range",
+            "label": "Date Range", 
+            "default": "current_month"
+        },
+        {
+            "field": "warehouse",
+            "type": "multiselect",
+            "label": "Warehouse",
+            "options_from": "warehouse"
+        },
+        {
+            "field": "item_group",
+            "type": "multiselect", 
+            "label": "Item Group",
+            "options_from": "item_group"
+        },
+        {
+            "field": "company",
+            "type": "select",
+            "label": "Company",
+            "options_from": "company"
+        }
+    ],
+    "refresh_interval": "15_minutes",
+    "auto_refresh": true,
+    "mobile_layout": {
+        "enabled": true,
+        "stack_charts": true,
+        "priority_charts": ["Low Stock Items", "Total Stock Value", "Stock Movement Trends"]
+    },
+    "export_options": {
+        "pdf": true,
+        "excel": true,
+        "png": true
+    },
+    "sharing": {
+        "default_roles": ["Stock Manager", "Stock User", "Warehouse Manager"],
+        "public_access": false
+    },
+    "alerts": [
+        {
+            "name": "Low Stock Alert",
+            "condition": "stock_qty < reorder_level",
+            "notification_method": "email",
+            "recipients": ["stock_manager@company.com"]
+        },
+        {
+            "name": "Overstock Alert", 
+            "condition": "stock_qty > max_stock_level",
+            "notification_method": "dashboard",
+            "severity": "warning"
+        }
+    ]
+}

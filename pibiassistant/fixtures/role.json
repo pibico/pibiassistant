@@ -1,0 +1,22 @@
+[
+    {
+        "doctype": "Role",
+        "name": "PA User",
+        "role_name": "PA User",
+        "description": "Can use assistant tools and view connection logs",
+        "desk_access": 1,
+        "disabled": 0,
+        "is_custom": 0,
+        "two_factor_auth": 0
+    },
+    {
+        "doctype": "Role", 
+        "name": "PA Admin",
+        "role_name": "PA Admin",
+        "description": "Full access to assistant Server configuration and management",
+        "desk_access": 1,
+        "disabled": 0,
+        "is_custom": 0,
+        "two_factor_auth": 0
+    }
+]

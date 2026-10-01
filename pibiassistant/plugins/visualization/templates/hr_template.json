@@ -1,0 +1,260 @@
+{
+    "name": "HR Analytics Dashboard",
+    "description": "Comprehensive HR analytics including employee metrics, attendance patterns, performance tracking, and workforce analytics for data-driven HR decisions",
+    "category": "Human Resources",
+    "doctype": "Employee",
+    "icon": "users",
+    "tags": ["hr", "employees", "attendance", "performance", "workforce"],
+    "charts": [
+        {
+            "type": "kpi_card",
+            "title": "Total Employees",
+            "description": "Active employee count",
+            "field": "name",
+            "aggregate": "count",
+            "filters": {"status": "Active"},
+            "comparison": "previous_month",
+            "chart_options": {
+                "color": "#007bff",
+                "show_percentage_change": true,
+                "format": "number"
+            },
+            "position": {"row": 1, "col": 1, "width": 3, "height": 2}
+        },
+        {
+            "type": "kpi_card",
+            "title": "New Hires",
+            "description": "Employees hired this month",
+            "field": "name",
+            "aggregate": "count",
+            "filters": {"date_of_joining": "current_month"},
+            "comparison": "previous_month",
+            "chart_options": {
+                "color": "#28a745",
+                "show_percentage_change": true,
+                "format": "number"
+            },
+            "position": {"row": 1, "col": 4, "width": 3, "height": 2}
+        },
+        {
+            "type": "kpi_card",
+            "title": "Turnover Rate",
+            "description": "Employee turnover percentage",
+            "calculation": "turnover_rate_percentage",
+            "time_span": "current_quarter",
+            "comparison": "previous_quarter",
+            "chart_options": {
+                "color": "#dc3545",
+                "show_percentage_change": true,
+                "format": "percentage"
+            },
+            "position": {"row": 1, "col": 7, "width": 3, "height": 2}
+        },
+        {
+            "type": "kpi_card",
+            "title": "Average Attendance",
+            "description": "Overall attendance rate",
+            "calculation": "average_attendance_rate",
+            "time_span": "current_month",
+            "comparison": "previous_month",
+            "chart_options": {
+                "color": "#17a2b8",
+                "show_percentage_change": true,
+                "format": "percentage"
+            },
+            "position": {"row": 1, "col": 10, "width": 3, "height": 2}
+        },
+        {
+            "type": "pie",
+            "title": "Employees by Department",
+            "description": "Workforce distribution across departments",
+            "x_field": "department",
+            "y_field": "name", 
+            "aggregate": "count",
+            "filters": {"status": "Active"},
+            "chart_options": {
+                "show_percentages": true,
+                "color_scheme": "category20"
+            },
+            "position": {"row": 2, "col": 1, "width": 4, "height": 5}
+        },
+        {
+            "type": "bar",
+            "title": "Employees by Age Group",
+            "description": "Age distribution of workforce",
+            "x_field": "age_group",
+            "y_field": "name",
+            "aggregate": "count",
+            "calculation": "age_grouping",
+            "filters": {"status": "Active"},
+            "chart_options": {
+                "color": "#6f42c1",
+                "show_values": true
+            },
+            "position": {"row": 2, "col": 5, "width": 4, "height": 5}
+        },
+        {
+            "type": "line",
+            "title": "Headcount Trend",
+            "description": "Employee count changes over time",
+            "x_field": "date_of_joining",
+            "y_field": "name",
+            "aggregate": "cumulative_count",
+            "time_span": "last_12_months",
+            "chart_options": {
+                "color": "#fd7e14",
+                "show_data_points": true,
+                "area_fill": true
+            },
+            "position": {"row": 2, "col": 9, "width": 4, "height": 5}
+        },
+        {
+            "type": "heatmap",
+            "title": "Attendance Patterns",
+            "description": "Attendance by day of week and month",
+            "doctype": "Attendance",
+            "x_field": "attendance_date",
+            "y_field": "employee",
+            "value_field": "status",
+            "calculation": "attendance_heatmap",
+            "time_span": "last_6_months",
+            "chart_options": {
+                "date_grouping": "day_of_week",
+                "color_scheme": "greens"
+            },
+            "position": {"row": 3, "col": 1, "width": 6, "height": 4}
+        },
+        {
+            "type": "gauge",
+            "title": "Employee Satisfaction",
+            "description": "Latest satisfaction survey score",
+            "calculation": "employee_satisfaction_score",
+            "target_value": 80,
+            "chart_options": {
+                "unit": "%",
+                "color_ranges": [
+                    {"min": 0, "max": 60, "color": "#dc3545"},
+                    {"min": 60, "max": 75, "color": "#ffc107"},
+                    {"min": 75, "max": 100, "color": "#28a745"}
+                ]
+            },
+            "position": {"row": 3, "col": 7, "width": 3, "height": 4}
+        },
+        {
+            "type": "table",
+            "title": "Top Performers",
+            "description": "Highest rated employees this quarter",
+            "doctype": "Employee Performance",
+            "fields": ["employee", "employee_name", "department", "performance_score", "review_date"],
+            "order_by": "performance_score desc",
+            "limit": 10,
+            "time_span": "current_quarter",
+            "chart_options": {
+                "highlight_top": true,
+                "format_score": ["performance_score"]
+            },
+            "position": {"row": 3, "col": 10, "width": 3, "height": 4}
+        },
+        {
+            "type": "bar",
+            "title": "Training Completion Rate",
+            "description": "Training completion by department",
+            "doctype": "Training Record",
+            "x_field": "department",
+            "y_field": "completion_percentage",
+            "aggregate": "avg",
+            "time_span": "current_quarter",
+            "chart_options": {
+                "color": "#20c997",
+                "show_values": true,
+                "target_line": 80
+            },
+            "position": {"row": 4, "col": 1, "width": 4, "height": 4}
+        },
+        {
+            "type": "funnel",
+            "title": "Recruitment Funnel",
+            "description": "Candidate progression through hiring stages",
+            "stages": [
+                {"stage": "Applications", "doctype": "Job Applicant", "count_field": "name"},
+                {"stage": "Screening", "doctype": "Job Applicant", "count_field": "name", "filters": {"status": "Open"}},
+                {"stage": "Interview", "doctype": "Interview", "count_field": "name"},
+                {"stage": "Offer", "doctype": "Job Offer", "count_field": "name"},
+                {"stage": "Hired", "doctype": "Employee", "count_field": "name", "filters": {"date_of_joining": "current_quarter"}}
+            ],
+            "time_span": "current_quarter",
+            "position": {"row": 4, "col": 5, "width": 4, "height": 4}
+        },
+        {
+            "type": "line",
+            "title": "Leave Trends",
+            "description": "Leave applications over time",
+            "doctype": "Leave Application",
+            "x_field": "from_date",
+            "y_field": "total_leave_days",
+            "aggregate": "sum",
+            "group_by": "leave_type",
+            "time_span": "last_12_months",
+            "chart_options": {
+                "multi_series": true,
+                "show_data_points": true
+            },
+            "position": {"row": 4, "col": 9, "width": 4, "height": 4}
+        }
+    ],
+    "filters": {
+        "docstatus": 1
+    },
+    "global_filters": [
+        {
+            "field": "department",
+            "type": "multiselect",
+            "label": "Department",
+            "options_from": "department"
+        },
+        {
+            "field": "designation",
+            "type": "multiselect",
+            "label": "Designation", 
+            "options_from": "designation"
+        },
+        {
+            "field": "company",
+            "type": "select",
+            "label": "Company",
+            "options_from": "company"
+        },
+        {
+            "field": "employment_type",
+            "type": "select",
+            "label": "Employment Type",
+            "options": ["Full-time", "Part-time", "Contract", "Intern"]
+        }
+    ],
+    "refresh_interval": "2_hours",
+    "auto_refresh": true,
+    "mobile_layout": {
+        "enabled": true,
+        "stack_charts": true,
+        "priority_charts": ["Total Employees", "New Hires", "Turnover Rate", "Average Attendance"]
+    },
+    "export_options": {
+        "pdf": true,
+        "excel": true,
+        "png": true
+    },
+    "sharing": {
+        "default_roles": ["HR Manager", "HR User", "System Manager"],
+        "public_access": false
+    },
+    "calculated_fields": [
+        {
+            "name": "age_group",
+            "calculation": "CASE WHEN DATEDIFF(CURDATE(), date_of_birth)/365 < 25 THEN 'Under 25' WHEN DATEDIFF(CURDATE(), date_of_birth)/365 < 35 THEN '25-34' WHEN DATEDIFF(CURDATE(), date_of_birth)/365 < 45 THEN '35-44' WHEN DATEDIFF(CURDATE(), date_of_birth)/365 < 55 THEN '45-54' ELSE '55+' END"
+        },
+        {
+            "name": "tenure_years",
+            "calculation": "DATEDIFF(CURDATE(), date_of_joining)/365"
+        }
+    ]
+}

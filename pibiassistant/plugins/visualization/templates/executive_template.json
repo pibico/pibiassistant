@@ -1,0 +1,279 @@
+{
+    "name": "Executive Summary Dashboard",
+    "description": "High-level executive dashboard with key business metrics, performance indicators, and strategic insights for leadership decision-making",
+    "category": "Executive",
+    "doctype": "Company",
+    "icon": "trending-up",
+    "tags": ["executive", "kpi", "summary", "leadership", "strategic"],
+    "charts": [
+        {
+            "type": "kpi_card",
+            "title": "Monthly Revenue",
+            "description": "Total revenue this month",
+            "doctype": "Sales Invoice",
+            "field": "grand_total",
+            "aggregate": "sum",
+            "time_span": "current_month",
+            "comparison": "previous_month",
+            "chart_options": {
+                "color": "#007bff",
+                "show_percentage_change": true,
+                "format": "currency",
+                "size": "large"
+            },
+            "position": {"row": 1, "col": 1, "width": 3, "height": 3}
+        },
+        {
+            "type": "kpi_card",
+            "title": "Net Profit Margin",
+            "description": "Profitability percentage",
+            "calculation": "net_profit_margin",
+            "time_span": "current_month",
+            "comparison": "previous_month",
+            "chart_options": {
+                "color": "#28a745",
+                "show_percentage_change": true,
+                "format": "percentage",
+                "size": "large"
+            },
+            "position": {"row": 1, "col": 4, "width": 3, "height": 3}
+        },
+        {
+            "type": "kpi_card",
+            "title": "Customer Satisfaction",
+            "description": "Average satisfaction score",
+            "calculation": "customer_satisfaction_score",
+            "comparison": "previous_quarter",
+            "chart_options": {
+                "color": "#17a2b8",
+                "show_percentage_change": true,
+                "format": "decimal",
+                "size": "large"
+            },
+            "position": {"row": 1, "col": 7, "width": 3, "height": 3}
+        },
+        {
+            "type": "kpi_card",
+            "title": "Cash Flow",
+            "description": "Operating cash flow",
+            "doctype": "GL Entry",
+            "calculation": "operating_cash_flow",
+            "time_span": "current_month",
+            "comparison": "previous_month",
+            "chart_options": {
+                "color": "#6f42c1",
+                "show_percentage_change": true,
+                "format": "currency",
+                "size": "large"
+            },
+            "position": {"row": 1, "col": 10, "width": 3, "height": 3}
+        },
+        {
+            "type": "line",
+            "title": "Revenue & Profit Trends",
+            "description": "12-month revenue and profit trend",
+            "doctype": "Sales Invoice",
+            "calculated_metrics": [
+                {"name": "Revenue", "field": "grand_total", "aggregate": "sum"},
+                {"name": "Gross Profit", "calculation": "revenue_minus_cogs"}
+            ],
+            "x_field": "posting_date",
+            "time_span": "last_12_months",
+            "chart_options": {
+                "multi_series": true,
+                "colors": ["#007bff", "#28a745"],
+                "show_data_points": true,
+                "area_fill": true,
+                "secondary_y_axis": false
+            },
+            "position": {"row": 2, "col": 1, "width": 8, "height": 6}
+        },
+        {
+            "type": "gauge",
+            "title": "Quarterly Target",
+            "description": "Progress towards quarterly revenue target",
+            "doctype": "Sales Invoice",
+            "field": "grand_total",
+            "aggregate": "sum",
+            "time_span": "current_quarter",
+            "target_value": 5000000,
+            "chart_options": {
+                "color_ranges": [
+                    {"min": 0, "max": 60, "color": "#dc3545"},
+                    {"min": 60, "max": 80, "color": "#ffc107"},
+                    {"min": 80, "max": 100, "color": "#28a745"}
+                ],
+                "size": "large"
+            },
+            "position": {"row": 2, "col": 9, "width": 4, "height": 6}
+        },
+        {
+            "type": "bar",
+            "title": "Revenue by Business Unit",
+            "description": "Performance comparison across business units",
+            "doctype": "Sales Invoice", 
+            "x_field": "cost_center",
+            "y_field": "grand_total",
+            "aggregate": "sum",
+            "time_span": "current_quarter",
+            "chart_options": {
+                "color": "#fd7e14",
+                "show_values": true,
+                "orientation": "horizontal"
+            },
+            "position": {"row": 3, "col": 1, "width": 6, "height": 5}
+        },
+        {
+            "type": "pie",
+            "title": "Customer Segment Distribution",
+            "description": "Revenue by customer segment",
+            "doctype": "Sales Invoice",
+            "x_field": "customer_group",
+            "y_field": "grand_total",
+            "aggregate": "sum",
+            "time_span": "current_quarter",
+            "chart_options": {
+                "show_percentages": true,
+                "color_scheme": "pastel"
+            },
+            "position": {"row": 3, "col": 7, "width": 6, "height": 5}
+        },
+        {
+            "type": "table",
+            "title": "Key Performance Indicators",
+            "description": "Critical business metrics summary",
+            "calculated_data": [
+                {"metric": "Monthly Recurring Revenue", "current": "calculation", "target": 1000000, "status": "on_track"},
+                {"metric": "Customer Acquisition Cost", "current": "calculation", "target": 500, "status": "warning"},
+                {"metric": "Employee Productivity", "current": "calculation", "target": 85, "status": "excellent"},
+                {"metric": "Inventory Turnover", "current": "calculation", "target": 6, "status": "needs_attention"},
+                {"metric": "Debt-to-Equity Ratio", "current": "calculation", "target": 0.5, "status": "good"}
+            ],
+            "chart_options": {
+                "status_colors": {
+                    "excellent": "#28a745",
+                    "on_track": "#007bff", 
+                    "warning": "#ffc107",
+                    "needs_attention": "#dc3545"
+                }
+            },
+            "position": {"row": 4, "col": 1, "width": 8, "height": 4}
+        },
+        {
+            "type": "funnel",
+            "title": "Sales Pipeline",
+            "description": "Sales funnel conversion rates",
+            "stages": [
+                {"stage": "Leads", "doctype": "Lead", "count_field": "name"},
+                {"stage": "Qualified", "doctype": "Opportunity", "count_field": "name"},
+                {"stage": "Proposal", "doctype": "Quotation", "count_field": "name"},
+                {"stage": "Negotiation", "doctype": "Quotation", "count_field": "name", "filters": {"status": "Submitted"}},
+                {"stage": "Closed Won", "doctype": "Sales Order", "count_field": "name"}
+            ],
+            "time_span": "current_quarter",
+            "position": {"row": 4, "col": 9, "width": 4, "height": 4}
+        },
+        {
+            "type": "heatmap",
+            "title": "Performance Heatmap",
+            "description": "Departmental performance across key metrics",
+            "calculated_data": "department_performance_matrix",
+            "chart_options": {
+                "color_scheme": "reds_greens",
+                "show_values": true
+            },
+            "position": {"row": 5, "col": 1, "width": 6, "height": 4}
+        },
+        {
+            "type": "line",
+            "title": "Market Share Trend",
+            "description": "Market position over time",
+            "calculated_metrics": [
+                {"name": "Market Share", "calculation": "market_share_percentage"},
+                {"name": "Industry Growth", "calculation": "industry_growth_rate"}
+            ],
+            "time_span": "last_24_months",
+            "chart_options": {
+                "multi_series": true,
+                "colors": ["#e83e8c", "#6610f2"],
+                "show_data_points": true
+            },
+            "position": {"row": 5, "col": 7, "width": 6, "height": 4}
+        }
+    ],
+    "filters": {
+        "docstatus": 1
+    },
+    "global_filters": [
+        {
+            "field": "company",
+            "type": "select",
+            "label": "Company",
+            "options_from": "company"
+        },
+        {
+            "field": "fiscal_year",
+            "type": "select",
+            "label": "Fiscal Year",
+            "options_from": "fiscal_year"
+        },
+        {
+            "field": "time_period",
+            "type": "select",
+            "label": "Time Period",
+            "options": ["current_month", "current_quarter", "current_year", "last_quarter", "last_year"]
+        }
+    ],
+    "refresh_interval": "5_minutes",
+    "auto_refresh": true,
+    "mobile_layout": {
+        "enabled": true,
+        "stack_charts": true,
+        "priority_charts": ["Monthly Revenue", "Net Profit Margin", "Customer Satisfaction", "Cash Flow"]
+    },
+    "export_options": {
+        "pdf": true,
+        "excel": true,
+        "png": true,
+        "powerpoint": true
+    },
+    "sharing": {
+        "default_roles": ["System Manager", "CEO", "Management"],
+        "public_access": false,
+        "board_access": true
+    },
+    "alerts": [
+        {
+            "name": "Revenue Target Alert",
+            "condition": "monthly_revenue < monthly_target * 0.8",
+            "notification_method": "email",
+            "recipients": ["ceo@company.com", "cfo@company.com"]
+        },
+        {
+            "name": "Margin Alert",
+            "condition": "profit_margin < 15",
+            "notification_method": "dashboard",
+            "severity": "critical"
+        }
+    ],
+    "calculated_metrics": [
+        {
+            "name": "net_profit_margin",
+            "calculation": "(total_revenue - total_expenses) / total_revenue * 100"
+        },
+        {
+            "name": "operating_cash_flow",
+            "calculation": "net_income + depreciation + working_capital_changes"
+        },
+        {
+            "name": "customer_satisfaction_score", 
+            "calculation": "avg(satisfaction_ratings)"
+        },
+        {
+            "name": "market_share_percentage",
+            "calculation": "company_revenue / industry_revenue * 100"
+        }
+    ],
+    "drill_down_enabled": true,
+    "real_time_updates": true
+}

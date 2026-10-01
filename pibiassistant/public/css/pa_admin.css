@@ -1,0 +1,1418 @@
+/* PA Admin Page Styles */
+/* Auto-extracted from pa_admin.js */
+
+.pa-admin-container {
+    /* pibiCo steelblue accent — local page-scoped vars. */
+    --pa-accent: #4682B4;
+    --pa-accent-soft: rgba(70, 130, 180, 0.12);
+    max-width: 1400px;
+    margin: 0 auto;
+}
+[data-theme="dark"] .pa-admin-container {
+    --pa-accent: #5BA3D9;
+    --pa-accent-soft: rgba(91, 163, 217, 0.16);
+}
+
+/* ============================================================
+   Layout — page header + two-column body + sidebar
+   ============================================================ */
+.pa-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 4px 16px;
+    margin-bottom: 8px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.pa-page-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--heading-color);
+}
+.pa-page-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pa-two-col {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 20px;
+    align-items: start;
+}
+@media (max-width: 1100px) {
+    .pa-two-col {
+        grid-template-columns: 1fr;
+    }
+}
+
+.pa-registry-card {
+    padding-bottom: 16px;
+    /* Override the global card padding so tab nav sits flush */
+    padding-top: 0;
+}
+
+.pa-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: sticky;
+    top: 16px;
+    /* Match the registry's viewport cap so the sidebar scrolls internally
+       instead of pushing the page taller. Without this, a sidebar taller
+       than the registry leaves a tall empty stretch on the left. */
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    /* Reserve scrollbar gutter so the rightmost card edge doesn't shift
+       when the scrollbar appears/disappears. */
+    scrollbar-gutter: stable;
+    /* Small inside padding so the scrollbar doesn't touch card edges. */
+    padding-right: 4px;
+}
+@media (max-width: 1100px) {
+    .pa-sidebar {
+        position: static;
+        max-height: none;
+        overflow-y: visible;
+        padding-right: 0;
+    }
+}
+
+.pa-sidebar-card {
+    padding: 14px 16px;
+    margin-bottom: 0;
+}
+.pa-sidebar-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    gap: 8px;
+}
+.pa-sidebar-title {
+    font-weight: 600;
+    color: var(--heading-color);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.pa-sidebar-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-muted);
+}
+.pa-sidebar-subtle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+}
+.pa-sidebar-subtle code {
+    background: var(--bg-color);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 11px;
+}
+.pa-sidebar-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+.pa-endpoint-compact {
+    padding: 6px 8px;
+    font-size: 11px;
+    margin-bottom: 8px;
+    background: var(--control-bg);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    word-break: break-all;
+}
+
+/* Quick-actions list */
+.pa-quick-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.pa-quick-list li {
+    margin: 0;
+}
+.pa-quick-list a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    margin: 0 -8px;
+    border-radius: 6px;
+    color: var(--text-color);
+    font-size: 13px;
+    text-decoration: none;
+    border-bottom: 1px solid var(--border-color);
+    transition: color 0.15s, background 0.15s;
+}
+.pa-quick-list li:last-child a {
+    border-bottom: none;
+}
+/* Use an explicit light-blue tint that reads in both themes; var(--bg-color)
+   was the same off-white as the card so the hover was invisible. */
+.pa-quick-list a:hover {
+    color: var(--pa-accent);
+    background: var(--pa-accent-soft);
+    text-decoration: none;
+}
+.pa-quick-list a:hover i {
+    color: var(--pa-accent);
+}
+.pa-quick-list a i {
+    color: var(--text-muted);
+    width: 16px;
+    text-align: center;
+    transition: color 0.15s;
+}
+
+/* Chat analytics — 2x2 mini grid + sparkline */
+.pa-analytics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.pa-analytics-cell {
+    padding: 8px 10px;
+    background: var(--bg-color);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+.pa-analytics-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 2px;
+}
+.pa-analytics-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--heading-color);
+    line-height: 1.2;
+}
+/* Gold reserved for money: the Credits stat is the one money number. */
+.pa-analytics-value--money { color: #C9A227; }
+[data-theme="dark"] .pa-analytics-value--money { color: #D9B84A; }
+.pa-analytics-spark {
+    width: 100%;
+    height: 28px;
+    margin-top: 4px;
+}
+.pa-spark-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+.pa-spark-svg polyline {
+    fill: none;
+    stroke: var(--pa-accent);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+}
+
+/* Scroll area for registry lists.
+   Caps the list to viewport height minus the surrounding chrome (Desk navbar,
+   our page header strip, tab strip, and filter bar) so the page itself stays
+   stationary while the user scrolls the list. The sidebar then remains
+   visible next to the list instead of becoming dead whitespace. */
+.pa-scroll-area {
+    max-height: calc(100vh - 320px);
+    min-height: 320px;
+    overflow-y: auto;
+}
+/* On narrow screens the layout stacks; let the page scroll naturally. */
+@media (max-width: 1100px) {
+    .pa-scroll-area {
+        max-height: none;
+        min-height: 0;
+    }
+}
+
+/* Tab count pills */
+.pa-tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 18px;
+    padding: 0 6px;
+    background: var(--bg-color);
+    color: var(--text-muted);
+    border-radius: 9px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 4px;
+}
+/* Use explicit blue (not var(--primary)) — in the Frappe dark theme
+   --primary resolves to near-black, which made the active count invisible
+   against the faint-blue pill background. */
+.pa-top-tab.active .pa-tab-count {
+    background: var(--pa-accent-soft);
+    color: var(--pa-accent);
+}
+
+/* Compact activity list (no thead, no table border) */
+.pa-activity-list {
+    max-height: 320px;
+    overflow-y: auto;
+    font-size: 12px;
+}
+.pa-activity-list .pa-table {
+    font-size: 12px;
+}
+.pa-activity-list .pa-table th {
+    display: none;
+}
+.pa-activity-list .pa-table td {
+    padding: 6px 4px;
+}
+[data-theme="dark"] .pa-analytics-cell {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .pa-tab-count {
+    background: rgba(255, 255, 255, 0.06);
+}
+[data-theme="dark"] .pa-quick-list a {
+    border-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .pa-quick-list a:hover {
+    color: var(--pa-accent);
+    background: var(--pa-accent-soft);
+}
+[data-theme="dark"] .pa-quick-list a:hover i {
+    color: var(--pa-accent);
+}
+[data-theme="dark"] .pa-top-tab.active .pa-tab-count {
+    background: var(--pa-accent-soft);
+    color: var(--pa-accent);
+}
+[data-theme="dark"] .pa-endpoint-compact {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .pa-sidebar-subtle code {
+    background: rgba(255, 255, 255, 0.06);
+}
+.pa-card {
+    background: var(--card-bg);
+    border-radius: var(--border-radius-md);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+.pa-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+.pa-card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--heading-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.pa-status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.pa-status-indicator.active {
+    background: var(--green-500);
+    box-shadow: 0 0 0 3px var(--green-100);
+}
+.pa-status-indicator.inactive {
+    background: var(--red-500);
+    box-shadow: 0 0 0 3px var(--red-100);
+}
+.pa-tool-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.15s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.pa-tool-item:hover {
+    background: var(--bg-color);
+}
+.pa-tool-item:last-child {
+    border-bottom: none;
+}
+.pa-tool-info {
+    flex: 1;
+}
+.pa-tool-name {
+    font-weight: 600;
+    color: var(--heading-color);
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+.pa-tool-meta {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    font-size: 12px;
+}
+.pa-tool-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    background: var(--bg-color);
+    border-radius: 12px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+    border: 1px solid var(--border-color);
+}
+.pa-tool-toggle {
+    margin: 0;
+}
+.pa-plugin-item {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.15s;
+}
+.pa-plugin-item:hover {
+    background: var(--bg-color);
+}
+.pa-plugin-item:last-child {
+    border-bottom: none;
+}
+.pa-plugin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.pa-plugin-name {
+    font-weight: 600;
+    color: var(--heading-color);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.pa-plugin-name i {
+    color: var(--pa-accent);
+}
+/* Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--gray-400);
+    transition: .3s;
+    border: 1px solid var(--border-color);
+}
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+input:checked + .slider {
+    background-color: var(--green-500);
+    border-color: var(--green-600);
+}
+input:checked + .slider:before {
+    transform: translateX(20px);
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.slider.round {
+    border-radius: 24px;
+}
+.slider.round:before {
+    border-radius: 50%;
+}
+.pa-settings-group {
+    margin-bottom: 24px;
+}
+.pa-settings-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--heading-color);
+    margin-bottom: 8px;
+    display: block;
+}
+.pa-settings-value {
+    font-size: 13px;
+    color: var(--text-color);
+    padding: 10px 12px;
+    background: var(--control-bg);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+.pa-endpoint-url {
+    font-family: var(--font-stack-monospace);
+    font-size: 12px;
+    word-break: break-all;
+}
+.pa-endpoint-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+}
+.pa-endpoint-row .pa-endpoint-url {
+    flex: 1;
+}
+.pa-copy-endpoint {
+    flex-shrink: 0;
+}
+.pa-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.pa-table thead {
+    background: var(--bg-color);
+}
+.pa-table th {
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-color);
+}
+.pa-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--text-color);
+    border-bottom: 1px solid var(--border-color);
+}
+.pa-table tbody tr:hover {
+    background: var(--bg-color);
+}
+/* Toggle in progress state */
+.toggle-in-progress {
+    opacity: 0.6;
+    pointer-events: none;
+}
+.toggle-in-progress .slider {
+    cursor: not-allowed;
+}
+/* View mode tabs */
+.pa-view-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.pa-view-tab {
+    padding: 8px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--card-bg);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+}
+.pa-view-tab:hover {
+    background: var(--bg-color);
+}
+.pa-view-tab.active {
+    background: var(--pa-accent);
+    color: white;
+    border-color: var(--pa-accent);
+}
+/* Category badges */
+.pa-category-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.pa-category-badge.read_only, .pa-category-badge.green {
+    background: var(--green-100);
+    color: var(--green-600);
+}
+.pa-category-badge.write, .pa-category-badge.yellow {
+    background: var(--yellow-100);
+    color: var(--yellow-700);
+}
+.pa-category-badge.read_write, .pa-category-badge.blue {
+    background: var(--blue-100);
+    color: var(--blue-600);
+}
+.pa-category-badge.privileged, .pa-category-badge.orange {
+    background: var(--orange-100);
+    color: var(--orange-600);
+}
+/* Backward compatibility for existing 'dangerous' category */
+.pa-category-badge.dangerous {
+    background: var(--orange-100);
+    color: var(--orange-600);
+}
+/* Tool item with expanded layout */
+.pa-tool-item-detailed {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.15s;
+}
+.pa-tool-item-detailed:hover {
+    background: var(--bg-color);
+}
+.pa-tool-item-detailed:last-child {
+    border-bottom: none;
+}
+.pa-tool-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+}
+.pa-tool-title {
+    font-weight: 600;
+    color: var(--heading-color);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.pa-tool-description {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+.pa-tool-footer {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.pa-disabled-overlay {
+    opacity: 0.5;
+}
+.pa-plugin-disabled-notice {
+    font-size: 11px;
+    color: var(--orange-500);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+/* Filter controls */
+.pa-filter-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.pa-filter-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 13px;
+}
+.pa-filter-select {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 13px;
+    background: var(--card-bg);
+}
+/* Tool settings button */
+.pa-tool-settings-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 4px 8px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 12px;
+    transition: all 0.15s;
+    margin-left: 8px;
+}
+.pa-tool-settings-btn:hover {
+    background: var(--pa-accent-soft);
+    color: var(--pa-accent);
+    border-color: var(--pa-accent);
+}
+.pa-tool-settings-btn.active {
+    background: var(--pa-accent);
+    color: white;
+    border-color: var(--pa-accent);
+}
+/* Tool config panel */
+.pa-tool-config-panel {
+    display: none;
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--control-bg);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+.pa-tool-config-panel.open {
+    display: block;
+}
+.pa-config-row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+.pa-config-row:last-child {
+    margin-bottom: 0;
+}
+@media (max-width: 720px) {
+    .pa-config-row {
+        flex-direction: column;
+        gap: 12px;
+    }
+}
+.pa-config-group {
+    flex: 1;
+}
+.pa-config-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: block;
+}
+.pa-config-select {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 12px;
+    background: var(--card-bg);
+}
+/* Role tags */
+.pa-role-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+.pa-role-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: var(--blue-100);
+    color: var(--blue-700);
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+}
+.pa-role-tag .remove-role {
+    cursor: pointer;
+    opacity: 0.7;
+}
+.pa-role-tag .remove-role:hover {
+    opacity: 1;
+}
+.pa-role-remove-btn {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    color: inherit;
+    cursor: pointer;
+}
+.pa-role-remove-btn:focus-visible {
+    outline: 2px solid var(--pa-accent);
+    outline-offset: 1px;
+    border-radius: 2px;
+}
+.pa-add-role-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: var(--card-bg);
+    color: var(--text-muted);
+    border: 1px dashed var(--border-color);
+    border-radius: 12px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.pa-add-role-btn:hover {
+    border-color: var(--pa-accent);
+    color: var(--pa-accent);
+}
+.pa-config-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+.pa-tool-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+/* Bulk actions bar */
+.pa-bulk-actions-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    background: var(--bg-color);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+.pa-bulk-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-right: 4px;
+}
+.pa-bulk-actions-bar .btn {
+    min-width: 80px;
+}
+.pa-bulk-actions-bar .btn-success {
+    background: var(--green-500);
+    border-color: var(--green-600);
+    color: white;
+}
+.pa-bulk-actions-bar .btn-success:hover {
+    background: var(--green-600);
+}
+.pa-bulk-actions-bar .btn-warning {
+    background: var(--orange-500);
+    border-color: var(--orange-600);
+    color: white;
+}
+.pa-bulk-actions-bar .btn-warning:hover {
+    background: var(--orange-600);
+}
+.pa-bulk-scope {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-left: auto;
+    font-style: italic;
+    white-space: nowrap;
+}
+.pa-filter-bar .btn-success {
+    background: var(--green-500);
+    border-color: var(--green-600);
+    color: white;
+}
+.pa-filter-bar .btn-success:hover:not(:disabled) {
+    background: var(--green-600);
+}
+.pa-filter-bar .btn-warning {
+    background: var(--orange-500);
+    border-color: var(--orange-600);
+    color: white;
+}
+.pa-filter-bar .btn-warning:hover:not(:disabled) {
+    background: var(--orange-600);
+}
+.pa-filter-bar .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+@media (max-width: 720px) {
+    .pa-filter-bar .pa-btn-label {
+        display: none;
+    }
+    .pa-bulk-scope {
+        order: 99;
+        width: 100%;
+        margin-left: 0;
+    }
+}
+
+/* Top-level tab nav */
+.pa-top-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border-color);
+    margin: 0 -16px 0;
+    padding: 0 16px;
+}
+.pa-top-tab {
+    padding: 12px 20px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.pa-top-tab:hover {
+    color: var(--heading-color);
+    background: var(--bg-color);
+}
+.pa-top-tab.active {
+    color: var(--pa-accent);
+    border-bottom-color: var(--pa-accent);
+    font-weight: 600;
+}
+
+/* Tab content panels */
+.pa-tab-panel {
+    display: none;
+    padding-top: 16px;
+}
+.pa-tab-panel.active {
+    display: block;
+}
+.pa-registry-card .pa-tab-panel {
+    padding-top: 16px;
+}
+.pa-registry-card .pa-filter-bar {
+    margin-bottom: 12px;
+}
+
+/* Clean card layout for prompts and skills lists */
+.pa-item-card {
+    padding: 16px 20px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    margin-bottom: 10px;
+    background: var(--card-bg);
+    transition: box-shadow 0.15s, border-color 0.15s;
+}
+.pa-item-card:hover {
+    border-color: var(--gray-300);
+    box-shadow: var(--shadow-sm);
+}
+.pa-item-card.toggle-in-progress { opacity: 0.6; }
+
+/* Top row: title + status + actions */
+.pa-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+.pa-item-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--heading-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+.pa-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    margin-left: 16px;
+}
+
+/* Subtitle row: prompt_id / skill_id */
+.pa-item-subtitle {
+    font-size: 12px;
+    color: var(--text-light);
+    font-family: var(--font-stack-monospace, monospace);
+    margin-bottom: 10px;
+}
+
+/* Bottom row: metadata chips */
+.pa-item-meta {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.pa-meta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+}
+.pa-meta-chip i { font-size: 10px; }
+.pa-meta-chip.system-chip {
+    background: var(--blue-50, #eff6ff);
+    color: var(--blue-600, #2563eb);
+    border-color: var(--blue-100, #dbeafe);
+}
+
+/* Inline expand panel (for skill content / template preview) */
+.pa-expand-panel {
+    display: none;
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--control-bg);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    font-size: 13px;
+    line-height: 1.6;
+}
+.pa-expand-panel.open { display: block; }
+.pa-expand-panel pre {
+    margin: 0;
+    white-space: pre-wrap;
+    font-family: var(--font-stack-monospace, monospace);
+    font-size: 12px;
+    color: var(--text-color);
+}
+.pa-preview-content h1, .pa-preview-content h2,
+.pa-preview-content h3, .pa-preview-content h4 {
+    margin-top: 12px;
+    margin-bottom: 6px;
+}
+.pa-preview-content p { margin-bottom: 8px; }
+.pa-preview-content ul, .pa-preview-content ol {
+    margin-bottom: 8px;
+    padding-left: 20px;
+}
+.pa-preview-content code {
+    background: var(--gray-100);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+.pa-preview-content pre code {
+    background: var(--control-bg);
+    display: block;
+    padding: 8px;
+    border-radius: var(--border-radius);
+    overflow-x: auto;
+}
+.pa-expand-panel table, .pa-preview-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 13px;
+}
+.pa-expand-panel th, .pa-preview-content th {
+    background: var(--bg-color);
+    font-weight: 600;
+    text-align: left;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    font-size: 12px;
+    color: var(--heading-color);
+}
+.pa-expand-panel td, .pa-preview-content td {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    vertical-align: top;
+}
+.pa-expand-panel tr:hover td, .pa-preview-content tr:hover td {
+    background: var(--bg-color);
+}
+
+/* Status badge variants */
+.pa-status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.pa-status-badge.published {
+    background: var(--green-100);
+    color: var(--green-700);
+}
+.pa-status-badge.draft {
+    background: var(--gray-100);
+    color: var(--gray-600);
+}
+.pa-status-badge.deprecated, .pa-status-badge.archived {
+    background: var(--orange-100);
+    color: var(--orange-600);
+}
+
+/* Active state for eye/book expand buttons */
+.pa-tool-settings-btn.active {
+    background: var(--pa-accent-soft);
+    color: var(--pa-accent);
+    border-color: var(--pa-accent);
+}
+
+/* ===== Server status pill ===== */
+.pa-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-left: 8px;
+}
+.pa-status-pill:empty {
+    display: none;
+}
+.pa-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    display: inline-block;
+}
+.pa-status-pill--running {
+    background: var(--green-100);
+    color: var(--green-700);
+}
+.pa-status-pill--stopped {
+    background: var(--red-100);
+    color: var(--red-700);
+}
+
+/* ===== Empty states ===== */
+.pa-empty-state {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+.pa-empty-state--compact {
+    padding: 24px 16px;
+}
+.pa-empty-state > .fa {
+    font-size: 28px;
+    opacity: 0.5;
+    margin-bottom: 4px;
+}
+.pa-empty-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+.pa-empty-subtitle {
+    font-size: 12px;
+    max-width: 360px;
+}
+.pa-empty-state .btn {
+    margin-top: 8px;
+}
+
+/* ===== Skeleton loaders ===== */
+.pa-skeleton-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 0;
+}
+.pa-skeleton-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.pa-skeleton-line {
+    height: 10px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--control-bg) 0%, var(--border-color) 50%, var(--control-bg) 100%);
+    background-size: 200% 100%;
+    animation: pa-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+.pa-skeleton-line--title {
+    width: 35%;
+    height: 14px;
+}
+.pa-skeleton-line--body {
+    width: 90%;
+}
+.pa-skeleton-line--body.short {
+    width: 60%;
+}
+@keyframes pa-skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ===== Last-refreshed label ===== */
+.pa-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.pa-last-refreshed {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* ===== Search hit highlighting ===== */
+mark.pa-hl {
+    background: var(--yellow-100, #fef08a);
+    color: inherit;
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+/* ===== Tool description clamp ===== */
+.pa-tool-description-wrap {
+    position: relative;
+}
+.pa-tool-description {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.pa-tool-description-wrap.expanded .pa-tool-description {
+    -webkit-line-clamp: unset;
+    overflow: visible;
+}
+.pa-desc-toggle {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-top: 4px;
+    color: var(--pa-accent);
+    font-size: 12px;
+    cursor: pointer;
+}
+.pa-desc-toggle:hover {
+    text-decoration: underline;
+}
+
+/* ===== Responsive refresh button / labels ===== */
+@media (max-width: 600px) {
+    #refresh-tools .pa-btn-label,
+    #refresh-prompts .pa-btn-label,
+    #refresh-skills .pa-btn-label {
+        display: none;
+    }
+}
+
+/* ===== Dark mode skeletons / highlight ===== */
+[data-theme="dark"] mark.pa-hl {
+    background: rgba(250, 204, 21, 0.25);
+    color: #fde68a;
+}
+
+/* ===== View-all link ===== */
+.pa-view-all {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.pa-view-all:hover {
+    color: var(--pa-accent);
+    text-decoration: none;
+}
+
+/* ===== Dark mode overrides ===== */
+[data-theme="dark"] .pa-status-badge.published {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+}
+[data-theme="dark"] .pa-status-badge.draft {
+    background: rgba(156, 163, 175, 0.2);
+    color: #9ca3af;
+}
+[data-theme="dark"] .pa-status-badge.deprecated,
+[data-theme="dark"] .pa-status-badge.archived {
+    background: rgba(251, 146, 60, 0.15);
+    color: #fb923c;
+}
+[data-theme="dark"] .pa-meta-chip {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+}
+[data-theme="dark"] .pa-meta-chip.system-chip {
+    background: rgba(96, 165, 250, 0.12);
+    color: #93bbfd;
+    border-color: rgba(96, 165, 250, 0.2);
+}
+[data-theme="dark"] .pa-item-card {
+    border-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .pa-item-card:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+}
+[data-theme="dark"] .pa-item-subtitle {
+    color: var(--text-muted);
+}
+[data-theme="dark"] .pa-expand-panel {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .pa-expand-panel th,
+[data-theme="dark"] .pa-preview-content th {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+[data-theme="dark"] .pa-expand-panel td,
+[data-theme="dark"] .pa-preview-content td {
+    border-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .pa-expand-panel tr:hover td,
+[data-theme="dark"] .pa-preview-content tr:hover td {
+    background: rgba(255, 255, 255, 0.04);
+}
+[data-theme="dark"] .pa-preview-content code {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e5a0f0;
+}
+[data-theme="dark"] .pa-preview-content pre code {
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--text-color);
+}
+[data-theme="dark"] .pa-top-tab:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-color);
+}
+[data-theme="dark"] .pa-top-tab.active {
+    color: var(--pa-accent);
+    border-bottom-color: var(--pa-accent);
+}
+[data-theme="dark"] .pa-tool-settings-btn.active {
+    background: var(--pa-accent-soft);
+    color: var(--pa-accent);
+    border-color: var(--pa-accent);
+}
+[data-theme="dark"] .pa-status-pill--running {
+    background: rgba(34, 197, 94, 0.18);
+    color: #4ade80;
+}
+[data-theme="dark"] .pa-status-pill--stopped {
+    background: rgba(239, 68, 68, 0.18);
+    color: #fca5a5;
+}
+[data-theme="dark"] .pa-empty-title {
+    color: var(--text-color);
+}
+
+/* ============================================================
+   Phone (< 768px): keep every panel inside the viewport.
+   The two-column body already stacks at <=1100px; here we stop the
+   registry card from growing to its widest child's min-content (tab
+   strip, endpoint URL, tables) and force those children to scroll or
+   wrap inside their own box instead of the page.
+   ============================================================ */
+@media (max-width: 767px) {
+    /* Cards can't exceed their (stacked) grid track. */
+    .pa-two-col,
+    .pa-card,
+    .pa-registry-card,
+    .pa-sidebar,
+    .pa-tab-panel {
+        min-width: 0;
+        max-width: 100%;
+    }
+    .pa-card,
+    .pa-registry-card {
+        overflow-x: hidden;
+    }
+
+    /* Tab strips become swipeable — every tab stays reachable. */
+    .pa-top-tabs,
+    .pa-view-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .pa-top-tabs::-webkit-scrollbar,
+    .pa-view-tabs::-webkit-scrollbar {
+        display: none;
+    }
+    .pa-top-tab,
+    .pa-view-tab {
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+
+    /* MCP endpoint: wrap the long URL inside its box. */
+    .pa-endpoint-compact,
+    .pa-endpoint-url {
+        max-width: 100%;
+        word-break: break-all;
+        overflow-wrap: anywhere;
+    }
+
+    /* Wide tables scroll inside their own area, not the page. */
+    .pa-scroll-area,
+    .pa-table {
+        display: block;
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Analytics summary collapses to a single column. */
+    .pa-analytics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Touch targets >= 44px. */
+    .pa-top-tab,
+    .pa-view-tab,
+    .pa-plugin-toggle,
+    .pa-btn,
+    .pa-copy-endpoint {
+        min-height: 44px;
+    }
+}

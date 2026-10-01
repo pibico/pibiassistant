@@ -1,0 +1,775 @@
+/* pibiAssistant Copilot - Powered by PA Cloud - Widget Base Styles */
+/* Theme CSS Variables - Matched to Vue app (theme.css / Quiet Ledger) for consistent UX */
+
+/* Accent Colors - Quiet Ledger family (teal + gold) */
+:root {
+	--pao-indigo: #0F6E5C;
+	--pao-purple: #C9A227;
+	--pao-blue: #0F6E5C;
+	--pao-green: #1E7A52;
+	--pao-orange: #B8791A;
+}
+
+/* Light Theme (default) - Quiet Ledger "Paper" */
+.pao-widget {
+	/* Backgrounds */
+	--pao-bg-primary: #FFFFFF;
+	--pao-bg-secondary: #FBFAF8;
+	--pao-bg-tertiary: #F5F3EF;
+	--pao-bg-input: #FFFFFF;
+
+	/* Text */
+	--pao-text-primary: #1A1A17;
+	--pao-text-secondary: #57534C;
+	--pao-text-muted: #8A857C;
+
+	/* Borders & Effects */
+	--pao-border-color: #ECE9E3;
+	--pao-hover: #F5F3EF;
+	--pao-code-bg: #F5F3EF;
+	--pao-shadow: rgba(0, 0, 0, 0.08);
+
+	/* Primary - Teal (Quiet Ledger) */
+	--pao-primary: #0F6E5C;
+	--pao-primary-hover: #0B5A4B;
+}
+
+/* Dark Theme - Quiet Ledger "Ink Ledger" (warm charcoal) */
+html[data-theme="dark"] .pao-widget {
+	/* Backgrounds */
+	--pao-bg-primary: #1E1D16;
+	--pao-bg-secondary: #16150F;
+	--pao-bg-tertiary: #26241B;
+	--pao-bg-input: #1E1D16;
+
+	/* Text */
+	--pao-text-primary: #F2EFE6;
+	--pao-text-secondary: #B7B2A4;
+	--pao-text-muted: #8A857C;
+
+	/* Borders & Effects */
+	--pao-border-color: #2E2C22;
+	--pao-hover: #26241B;
+	--pao-code-bg: #26241B;
+	--pao-shadow: rgba(0, 0, 0, 0.3);
+
+	/* Primary - Teal (Quiet Ledger, brightened for dark) */
+	--pao-primary: #2DAA8F;
+	--pao-primary-hover: #3FBBA0;
+}
+
+/* Widget Container */
+.pao-widget {
+	position: fixed;
+	bottom: 20px;
+	right: 20px;
+	left: auto;
+	z-index: 9999;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	transition: opacity 0.2s ease;
+}
+
+/* Dragging state */
+.pao-widget.pao-dragging {
+	opacity: 0.8;
+	transition: none;
+}
+
+.pao-widget.pao-dragging .pao-chat-window {
+	box-shadow: 0 12px 48px rgba(0, 0, 0, 0.25);
+}
+
+/* Auto-fade while user is typing in a Frappe input or scrolling */
+.pao-widget.pao-fade {
+	opacity: 0.15;
+	pointer-events: none;
+}
+
+/* A pending approval outranks auto-fade: dimming the launcher to 15% at the
+   one moment the assistant is blocked on the user is how approvals get missed. */
+.pao-widget.pao-awaiting-approval.pao-fade {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+/* Launcher badge — only while an approval is waiting. */
+.pao-approval-badge {
+	display: none;
+	position: absolute;
+	top: 6px;
+	right: 6px;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	background: #f59e0b;
+	border: 2px solid #fff;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.pao-widget.pao-awaiting-approval .pao-approval-badge {
+	display: block;
+	animation: pao-approval-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pao-approval-pulse {
+	0%,
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+	50% {
+		transform: scale(1.25);
+		opacity: 0.75;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.pao-widget.pao-awaiting-approval .pao-approval-badge {
+		animation: none;
+	}
+}
+
+/* Toggle Button */
+.pao-toggle-btn {
+	width: 70px;
+	height: 70px;
+	border-radius: 50%;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.3s ease;
+	position: relative;
+}
+
+.pao-toggle-btn:hover {
+	transform: scale(1.1);
+}
+
+.pao-widget.pao-open .pao-toggle-btn {
+	display: none;
+}
+
+/* Tooltip/Banner for closed state */
+.pao-tooltip {
+	position: fixed;
+	background: var(--pao-bg-primary, white);
+	border: 1px solid var(--pao-border-color, #d1d8dd);
+	border-radius: 20px;
+	padding: 10px 16px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	white-space: nowrap;
+	font-size: 13px;
+	color: var(--pao-text-primary, #36414c);
+	pointer-events: none;
+	opacity: 0;
+	transform: scale(0.8);
+	transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+	z-index: 9998;
+}
+
+.pao-tooltip.pao-show {
+	opacity: 1;
+	transform: scale(1);
+}
+
+.pao-tooltip::before {
+	content: '';
+	position: absolute;
+	width: 0;
+	height: 0;
+	border: 6px solid transparent;
+	top: 50%;
+	transform: translateY(-50%);
+}
+
+/* Arrow points RIGHT (tooltip is on the left of button) */
+.pao-tooltip[data-arrow="right"]::before {
+	right: -12px;
+	border-left-color: var(--pao-bg-primary, white);
+}
+
+/* Arrow points LEFT (tooltip is on the right of button) */
+.pao-tooltip[data-arrow="left"]::before {
+	left: -12px;
+	border-right-color: var(--pao-bg-primary, white);
+}
+
+.pao-tooltip-icon {
+	display: inline-block;
+	margin-right: 6px;
+	font-size: 14px;
+	animation: pao-tooltip-bounce 0.5s ease;
+}
+
+@keyframes pao-tooltip-bounce {
+	0%, 100% { transform: scale(1); }
+	50% { transform: scale(1.3); }
+}
+
+/* Chat Window */
+.pao-chat-window {
+	position: fixed;
+	/* Position is set dynamically by JavaScript to ensure it stays on screen */
+	width: 400px;
+	height: 650px;
+	max-height: calc(100vh - 100px);
+	background: var(--pao-bg-primary, white);
+	border-radius: 8px;
+	border: 1px solid var(--pao-border-color, #d1d8dd);
+	box-shadow: 0 2px 8px var(--pao-shadow, rgba(0, 0, 0, 0.08));
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	z-index: 10000;
+}
+
+/* Minimized state - hide entire chat window, show only toggle button */
+.pao-widget.pao-minimized .pao-chat-window {
+	display: none !important;
+}
+
+.pao-widget.pao-minimized .pao-toggle-btn {
+	display: flex !important;
+}
+
+/* Header - Frappe style */
+.pao-header {
+	background: var(--pao-bg-tertiary, #f7f7f7);
+	color: var(--pao-text-primary, #36414c);
+	padding: 0px 16px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-bottom: 1px solid var(--pao-border-color, #d1d8dd);
+}
+
+.pao-header-brand {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.pao-logo {
+	flex-shrink: 0;
+	color: var(--pao-primary, #0F6E5C);
+}
+
+.pao-brand-text {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--pao-text-primary, #36414c);
+}
+
+.pao-close-btn {
+	background: transparent;
+	border: none;
+	color: var(--pao-text-muted, #8d99a6);
+	cursor: pointer;
+	padding: 6px;
+	border-radius: 4px;
+	transition: all 0.2s;
+}
+
+.pao-close-btn:hover {
+	background: var(--pao-hover-bg, #f5f5f5);
+	color: var(--pao-text-primary, #36414c);
+}
+
+/* Header Actions Container */
+.pao-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+/* Expand Button - Prominent Style */
+.pao-expand-btn {
+	background: transparent;
+	border: none;
+	color: var(--pao-text-muted, #8d99a6);
+	cursor: pointer;
+	padding: 6px;
+	border-radius: 4px;
+	transition: all 0.2s;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.pao-expand-btn:hover {
+	background: var(--pao-hover-bg, #f5f5f5);
+	color: var(--pao-text-primary, #36414c);
+}
+
+.pao-expand-btn svg {
+	width: 16px;
+	height: 16px;
+}
+
+/* Prominent expand button with text - teal gradient (Quiet Ledger) */
+.pao-expand-prominent {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	background: linear-gradient(135deg, #0F6E5C 0%, #0B5A4B 100%);
+	color: white;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 500;
+	border: none;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	box-shadow: 0 2px 4px rgba(15, 110, 92, 0.2);
+}
+
+.pao-expand-prominent:hover {
+	background: linear-gradient(135deg, #0B5A4B 0%, #094539 100%);
+	color: white;
+	transform: translateY(-1px);
+	box-shadow: 0 4px 8px rgba(15, 110, 92, 0.3);
+}
+
+.pao-expand-prominent svg {
+	width: 14px;
+	height: 14px;
+	flex-shrink: 0;
+}
+
+.pao-expand-prominent span {
+	white-space: nowrap;
+}
+
+/* Input Area */
+.pao-input-area {
+	background: #FBFAF8;
+	border-top: 1px solid var(--pao-border-color, #ECE9E3);
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+/* Dark theme input area */
+html[data-theme="dark"] .pao-widget .pao-input-area {
+	background: #1E1D16;
+	border-top-color: #2E2C22;
+}
+
+/* Context Row - indicator and toggle on same line */
+.pao-context-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px;
+}
+
+.pao-context-indicator {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 11px;
+	color: var(--pao-text-muted, #9ca3af);
+	overflow: hidden;
+	flex: 1;
+	min-width: 0;
+}
+
+.pao-context-indicator svg {
+	color: var(--pao-text-muted, #9ca3af);
+	flex-shrink: 0;
+}
+
+.pao-context-text {
+	color: var(--pao-text-muted, #9ca3af);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* File Upload Button */
+.pao-file-upload-btn {
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	border: none;
+	background: transparent;
+	color: var(--pao-text-muted, #8d99a6);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background 0.15s ease, color 0.15s ease;
+	flex-shrink: 0;
+}
+
+.pao-file-upload-btn:hover {
+	background: var(--pao-hover, #f3f4f6);
+	color: var(--pao-text-primary, #18181b);
+}
+
+/* Dark theme file button */
+html[data-theme="dark"] .pao-widget .pao-file-upload-btn {
+	background: transparent;
+	color: #8A857C;
+}
+
+html[data-theme="dark"] .pao-widget .pao-file-upload-btn:hover {
+	background: #26241B;
+	color: #F2EFE6;
+}
+
+/* File Preview List */
+.pao-file-preview-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding-bottom: 8px;
+}
+
+.pao-file-preview {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 10px 12px;
+	background: var(--pao-bg-primary, white);
+	border: 2px solid var(--pao-border-color, #e5e7eb);
+	border-radius: 10px;
+	transition: all 0.2s;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.pao-file-preview:hover {
+	border-color: var(--pao-primary, #0F6E5C);
+	box-shadow: 0 2px 6px rgba(15, 110, 92, 0.1);
+}
+
+.pao-file-icon {
+	flex-shrink: 0;
+	color: var(--pao-primary, #0F6E5C);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.pao-file-info {
+	flex: 1;
+	min-width: 0;
+}
+
+.pao-file-name {
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--pao-text-primary, #36414c);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.pao-file-size {
+	font-size: 11px;
+	color: var(--pao-text-muted, #9ca3af);
+	margin-top: 2px;
+}
+
+.pao-file-remove {
+	flex-shrink: 0;
+	width: 24px;
+	height: 24px;
+	border-radius: 4px;
+	border: none;
+	background: transparent;
+	color: var(--pao-text-muted, #9ca3af);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.2s;
+}
+
+.pao-file-remove:hover {
+	background: var(--pao-hover-bg, #fee);
+	color: #ef4444;
+}
+
+/* Dark theme file preview */
+html[data-theme="dark"] .pao-widget .pao-file-preview {
+	background: #26241B;
+	border-color: #2E2C22;
+}
+
+html[data-theme="dark"] .pao-widget .pao-file-preview:hover {
+	border-color: var(--pao-primary, #2DAA8F);
+	box-shadow: 0 2px 6px rgba(45, 170, 143, 0.2);
+}
+
+html[data-theme="dark"] .pao-widget .pao-file-name {
+	color: #F2EFE6;
+}
+
+html[data-theme="dark"] .pao-widget .pao-file-size {
+	color: #8A857C;
+}
+
+html[data-theme="dark"] .pao-widget .pao-file-remove {
+	color: #8A857C;
+}
+
+html[data-theme="dark"] .pao-widget .pao-file-remove:hover {
+	background: rgba(239, 68, 68, 0.1);
+	color: #f87171;
+}
+
+.pao-input-wrapper {
+	display: flex;
+	gap: 4px;
+	align-items: center;
+	background: white;
+	border: 1px solid var(--pao-border-color, #e5e7eb);
+	border-radius: 12px;
+	padding: 6px 8px;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pao-input-wrapper:focus-within {
+	border-color: var(--pao-primary, #0F6E5C);
+	box-shadow: 0 0 0 3px rgba(15, 110, 92, 0.12);
+}
+
+html[data-theme="dark"] .pao-widget .pao-input-wrapper {
+	background: #1E1D16;
+	border-color: #2E2C22;
+}
+
+.pao-input {
+	flex: 1;
+	min-width: 0;
+	border: none;
+	background: transparent;
+	padding: 6px 4px;
+	font-size: 14px;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	resize: none;
+	outline: none;
+	min-height: 28px;
+	max-height: 120px;
+	line-height: 1.5;
+	color: #1A1A17;
+}
+
+.pao-input::placeholder {
+	color: #8A857C;
+}
+
+/* Dark theme input */
+html[data-theme="dark"] .pao-widget .pao-input {
+	background: transparent;
+	color: #F2EFE6;
+}
+
+html[data-theme="dark"] .pao-widget .pao-input::placeholder {
+	color: #8A857C;
+}
+
+.pao-send-btn {
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	border: none;
+	background: transparent;
+	color: var(--pao-text-muted, #8d99a6);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.15s ease;
+	flex-shrink: 0;
+}
+
+.pao-send-btn:hover:not(:disabled) {
+	background: var(--pao-hover, #f3f4f6);
+	color: var(--pao-text-primary, #18181b);
+}
+
+/* Active (has text) — teal fill */
+.pao-send-btn.is-active {
+	background: var(--pao-primary, #0F6E5C);
+	color: #fff;
+}
+
+.pao-send-btn.is-active:hover:not(:disabled) {
+	background: var(--pao-primary-hover, #0B5A4B);
+	color: #fff;
+}
+
+.pao-send-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+/* Dark theme send button */
+html[data-theme="dark"] .pao-widget .pao-send-btn {
+	background: transparent;
+	color: #8A857C;
+}
+
+html[data-theme="dark"] .pao-widget .pao-send-btn:hover:not(:disabled) {
+	background: #26241B;
+	color: #F2EFE6;
+}
+
+/* Scrollbar */
+.pao-messages::-webkit-scrollbar {
+	width: 6px;
+}
+
+.pao-messages::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.pao-messages::-webkit-scrollbar-thumb {
+	background: #DEDAD2;
+	border-radius: 3px;
+}
+
+.pao-messages::-webkit-scrollbar-thumb:hover {
+	background: #8A857C;
+}
+
+/* Context Toggle */
+.pao-context-toggle {
+	padding: 0;
+	border-bottom: none;
+	background: transparent;
+	display: flex;
+	flex-shrink: 0;
+}
+
+.pao-context-toggle label {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 11px;
+	color: var(--pao-text-muted, #9ca3af);
+	cursor: pointer;
+	margin: 0;
+	user-select: none;
+	padding: 4px 8px;
+	border-radius: 12px;
+	transition: all 0.15s ease;
+}
+
+.pao-context-toggle input[type="checkbox"] {
+	margin: 0;
+	cursor: pointer;
+	width: 14px;
+	height: 14px;
+}
+
+.pao-context-toggle svg {
+	opacity: 0.5;
+	width: 14px;
+	height: 14px;
+}
+
+.pao-context-toggle label:hover {
+	background: var(--pao-bg-secondary, #f9fafb);
+	color: var(--pao-text-secondary, #6b7280);
+}
+
+.pao-context-toggle label:hover svg {
+	opacity: 0.7;
+}
+
+/* Phone + tablet Desk: keep the launcher in the corner and give the open
+   panel a near-full viewport so 400×650 doesn't overflow the screen. */
+@media (max-width: 1023px) {
+	.pao-widget {
+		bottom: max(16px, env(safe-area-inset-bottom, 0px));
+		right: max(12px, env(safe-area-inset-right, 0px));
+		z-index: 10050;
+	}
+	.pao-toggle-btn {
+		width: 56px;
+		height: 56px;
+	}
+	/* Sit above the launcher like a sheet. Pinning top:8px plus the 400×650
+	   box put the panel at the top of the phone with a hole under it. */
+	.pao-widget.pao-open .pao-chat-window {
+		left: 8px !important;
+		right: 8px !important;
+		top: auto !important;
+		bottom: 76px !important;
+		width: auto !important;
+		height: min(72dvh, calc(100svh - 92px)) !important;
+		max-height: min(72dvh, calc(100svh - 92px)) !important;
+		border-radius: 14px 14px 10px 10px;
+	}
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+	.pao-onboarding {
+		padding: 24px 16px;
+	}
+}
+
+/* ─── Mic button (voice input) ─────────────────────────────────────── */
+.pao-mic-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	height: 32px;
+	min-width: 32px;
+	padding: 0 6px;
+	background: transparent;
+	border: none;
+	border-radius: 6px;
+	color: var(--pao-text-muted, #8d99a6);
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pao-mic-btn:hover {
+	background: var(--pao-hover-bg, #f5f5f5);
+	color: var(--pao-text-primary, #36414c);
+}
+
+.pao-mic-btn.is-recording {
+	color: #fff;
+	background: #ef4444;
+	animation: pao-mic-pulse 1.2s ease-in-out infinite;
+}
+
+.pao-mic-btn.is-recording:hover {
+	background: #dc2626;
+}
+
+.pao-mic-btn.is-transcribing .pao-mic-icon {
+	opacity: 0.5;
+	animation: pao-mic-spin 1s linear infinite;
+}
+
+.pao-mic-btn.is-error {
+	color: #ef4444;
+	background: rgba(239, 68, 68, 0.12);
+}
+
+.pao-mic-elapsed {
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+	font-weight: 600;
+}
+
+@keyframes pao-mic-pulse {
+	0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+	50%      { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
+@keyframes pao-mic-spin {
+	from { transform: rotate(0deg); }
+	to   { transform: rotate(360deg); }
+}

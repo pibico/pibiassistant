@@ -1,0 +1,174 @@
+{
+  "dxt_version": "0.1",
+  "name": "claude-for-frappe",
+  "display_name": "Claude for Frappe ERP",
+  "version": "2.2.2",
+  "description": "AI-powered bridge connecting Claude Desktop to Frappe ERP via pibiAssistant",
+  "long_description": "This extension creates an intelligent bridge between Claude Desktop and your Frappe ERP system through the pibiAssistant app. Enable AI-powered data analysis, automated report generation, and natural language interactions with your business data.",
+  "author": {
+    "name": "Paul Clinton",
+    "email": "jypaulclinton@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paborana/pibiassistant"
+  },
+  "homepage": "https://github.com/paborana/pibiassistant",
+  "support": "https://github.com/paborana/pibiassistant/issues",
+  "icon": "icon.png",
+  "screenshots": [
+    "assets/screenshots/dashboard.png",
+    "assets/screenshots/analysis.png",
+    "assets/screenshots/reports.png"
+  ],
+  "keywords": [
+    "frappe",
+    "erp",
+    "business",
+    "data-analysis",
+    "ai",
+    "claude"
+  ],
+  "license": "MIT",
+  "server": {
+    "type": "python",
+    "entry_point": "server/frappe_assistant_stdio_bridge.py",
+    "mcp_config": {
+      "command": "python3",
+      "args": [
+        "${__dirname}/server/frappe_assistant_stdio_bridge.py"
+      ],
+      "platform_overrides": {
+        "win32": {
+          "command": "python"
+        }
+      },
+      "env": {
+        "FRAPPE_SERVER_URL": "${user_config.server_url}",
+        "FRAPPE_API_KEY": "${user_config.api_key}",
+        "FRAPPE_API_SECRET": "${user_config.api_secret}",
+        "MCP_DEBUG": "${user_config.debug_mode ? '1' : '0'}"
+      }
+    }
+  },
+  "user_config": {
+    "server_url": {
+      "type": "string",
+      "title": "Frappe Server URL",
+      "description": "Your Frappe instance URL",
+      "required": true
+    },
+    "api_key": {
+      "type": "string",
+      "title": "Frappe API Key",
+      "description": "Your Frappe API key",
+      "sensitive": true,
+      "required": true,
+      "min": 10
+    },
+    "api_secret": {
+      "type": "string",
+      "title": "Frappe API Secret",
+      "description": "Your Frappe API secret",
+      "sensitive": true,
+      "required": true,
+      "min": 10
+    },
+    "debug_mode": {
+      "type": "boolean",
+      "title": "Enable Debug Mode",
+      "description": "Enable debug logging",
+      "default": false,
+      "required": false
+    }
+  },
+  "tools": [
+    {
+      "name": "generate_report",
+      "description": "Execute pre-built business reports (Sales Analytics, P&L, etc.) with 183+ available reports across modules"
+    },
+    {
+      "name": "report_list",
+      "description": "Browse and discover available business reports across Selling, Accounts, Stock, and HR modules"
+    },
+    {
+      "name": "report_requirements",
+      "description": "Get required filters and structure information for any business report"
+    },
+    {
+      "name": "list_documents",
+      "description": "Search and list documents with filtering and pagination"
+    },
+    {
+      "name": "get_document",
+      "description": "Retrieve detailed information about a specific document by name"
+    },
+    {
+      "name": "create_document",
+      "description": "Create new documents (Customer, Invoice, Item, etc.)"
+    },
+    {
+      "name": "update_document",
+      "description": "Modify existing document field values"
+    },
+    {
+      "name": "delete_document",
+      "description": "Remove documents from the system with permission checks"
+    },
+    {
+      "name": "submit_document",
+      "description": "Submit documents to change status from draft to submitted"
+    },
+    {
+      "name": "search_documents",
+      "description": "Text search for documents — global, scoped to one DocType, or resolving a Link field value"
+    },
+    {
+      "name": "get_doctype_info",
+      "description": "Get DocType schema, metadata, and field definitions"
+    },
+    {
+      "name": "run_workflow",
+      "description": "Execute workflow actions (approve, reject, etc.) on documents"
+    },
+    {
+      "name": "run_python_code",
+      "description": "Execute Python code in sandbox for advanced data analysis with pandas, numpy, and matplotlib"
+    },
+    {
+      "name": "analyze_business_data",
+      "description": "Perform statistical analysis (profiling, trends, correlations) on business data"
+    },
+    {
+      "name": "run_database_query",
+      "description": "Execute custom SQL SELECT queries for complex data analysis"
+    },
+    {
+      "name": "create_visualization",
+      "description": "Create charts and visualizations from data with inline display"
+    },
+    {
+      "name": "create_dashboard",
+      "description": "Create custom dashboards for business intelligence"
+    },
+    {
+      "name": "create_dashboard_chart",
+      "description": "Create dashboard charts for data visualization"
+    },
+    {
+      "name": "list_user_dashboards",
+      "description": "List all dashboards accessible to the current user"
+    }
+  ],
+  "tools_generated": true,
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "python": ">=3.8.0"
+    }
+  }
+}

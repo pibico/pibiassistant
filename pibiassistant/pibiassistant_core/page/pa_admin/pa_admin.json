@@ -1,0 +1,16 @@
+{
+  "doctype": "Page",
+  "name": "pa-admin",
+  "title": "AIDA Admin",
+  "icon": "octicon octicon-server",
+  "page_name": "pa-admin",
+  "description": "Panel de administración de AIDA — herramientas, plugins y configuración del servidor MCP de pibiCo.",
+  "standard": "Yes",
+  "module": "pibiAssistant Core",
+  "creation": "2025-06-22 12:00:00.000000",
+  "modified": "2025-06-22 12:00:00.000000",
+  "modified_by": "Administrator",
+  "owner": "Administrator",
+  "docstatus": 0,
+  "idx": 0
+}

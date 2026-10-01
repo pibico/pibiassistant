@@ -1,0 +1,2 @@
+pibiAssistant Core
+pibiAssistant Chat

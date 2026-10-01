@@ -1,0 +1,431 @@
+{
+ "actions": [],
+ "creation": "2025-06-21 22:45:07.030425",
+ "doctype": "DocType",
+ "document_type": "Setup",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "general_tab",
+  "server_enabled",
+  "mcp_endpoint_url",
+  "oauth_discovery_url",
+  "pa_chat_tab",
+  "pa_chat_description",
+  "enable_pa_chat",
+  "aida_section",
+  "aida_api_url",
+  "aida_api_key",
+  "aida_column_break",
+  "aida_default_provider",
+  "aida_default_model",
+  "aida_convert_section",
+  "aida_convert_url",
+  "aida_convert_api_key",
+  "aida_convert_column_break",
+  "aida_voice_url",
+  "aida_voice_api_key",
+  "plugins_tab",
+  "plugins_section",
+  "enabled_plugins_list",
+  "plugin_status_html",
+  "security_tab",
+  "execution_limits_section",
+  "code_execution_timeout",
+  "code_execution_max_memory_mb",
+  "execution_limits_column_break",
+  "code_execution_max_cpu_seconds",
+  "code_execution_max_recursion",
+  "execution_limits_info",
+  "audit_log_section",
+  "audit_log_retention_days",
+  "mcp_configuration_tab",
+  "mcp_section",
+  "mcp_server_name",
+  "mcp_protocol_version",
+  "mcp_transport_type",
+  "skills_section",
+  "skill_mode",
+  "oauth_tab",
+  "oauth_authorization_section",
+  "enable_dynamic_client_registration",
+  "allowed_public_client_origins",
+  "oauth_advanced_section",
+  "show_auth_server_metadata",
+  "show_protected_resource_metadata",
+  "oauth_metadata_section",
+  "resource_name",
+  "resource_documentation",
+  "oauth_column_break_2",
+  "resource_policy_uri",
+  "resource_tos_uri",
+  "scopes_supported"
+ ],
+ "fields": [
+  {
+   "fieldname": "general_tab",
+   "fieldtype": "Tab Break",
+   "label": "General"
+  },
+  {
+   "default": "1",
+   "description": "Activar/desactivar el servidor MCP de pibiAssistant",
+   "fieldname": "server_enabled",
+   "fieldtype": "Check",
+   "label": "Enable Assistant Core"
+  },
+  {
+   "fieldname": "mcp_endpoint_url",
+   "fieldtype": "Data",
+   "label": "MCP Endpoint URL",
+   "read_only": 1,
+   "description": "Main MCP StreamableHTTP endpoint URL. Use this URL when connecting Claude Desktop or MCP Inspector."
+  },
+  {
+   "fieldname": "oauth_discovery_url",
+   "fieldtype": "Data",
+   "label": "OAuth Discovery URL",
+   "read_only": 1,
+   "description": "OAuth/OIDC discovery endpoint for auto-configuration. MCP clients use this to discover authentication endpoints."
+  },
+  {
+   "fieldname": "pa_chat_tab",
+   "fieldtype": "Tab Break",
+   "label": "AIDA Chat"
+  },
+  {
+   "fieldname": "pa_chat_description",
+   "fieldtype": "HTML",
+   "options": "<p>AIDA — Asistente Inteligente de pibiCo. Activa el widget de chat en el Desk y la SPA en <code>/aida</code>. Conecta con las APIs de chat, conversión de documentos y transcripción de voz.</p>"
+  },
+  {
+   "default": "0",
+   "description": "Activa/desactiva el widget y la SPA de AIDA inmediatamente, sin reinicio.",
+   "fieldname": "enable_pa_chat",
+   "fieldtype": "Check",
+   "label": "Activar AIDA Chat"
+  },
+  {
+   "fieldname": "aida_section",
+   "fieldtype": "Section Break",
+   "label": "Chat API",
+   "description": "Conexión al servicio LLM para el chat de AIDA"
+  },
+  {
+   "fieldname": "aida_api_url",
+   "fieldtype": "Data",
+   "label": "Chat API URL",
+   "default": "https://api.espib.co/chat",
+   "description": "URL base de la API de chat (e.g. https://api.espib.co/chat)"
+  },
+  {
+   "fieldname": "aida_api_key",
+   "fieldtype": "Password",
+   "label": "Chat API Key",
+   "description": "API key para el servicio de chat (header X-API-Key)"
+  },
+  {
+   "fieldname": "aida_column_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "aida_default_provider",
+   "fieldtype": "Select",
+   "label": "Provider por defecto",
+   "options": "\nollama\nopenai\nanthropic",
+   "description": "Proveedor LLM por defecto. Se actualiza al pulsar 'Refresh Models'."
+  },
+  {
+   "fieldname": "aida_default_model",
+   "fieldtype": "Select",
+   "label": "Modelo por defecto",
+   "options": "",
+   "description": "Modelos disponibles en el provider seleccionado"
+  },
+  {
+   "fieldname": "aida_convert_section",
+   "fieldtype": "Section Break",
+   "label": "Document Conversion API",
+   "description": "Servicio Docling para convertir PDF/imágenes a texto (markdown)"
+  },
+  {
+   "fieldname": "aida_convert_url",
+   "fieldtype": "Data",
+   "label": "Convert API URL",
+   "default": "https://api.espib.co/convert",
+   "description": "URL base de la API de conversión de documentos"
+  },
+  {
+   "fieldname": "aida_convert_api_key",
+   "fieldtype": "Password",
+   "label": "Convert API Key",
+   "description": "API key para el servicio de conversión (header X-API-Key)"
+  },
+  {
+   "fieldname": "aida_convert_column_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "aida_voice_url",
+   "fieldtype": "Data",
+   "label": "Voice API URL",
+   "default": "https://api.espib.co/voice",
+   "description": "URL base de la API de transcripción de voz (Whisper)"
+  },
+  {
+   "fieldname": "aida_voice_api_key",
+   "fieldtype": "Password",
+   "label": "Voice API Key",
+   "description": "API key para el servicio de transcripción de voz (header X-API-Key)"
+  },
+  {
+   "fieldname": "plugins_tab",
+   "fieldtype": "Tab Break",
+   "label": "Plugins & Tools"
+  },
+  {
+   "fieldname": "plugins_section",
+   "fieldtype": "Section Break",
+   "label": "Plugin Configuration",
+   "description": "Manage MCP tool plugins. Plugins extend the MCP server with additional tools and capabilities."
+  },
+  {
+   "default": "[\"core\"]",
+   "fieldname": "enabled_plugins_list",
+   "fieldtype": "JSON",
+   "hidden": 1,
+   "label": "Enabled Plugins",
+   "description": "Internal list of enabled plugin IDs"
+  },
+  {
+   "fieldname": "plugin_status_html",
+   "fieldtype": "HTML",
+   "label": "Plugin Status",
+   "options": "<div id=\"plugin-status-container\">Loading plugin information...</div>",
+   "description": "Current status of installed plugins and available tools"
+  },
+  {
+   "fieldname": "security_tab",
+   "fieldtype": "Tab Break",
+   "label": "Security"
+  },
+  {
+   "fieldname": "execution_limits_section",
+   "fieldtype": "Section Break",
+   "label": "Code Execution Limits",
+   "description": "Configure resource limits for the run_python_code tool to prevent runaway code from crashing the system. These limits protect against infinite loops, memory exhaustion, and excessive recursion."
+  },
+  {
+   "fieldname": "code_execution_timeout",
+   "fieldtype": "Int",
+   "label": "Execution Timeout (seconds)",
+   "default": "30",
+   "description": "Maximum wall-clock time allowed for code execution. Code that exceeds this limit will be terminated. Range: 1-300 seconds."
+  },
+  {
+   "fieldname": "code_execution_max_memory_mb",
+   "fieldtype": "Int",
+   "label": "Max Memory (MB)",
+   "default": "512",
+   "description": "Maximum memory allowed for code execution. Prevents memory exhaustion attacks. Range: 64-2048 MB."
+  },
+  {
+   "fieldname": "execution_limits_column_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "code_execution_max_cpu_seconds",
+   "fieldtype": "Int",
+   "label": "Max CPU Time (seconds)",
+   "default": "60",
+   "description": "Maximum CPU time allowed. Unlike wall-clock timeout, this limits actual processing time. Range: 1-300 seconds."
+  },
+  {
+   "fieldname": "code_execution_max_recursion",
+   "fieldtype": "Int",
+   "label": "Max Recursion Depth",
+   "default": "500",
+   "description": "Maximum recursion depth allowed. Prevents stack overflow from deeply recursive code. Range: 50-1000. Frappe internals (frappe.get_doc, frappe.get_all) recurse well past 100, so keep this at the default unless you have a reason to lower it."
+  },
+  {
+   "fieldname": "execution_limits_info",
+   "fieldtype": "HTML",
+   "label": "Limits Info",
+   "options": "<div class=\"alert alert-info\" style=\"margin-top: 10px;\"><strong>Note:</strong> These limits use OS-level resource controls (signals, rlimit) and only work on Unix-like systems (Linux, macOS). On Windows, limits are not enforced. Changes take effect immediately for new code executions.</div>"
+  },
+  {
+   "fieldname": "audit_log_section",
+   "fieldtype": "Section Break",
+   "label": "Audit Log Retention",
+   "description": "Configure how long audit logs are retained. A daily scheduled job automatically cleans up logs older than the configured retention period."
+  },
+  {
+   "default": "180",
+   "description": "Number of days to retain audit logs. Logs older than this are automatically cleaned up daily. Set to 0 to disable automatic cleanup.",
+   "fieldname": "audit_log_retention_days",
+   "fieldtype": "Int",
+   "label": "Retention Period (Days)"
+  },
+  {
+   "fieldname": "mcp_configuration_tab",
+   "fieldtype": "Tab Break",
+   "label": "MCP Configuration"
+  },
+  {
+   "fieldname": "mcp_section",
+   "fieldtype": "Section Break",
+   "label": "MCP Server Settings",
+   "description": "Configure MCP (Model Context Protocol) server identity and capabilities. These values are reported to MCP clients during initialization and discovery."
+  },
+  {
+   "fieldname": "mcp_server_name",
+   "fieldtype": "Data",
+   "label": "MCP Server Name",
+   "default": "pibiassistant",
+   "description": "Unique identifier for this MCP server instance. Used in MCP initialization handshake."
+  },
+  {
+   "fieldname": "mcp_protocol_version",
+   "fieldtype": "Data",
+   "label": "MCP Protocol Version",
+   "read_only": 1,
+   "default": "2025-06-18",
+   "description": "MCP specification version this server implements. Currently supports 2025-06-18."
+  },
+  {
+   "fieldname": "mcp_transport_type",
+   "fieldtype": "Data",
+   "label": "Transport Type",
+   "read_only": 1,
+   "default": "StreamableHTTP",
+   "description": "Transport protocol used for MCP communication. StreamableHTTP enables OAuth-based authentication."
+  },
+  {
+   "fieldname": "skills_section",
+   "fieldtype": "Section Break",
+   "label": "Skills Configuration"
+  },
+  {
+   "default": "supplementary",
+   "description": "Supplementary: tools keep full descriptions, skills provide additional guidance. Replace: tool descriptions are minimized when a skill exists, saving tokens.",
+   "fieldname": "skill_mode",
+   "fieldtype": "Select",
+   "label": "Skill Mode",
+   "options": "supplementary\nreplace"
+  },
+  {
+   "fieldname": "oauth_tab",
+   "fieldtype": "Tab Break",
+   "label": "OAuth",
+   "depends_on": "eval:!frappe.boot.versions?.frappe?.startsWith('16')"
+  },
+  {
+   "fieldname": "oauth_authorization_section",
+   "fieldtype": "Section Break",
+   "label": "OAuth Configuration",
+   "description": "Configure OAuth 2.0 settings for MCP clients (e.g., Claude Desktop, MCP Inspector)"
+  },
+  {
+   "default": "1",
+   "description": "Enable automatic OAuth client registration for MCP tools. When enabled, tools like MCP Inspector can connect without manual OAuth client setup.",
+   "fieldname": "enable_dynamic_client_registration",
+   "fieldtype": "Check",
+   "label": "Enable Dynamic Client Registration"
+  },
+  {
+   "description": "<b>⚠️ EXPERIMENTAL - Use site_config.json instead (recommended)</b><br><br><b>For MCP Inspector testing only.</b> Claude and Chatgpt do NOT need this.<br><br>Use this field (one origin per line). Leave blank for production.",
+   "fieldname": "allowed_public_client_origins",
+   "fieldtype": "Small Text",
+   "label": "Allowed Public Client Origins (Experimental)",
+   "depends_on": "eval:doc.enable_dynamic_client_registration"
+  },
+  {
+   "fieldname": "oauth_advanced_section",
+   "fieldtype": "Section Break",
+   "label": "Advanced Discovery Settings",
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:0",
+   "description": "Controls which OAuth discovery endpoints are exposed. Most users should leave these enabled."
+  },
+  {
+   "default": "1",
+   "description": "Exposes OAuth server capabilities at <code>/.well-known/oauth-authorization-server</code>. Required for auto-discovery.",
+   "fieldname": "show_auth_server_metadata",
+   "fieldtype": "Check",
+   "label": "Show Authorization Server Metadata"
+  },
+  {
+   "default": "1",
+   "description": "Exposes resource server info at <code>/.well-known/oauth-protected-resource</code>",
+   "fieldname": "show_protected_resource_metadata",
+   "fieldtype": "Check",
+   "label": "Show Protected Resource Metadata"
+  },
+  {
+   "fieldname": "oauth_metadata_section",
+   "fieldtype": "Section Break",
+   "label": "Resource Metadata (Optional)",
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:0"
+  },
+  {
+   "default": "pibiAssistant",
+   "description": "Display name for your resource server",
+   "fieldname": "resource_name",
+   "fieldtype": "Data",
+   "label": "Resource Name"
+  },
+  {
+   "default": "https://github.com/paborana/pibiassistant",
+   "description": "Documentation URL for developers",
+   "fieldname": "resource_documentation",
+   "fieldtype": "Data",
+   "label": "Documentation URL"
+  },
+  {
+   "fieldname": "oauth_column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Privacy policy URL",
+   "fieldname": "resource_policy_uri",
+   "fieldtype": "Data",
+   "label": "Policy URI"
+  },
+  {
+   "description": "Terms of service URL",
+   "fieldname": "resource_tos_uri",
+   "fieldtype": "Data",
+   "label": "Terms of Service URI"
+  },
+  {
+   "description": "Supported OAuth scopes (one per line). Leave blank to use default scopes (all, openid).",
+   "fieldname": "scopes_supported",
+   "fieldtype": "Small Text",
+   "label": "Supported Scopes"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-01-21 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "pibiAssistant Core",
+ "name": "PA Core Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

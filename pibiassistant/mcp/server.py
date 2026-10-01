@@ -1,0 +1,535 @@
+# pibiAssistant - AI Assistant integration for Frappe Framework
+# Copyright (C) 2025 Paul Clinton
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+"""
+Custom MCP Server Implementation
+
+A streamlined MCP server that fixes serialization issues and provides
+full control over the implementation. Based on the MCP specification
+with Frappe-specific optimizations.
+
+Key improvements over frappe-mcp:
+- Proper JSON serialization with `default=str` (handles datetime, Decimal, etc.)
+- No Pydantic dependency (simpler, faster)
+- Full error tracebacks for debugging
+- Optional Bearer token authentication
+- Frappe-native integration
+"""
+
+import json
+import traceback
+from collections import OrderedDict
+from typing import Any, Dict, Optional
+
+from werkzeug.wrappers import Request, Response
+
+
+class MCPServer:
+    """
+    Lightweight MCP server for Frappe.
+
+    This class implements the Model Context Protocol (MCP) specification
+    for tool calling with StreamableHTTP transport.
+
+    Example:
+        ```python
+        from pibiassistant.mcp.server import MCPServer
+        from pibiassistant.mcp.tool_adapter import register_base_tool
+        from pibiassistant.plugins.core.tools.list_documents import DocumentList
+
+        mcp = MCPServer("my-server")
+
+        @mcp.register()
+        def handle_mcp():
+            # Import and register BaseTool instances
+            register_base_tool(mcp, DocumentList())
+        ```
+
+    Note:
+        Tools are implemented as BaseTool subclasses and registered using
+        the tool_adapter. The @mcp.tool decorator pattern is not supported.
+    """
+
+    def __init__(self, name: str = "pibiassistant"):
+        """
+        Initialize MCP server.
+
+        Args:
+            name: Server name for identification
+        """
+        self.name = name
+        self._tool_registry = OrderedDict()
+        self._entry_fn = None
+
+    def register(
+        self,
+        allow_guest: bool = False,
+        xss_safe: bool = True,
+        methods: list = None,
+    ):
+        """
+        Decorator to register MCP endpoint with Frappe.
+
+        This creates a whitelisted Frappe endpoint that handles MCP requests.
+
+        Args:
+            allow_guest: If True, allows unauthenticated access
+            xss_safe: If True, response will not be sanitized for XSS
+            methods: List of allowed HTTP methods (default: ["POST"])
+
+        Example:
+            ```python
+            @mcp.register()
+            def handle_mcp():
+                # Import tool modules here
+                pass
+            ```
+        """
+        import frappe
+
+        if methods is None:
+            methods = ["POST"]
+
+        whitelister = frappe.whitelist(
+            allow_guest=allow_guest,
+            xss_safe=xss_safe,
+            methods=methods,
+        )
+
+        def decorator(fn):
+            if self._entry_fn is not None:
+                raise Exception("Only one MCP endpoint allowed per MCPServer instance")
+
+            self._entry_fn = fn
+
+            def wrapper() -> Response:
+                # Run user's function to perform auth checks and build the
+                # per-request tool registry. The registry is returned to keep it
+                # off any shared/global state, so concurrent requests stay
+                # isolated (see issue #197).
+                result = fn()
+
+                # If fn() returned a Response (e.g., 401 auth failure), use that.
+                if isinstance(result, Response):
+                    return result
+
+                # Otherwise fn() returns the per-request tool registry (a dict),
+                # or None to fall back to the shared registry.
+                tool_registry = result if isinstance(result, dict) else None
+
+                # Handle MCP request
+                request = frappe.request
+                response = Response()
+                return self.handle(request, response, tool_registry=tool_registry)
+
+            return whitelister(wrapper)
+
+        return decorator
+
+    def handle(self, request: Request, response: Response, tool_registry: Optional[Dict] = None) -> Response:
+        """
+        Handle MCP request - main entry point.
+
+        Processes JSON-RPC 2.0 requests according to MCP specification.
+
+        Args:
+            request: Werkzeug Request object
+            response: Werkzeug Response object
+            tool_registry: Per-request tool registry (name -> tool_dict). When
+                provided, all tool routing for this request reads from it instead
+                of the shared ``self._tool_registry``. This is what keeps
+                concurrent requests isolated: each request builds its own
+                registry on the call stack rather than mutating a process-global
+                one. Falls back to ``self._tool_registry`` when not supplied
+                (e.g. tools registered directly via ``add_tool``).
+
+        Returns:
+            Populated Response object with MCP response
+        """
+        import frappe
+
+        # Per-request registry isolates concurrent requests. Never mutate the
+        # shared singleton during request handling.
+        if tool_registry is None:
+            tool_registry = self._tool_registry
+
+        # Only POST allowed
+        if request.method != "POST":
+            response.status_code = 405
+            return response
+
+        # Parse JSON request
+        try:
+            data = request.get_json(force=True)
+            # Log incoming request for debugging
+            frappe.logger().debug(f"MCP Request: method={data.get('method')}, id={data.get('id')}")
+        except Exception as e:
+            frappe.logger().error(
+                f"MCP Parse Error: {str(e)}, Raw data: {request.get_data(as_text=True)[:500]}"
+            )
+            return self._error_response(response, None, -32700, f"Parse error: {str(e)}")
+
+        # Populate correlation ids on frappe.local so downstream audit logging
+        # can tag every tool execution with the MCP session and client. See
+        # _populate_correlation_ids for header/initialize param fallback order.
+        self._populate_correlation_ids(request, data)
+
+        # Check if notification (no response needed)
+        if self._is_notification(data):
+            response.status_code = 202  # Accepted
+            # Echo MCP-Protocol-Version header if present (2025-06-18 spec)
+            incoming_version = frappe.request.headers.get("mcp-protocol-version")
+            if incoming_version:
+                response.headers["mcp-protocol-version"] = incoming_version
+            return response
+
+        # Get request ID
+        request_id = data.get("id")
+        if request_id is None:
+            return self._error_response(response, None, -32600, "Invalid Request: missing id")
+
+        # Route method
+        method = data.get("method")
+        params = data.get("params", {})
+
+        result = None
+
+        try:
+            if method == "initialize":
+                result = self._handle_initialize(params)
+            elif method == "tools/list":
+                result = self._handle_tools_list(params, tool_registry)
+            elif method == "tools/call":
+                frappe.logger().info(
+                    f"MCP tools/call: tool={params.get('name')}, args={json.dumps(params.get('arguments', {}), default=str)[:200]}"
+                )
+                result = self._handle_tools_call(params, tool_registry)
+            elif method == "resources/list":
+                result = self._handle_resources_list(params, request_id)
+            elif method == "resources/read":
+                result = self._handle_resources_read(params, request_id)
+            elif method == "resources/templates/list":
+                result = {"resourceTemplates": []}
+            elif method == "prompts/list":
+                result = self._handle_prompts_list(params, request_id)
+            elif method == "prompts/get":
+                result = self._handle_prompts_get(params, request_id)
+            elif method == "ping":
+                result = {}
+            else:
+                frappe.logger().warning(f"MCP Unknown method: {method}")
+                return self._error_response(response, request_id, -32601, f"Method not found: {method}")
+        except Exception as e:
+            # Log unexpected errors
+            frappe.logger().error(
+                f"MCP Handler Error for method '{method}': {str(e)}\n{traceback.format_exc()}"
+            )
+            return self._error_response(response, request_id, -32603, f"Internal error: {str(e)}")
+
+        # Success response
+        return self._success_response(response, request_id, result)
+
+    def add_tool(self, tool_dict: Dict):
+        """
+        Programmatically add a tool.
+
+        Used by tool_adapter to register BaseTool instances.
+
+        Args:
+            tool_dict: Dict with keys: name, description, inputSchema, fn, annotations
+        """
+        self._tool_registry[tool_dict["name"]] = tool_dict
+
+    def _populate_correlation_ids(self, request: Request, data: Dict):
+        """
+        Set `frappe.local.assistant_session_id` and `assistant_client_id`.
+
+        Resolution order for session id:
+            1. `Mcp-Session-Id` request header (MCP streamable HTTP transport)
+            2. `X-Assistant-Session-Id` request header (explicit override)
+            3. A freshly-generated UUID4 (per-request fallback)
+
+        Resolution order for client id:
+            1. `X-Assistant-Client-Id` request header
+            2. `clientInfo.name` from the `initialize` params when present
+            3. `None`
+        """
+        import uuid
+
+        import frappe
+
+        session_id = (
+            request.headers.get("Mcp-Session-Id")
+            or request.headers.get("X-Assistant-Session-Id")
+            or str(uuid.uuid4())
+        )
+
+        client_id = request.headers.get("X-Assistant-Client-Id")
+        if not client_id:
+            params = data.get("params") or {}
+            client_info = params.get("clientInfo") or {}
+            client_id = client_info.get("name")
+
+        frappe.local.assistant_session_id = session_id
+        frappe.local.assistant_client_id = client_id
+
+    def _handle_initialize(self, params: Dict) -> Dict:
+        """
+        Handle initialize request.
+
+        Declares server capabilities according to MCP 2025-06-18 spec.
+        We only support tools (not prompts, resources, or sampling).
+        """
+        import frappe
+
+        # Get protocol version from settings
+        protocol_version = "2025-06-18"  # Default
+        try:
+            settings = frappe.get_single("PA Core Settings")
+            protocol_version = settings.mcp_protocol_version or protocol_version
+        except Exception:
+            pass
+
+        return {
+            "protocolVersion": protocol_version,
+            "capabilities": {
+                "tools": {},  # We support tools
+                "prompts": {},  # We support prompts (database-driven templates)
+                "resources": {},  # We support resources (skill documents)
+            },
+            "serverInfo": {"name": self.name, "version": "2.0.0"},
+        }
+
+    def _handle_tools_list(self, params: Dict, tool_registry: Optional[Dict] = None) -> Dict:
+        """Handle tools/list request with optional token optimization."""
+        import frappe
+
+        if tool_registry is None:
+            tool_registry = self._tool_registry
+
+        tools_list = []
+
+        # Check skill_mode for token optimization
+        skill_replace_map = {}
+        try:
+            settings = frappe.get_single("PA Core Settings")
+            if getattr(settings, "skill_mode", "supplementary") == "replace":
+                from pibiassistant.api.handlers.resources import get_skill_manager
+
+                skill_replace_map = get_skill_manager().get_tool_skill_map(user=frappe.session.user)
+        except Exception:
+            pass
+
+        for tool in tool_registry.values():
+            description = tool["description"]
+
+            # In replace mode, minimize descriptions for tools with linked skills
+            if skill_replace_map and tool["name"] in skill_replace_map:
+                skill_info = skill_replace_map[tool["name"]]
+                description = f"{tool['name']}: {skill_info['description']}. Detailed guidance: pa://skills/{skill_info['skill_id']}"
+
+            tool_spec = {
+                "name": tool["name"],
+                "description": description,
+                "inputSchema": tool["inputSchema"],
+            }
+
+            # Add annotations if present
+            if tool.get("annotations"):
+                tool_spec["annotations"] = tool["annotations"]
+
+            tools_list.append(tool_spec)
+
+        return {"tools": tools_list}
+
+    def _handle_tools_call(self, params: Dict, tool_registry: Optional[Dict] = None) -> Dict:
+        """
+        Handle tools/call request.
+
+        This is the CRITICAL method that fixes the serialization issue.
+        Uses json.dumps with default=str to handle datetime, Decimal, etc.
+        """
+        import frappe
+
+        if tool_registry is None:
+            tool_registry = self._tool_registry
+
+        tool_name = params.get("name")
+        arguments = params.get("arguments", {})
+
+        frappe.logger().debug(f"MCP _handle_tools_call: tool={tool_name}, args={arguments}")
+
+        # Check tool exists
+        if tool_name not in tool_registry:
+            error_msg = f"Tool '{tool_name}' not found. Available tools: {list(tool_registry.keys())}"
+            frappe.logger().error(f"MCP Tool Not Found: {error_msg}")
+            return {
+                "content": [{"type": "text", "text": error_msg}],
+                "isError": True,
+            }
+
+        tool = tool_registry[tool_name]
+        fn = tool["fn"]
+
+        try:
+            # Execute tool
+            frappe.logger().info(f"MCP Executing tool: {tool_name}")
+            result = fn(**arguments)
+            frappe.logger().info(
+                f"MCP Tool {tool_name} executed successfully, result type: {type(result).__name__}"
+            )
+
+            # Extract image content for vision API (e.g., screenshot tool).
+            # Tools can include _image_content in their result to have the LLM
+            # see the image directly via vision, rather than just getting metadata.
+            # Note: BaseTool._safe_execute() wraps tool output as:
+            #   {"success": True, "result": <tool_output>, "execution_time": ...}
+            # so _image_content lives inside result["result"], not at the top level.
+            image_content = None
+            if isinstance(result, dict):
+                inner = result.get("result")
+                if isinstance(inner, dict) and "_image_content" in inner:
+                    image_content = inner.pop("_image_content")
+
+            # Serialize the text result (default=str handles datetime, Decimal, etc.)
+            if isinstance(result, str):
+                result_text = result
+            else:
+                result_text = json.dumps(result, default=str, indent=2)
+
+            # Build MCP content blocks
+            content = [{"type": "text", "text": result_text}]
+
+            # Add image block for vision API if tool provided one
+            if image_content and isinstance(image_content, dict):
+                mime_map = {
+                    "jpeg": "image/jpeg",
+                    "jpg": "image/jpeg",
+                    "png": "image/png",
+                    "gif": "image/gif",
+                    "webp": "image/webp",
+                }
+                fmt = image_content.get("format", "jpeg")
+                content.append(
+                    {
+                        "type": "image",
+                        "mimeType": mime_map.get(fmt, f"image/{fmt}"),
+                        "data": image_content["data"],
+                    }
+                )
+
+            return {"content": content, "isError": False}
+
+        except Exception as e:
+            # Full traceback for debugging
+            error_text = f"Error executing {tool_name}: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
+            frappe.logger().error(f"MCP Tool Execution Error: {error_text}")
+
+            return {"content": [{"type": "text", "text": error_text}], "isError": True}
+
+    def _success_response(self, response: Response, request_id: Any, result: Dict) -> Response:
+        """Create JSON-RPC success response."""
+        import frappe
+
+        response_data = {"jsonrpc": "2.0", "id": request_id, "result": result}
+
+        # Use default=str here too for consistency
+        response.data = json.dumps(response_data, default=str)
+        response.mimetype = "application/json"
+        response.status_code = 200
+
+        # Echo MCP-Protocol-Version header if present (2025-06-18 spec)
+        incoming_version = frappe.request.headers.get("mcp-protocol-version")
+        if incoming_version:
+            response.headers["mcp-protocol-version"] = incoming_version
+
+        return response
+
+    def _error_response(
+        self, response: Response, request_id: Optional[Any], code: int, message: str
+    ) -> Response:
+        """Create JSON-RPC error response."""
+        import frappe
+
+        response_data = {"jsonrpc": "2.0", "id": request_id, "error": {"code": code, "message": message}}
+
+        response.data = json.dumps(response_data)
+        response.mimetype = "application/json"
+        response.status_code = 400
+
+        # Echo MCP-Protocol-Version header if present (2025-06-18 spec)
+        incoming_version = frappe.request.headers.get("mcp-protocol-version")
+        if incoming_version:
+            response.headers["mcp-protocol-version"] = incoming_version
+
+        return response
+
+    def _handle_prompts_list(self, params: Dict, request_id: Any) -> Dict:
+        """
+        Handle prompts/list request.
+
+        Returns available prompt templates from the database.
+        """
+        from pibiassistant.api.handlers.prompts import handle_prompts_list
+
+        # The handler returns a full JSON-RPC response, extract just the result
+        response = handle_prompts_list(request_id)
+        if "result" in response:
+            return response["result"]
+        # If there's an error, return empty prompts list
+        return {"prompts": []}
+
+    def _handle_prompts_get(self, params: Dict, request_id: Any) -> Dict:
+        """
+        Handle prompts/get request.
+
+        Returns a specific prompt template rendered with provided arguments.
+        """
+        from pibiassistant.api.handlers.prompts import handle_prompts_get
+
+        # The handler returns a full JSON-RPC response, extract just the result
+        response = handle_prompts_get(params, request_id)
+        if "result" in response:
+            return response["result"]
+        # If there's an error, re-raise it
+        if "error" in response:
+            raise Exception(response["error"].get("message", "Unknown prompt error"))
+        return {}
+
+    def _handle_resources_list(self, params: Dict, request_id: Any) -> Dict:
+        """
+        Handle resources/list request.
+
+        Returns available skill documents as MCP resources.
+        """
+        from pibiassistant.api.handlers.resources import handle_resources_list
+
+        return handle_resources_list(request_id)
+
+    def _handle_resources_read(self, params: Dict, request_id: Any) -> Dict:
+        """
+        Handle resources/read request.
+
+        Returns the content of a specific skill resource by URI.
+        """
+        from pibiassistant.api.handlers.resources import handle_resources_read
+
+        return handle_resources_read(params, request_id)
+
+    def _is_notification(self, data: Dict) -> bool:
+        """Check if request is a notification (no response needed)."""
+        method = data.get("method", "")
+        return isinstance(method, str) and method.startswith("notifications/")

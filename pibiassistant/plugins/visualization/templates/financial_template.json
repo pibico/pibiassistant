@@ -1,0 +1,226 @@
+{
+    "name": "Financial Performance Dashboard",
+    "description": "Comprehensive financial analytics including P&L trends, cash flow analysis, budget vs actual performance, and key financial ratios",
+    "category": "Finance", 
+    "doctype": "GL Entry",
+    "icon": "accounting",
+    "tags": ["finance", "accounting", "profit_loss", "cash_flow", "budgets"],
+    "charts": [
+        {
+            "type": "line",
+            "title": "Revenue vs Expenses Trend",
+            "description": "Monthly revenue and expense comparison",
+            "x_field": "posting_date",
+            "y_field": "debit",
+            "aggregate": "sum",
+            "time_span": "last_12_months",
+            "group_by": "account_type",
+            "filters": {"account_type": ["Income", "Expense"]},
+            "chart_options": {
+                "multi_series": true,
+                "colors": ["#28a745", "#dc3545"],
+                "show_data_points": true,
+                "area_fill": true
+            },
+            "position": {"row": 1, "col": 1, "width": 8, "height": 6}
+        },
+        {
+            "type": "kpi_card",
+            "title": "Net Profit",
+            "description": "Current month net profit",
+            "calculation": "revenue_minus_expenses",
+            "aggregate": "sum",
+            "comparison": "previous_month",
+            "time_span": "current_month",
+            "chart_options": {
+                "color": "#17a2b8",
+                "show_percentage_change": true,
+                "format": "currency"
+            },
+            "position": {"row": 1, "col": 9, "width": 4, "height": 2}
+        },
+        {
+            "type": "kpi_card", 
+            "title": "Cash Flow",
+            "description": "Net cash flow this month",
+            "field": "debit",
+            "aggregate": "sum",
+            "filters": {"account_type": "Cash"},
+            "comparison": "previous_month",
+            "time_span": "current_month",
+            "chart_options": {
+                "color": "#6f42c1",
+                "show_percentage_change": true,
+                "format": "currency"
+            },
+            "position": {"row": 1, "col": 9, "width": 4, "height": 2}
+        },
+        {
+            "type": "kpi_card",
+            "title": "Gross Margin %",
+            "description": "Gross profit margin percentage",
+            "calculation": "gross_margin_percentage",
+            "comparison": "previous_quarter",
+            "time_span": "current_quarter",
+            "chart_options": {
+                "color": "#fd7e14",
+                "show_percentage_change": true,
+                "format": "percentage"
+            },
+            "position": {"row": 1, "col": 9, "width": 4, "height": 2}
+        },
+        {
+            "type": "waterfall",
+            "title": "Cash Flow Analysis",
+            "description": "Cash flow breakdown by category",
+            "categories": [
+                {"label": "Opening Balance", "field": "opening_balance", "type": "start"},
+                {"label": "Revenue", "field": "revenue", "type": "positive"},
+                {"label": "Operating Expenses", "field": "operating_expenses", "type": "negative"},
+                {"label": "Capital Expenses", "field": "capital_expenses", "type": "negative"},
+                {"label": "Closing Balance", "type": "end"}
+            ],
+            "time_span": "current_month",
+            "chart_options": {
+                "positive_color": "#28a745",
+                "negative_color": "#dc3545",
+                "total_color": "#007bff"
+            },
+            "position": {"row": 2, "col": 1, "width": 6, "height": 6}
+        },
+        {
+            "type": "bar",
+            "title": "Budget vs Actual",
+            "description": "Budget performance by department",
+            "x_field": "cost_center",
+            "y_field": "debit",
+            "aggregate": "sum",
+            "comparison_field": "budget_amount",
+            "time_span": "current_quarter",
+            "chart_options": {
+                "grouped": true,
+                "colors": ["#007bff", "#28a745"],
+                "show_variance": true
+            },
+            "position": {"row": 2, "col": 7, "width": 6, "height": 6}
+        },
+        {
+            "type": "gauge",
+            "title": "Accounts Receivable Days",
+            "description": "Average collection period",
+            "calculation": "ar_days",
+            "target_value": 30,
+            "chart_options": {
+                "unit": "days",
+                "color_ranges": [
+                    {"min": 0, "max": 30, "color": "#28a745"},
+                    {"min": 30, "max": 45, "color": "#ffc107"},
+                    {"min": 45, "max": 100, "color": "#dc3545"}
+                ]
+            },
+            "position": {"row": 3, "col": 1, "width": 3, "height": 4}
+        },
+        {
+            "type": "gauge",
+            "title": "Accounts Payable Days",
+            "description": "Average payment period",
+            "calculation": "ap_days",
+            "target_value": 45,
+            "chart_options": {
+                "unit": "days",
+                "color_ranges": [
+                    {"min": 0, "max": 30, "color": "#dc3545"},
+                    {"min": 30, "max": 45, "color": "#ffc107"},
+                    {"min": 45, "max": 100, "color": "#28a745"}
+                ]
+            },
+            "position": {"row": 3, "col": 4, "width": 3, "height": 4}
+        },
+        {
+            "type": "line",
+            "title": "Key Financial Ratios",
+            "description": "Track important financial ratios over time",
+            "calculated_metrics": [
+                {"name": "Current Ratio", "calculation": "current_assets/current_liabilities"},
+                {"name": "Debt to Equity", "calculation": "total_debt/total_equity"},
+                {"name": "ROA", "calculation": "net_income/total_assets"}
+            ],
+            "time_span": "last_12_months",
+            "chart_options": {
+                "multi_series": true,
+                "secondary_y_axis": true
+            },
+            "position": {"row": 3, "col": 7, "width": 6, "height": 4}
+        },
+        {
+            "type": "table",
+            "title": "Largest Expenses This Month",
+            "description": "Top expense transactions",
+            "fields": ["account", "posting_date", "debit", "voucher_type", "voucher_no"],
+            "filters": {"debit": [">", 0]},
+            "order_by": "debit desc",
+            "limit": 10,
+            "time_span": "current_month",
+            "chart_options": {
+                "highlight_large_amounts": true,
+                "format_currency": ["debit"]
+            },
+            "position": {"row": 4, "col": 1, "width": 6, "height": 4}
+        },
+        {
+            "type": "pie",
+            "title": "Expense Breakdown by Category",
+            "description": "Distribution of expenses by account type",
+            "x_field": "account",
+            "y_field": "debit",
+            "aggregate": "sum",
+            "filters": {"debit": [">", 0]},
+            "time_span": "current_quarter",
+            "chart_options": {
+                "show_percentages": true,
+                "group_small_slices": true
+            },
+            "position": {"row": 4, "col": 7, "width": 6, "height": 4}
+        }
+    ],
+    "filters": {
+        "docstatus": 1,
+        "is_cancelled": 0
+    },
+    "global_filters": [
+        {
+            "field": "posting_date",
+            "type": "date_range", 
+            "label": "Date Range",
+            "default": "current_quarter"
+        },
+        {
+            "field": "company",
+            "type": "select",
+            "label": "Company",
+            "options_from": "company"
+        },
+        {
+            "field": "cost_center",
+            "type": "multiselect",
+            "label": "Cost Center",
+            "options_from": "cost_center"
+        }
+    ],
+    "refresh_interval": "30_minutes",
+    "auto_refresh": true,
+    "mobile_layout": {
+        "enabled": true,
+        "stack_charts": true,
+        "priority_charts": ["Net Profit", "Cash Flow", "Revenue vs Expenses Trend"]
+    },
+    "export_options": {
+        "pdf": true,
+        "excel": true,
+        "png": true
+    },
+    "sharing": {
+        "default_roles": ["Accounts Manager", "Accounts User", "System Manager"],
+        "public_access": false
+    }
+}
