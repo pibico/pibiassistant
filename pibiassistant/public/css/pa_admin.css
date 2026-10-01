@@ -1065,16 +1065,16 @@ input:checked + .slider:before {
     text-transform: uppercase;
 }
 .pa-status-badge.published {
-    background: var(--green-100);
-    color: var(--green-700);
+    background: #dcfce7;
+    color: #14532d;
 }
 .pa-status-badge.draft {
-    background: var(--gray-100);
-    color: var(--gray-600);
+    background: #f3f4f6;
+    color: #374151;
 }
 .pa-status-badge.deprecated, .pa-status-badge.archived {
-    background: var(--orange-100);
-    color: var(--orange-600);
+    background: #ffedd5;
+    color: #7c2d12;
 }
 
 /* Active state for eye/book expand buttons */
@@ -1108,12 +1108,19 @@ input:checked + .slider:before {
     display: inline-block;
 }
 .pa-status-pill--running {
-    background: var(--green-100);
-    color: var(--green-700);
+    background: #dcfce7;
+    color: #14532d;
 }
 .pa-status-pill--stopped {
-    background: var(--red-100);
-    color: var(--red-700);
+    background: #fee2e2;
+    color: #7f1d1d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pa-skeleton-line,
+    .fa-spin {
+        animation: none;
+    }
 }
 
 /* ===== Empty states ===== */
@@ -1438,4 +1445,11 @@ mark.pa-hl {
 #pa-aida-model {
     margin: 6px 0 8px;
     overflow-wrap: break-word;
+}
+
+.switch input:focus-visible + .slider,
+.pa-top-tab:focus-visible,
+.pa-view-tab:focus-visible {
+    outline: 2px solid var(--pa-accent);
+    outline-offset: 2px;
 }
