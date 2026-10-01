@@ -181,7 +181,6 @@ window.PAOWidgetStreaming = {
 					// state so the next turn starts fresh.
 					widget._pendingInterrupts = [];
 					widget._isSubmittingInterrupts = false;
-					if (data.conversation_id) widget.set_aida_conversation_id(data.conversation_id);
 					this.clear_approval_attention(widget);
 					this.finalize_streaming_message(
 						widget,

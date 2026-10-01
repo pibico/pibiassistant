@@ -349,6 +349,8 @@ def _loop(ctx: dict) -> dict:
         reply = data.get("message") or {}
         calls = _parse_calls(reply)
         state["round"] += 1
+        if is_cancelled(session_id):
+            return {"aborted": True}
         if not calls:
             return _finish_value(state, (reply.get("content") or "").strip())
 

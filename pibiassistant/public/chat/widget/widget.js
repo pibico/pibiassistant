@@ -952,25 +952,19 @@ class PAOWidget {
 				}
 			} catch(e) {}
 
-			const full_message = page_context ? `${page_context}\n${message}` : message;
-
-			// Send to AIDA API proxy
-			const apiArgs = {
-				session_id: this.session_id,
-				message: full_message,
-				file_urls: JSON.stringify(file_urls),
-			};
-			const conversation_id = this.get_aida_conversation_id();
-			if (conversation_id) apiArgs.conversation_id = conversation_id;
-
-			const response = await frappe.call({
-				method: "pibiassistant.pibiassistant_chat.api.aida.send_message",
-				args: apiArgs,
+			// Same endpoint as the full-page chat: stored history, site tools, model choice.
+			await frappe.call({
+				method: "pibiassistant.pibiassistant_chat.api.send_message",
+				args: {
+					session_id: this.session_id,
+					message: message,
+					file_urls: file_urls.length ? JSON.stringify(file_urls) : null,
+					attachments: attachments.length ? JSON.stringify(attachments) : null,
+					system_prompt_addendum: page_context || null,
+					client_signals: client_signals,
+					client_type: "widget",
+				},
 			});
-
-			if (response && response.message && response.message.conversation_id) {
-				this.set_aida_conversation_id(response.message.conversation_id);
-			}
 
 			// Clear attached files after sending
 			this.attached_files = [];
@@ -1006,14 +1000,7 @@ class PAOWidget {
 			frappe.show_alert({ message: __("Wait for the current answer to finish."), indicator: "orange" });
 			return;
 		}
-		const previous = this.session_id;
 		this.session_id = this.generate_session_id();
-		this._aida_conversation_id = null;
-		try {
-			if (previous) localStorage.removeItem("pao_aida_conv_" + previous);
-		} catch (e) {
-			/* storage blocked */
-		}
 		this.clear_stored_session();
 		this.set_persistent_session(this.session_id);
 		this.attached_files = [];
@@ -1021,29 +1008,6 @@ class PAOWidget {
 		this.$widget.find(".pao-messages").html(this._welcome_html || "");
 		this.$widget.find(".pao-input").val("").trigger("input").focus();
 		this.session_restored = false;
-	}
-
-	_aida_conv_key() {
-		return "pao_aida_conv_" + this.session_id;
-	}
-
-	get_aida_conversation_id() {
-		if (this._aida_conversation_id) return this._aida_conversation_id;
-		try {
-			this._aida_conversation_id = localStorage.getItem(this._aida_conv_key()) || null;
-		} catch (e) {
-			/* storage blocked: memory lasts for this page only */
-		}
-		return this._aida_conversation_id || null;
-	}
-
-	set_aida_conversation_id(id) {
-		this._aida_conversation_id = id;
-		try {
-			localStorage.setItem(this._aida_conv_key(), id);
-		} catch (e) {
-			/* storage blocked */
-		}
 	}
 
 	async handle_file_upload(file) {
