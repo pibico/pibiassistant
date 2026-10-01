@@ -407,14 +407,29 @@ def _relay_ar_interrupt_resume(
         from .aida_stream import is_aida_mode
 
         if is_aida_mode():
-            # AIDA has no tool approvals; a stale resume just closes the turn.
-            _emit_socket_event(
+            from .aida_stream import _relay_aida_stream
+            from .aida_tools import peek_pending
+
+            pending = peek_pending(session_id, user)
+            if not pending:
+                _emit_socket_event(
+                    session_id,
+                    {
+                        "event": "stream_error",
+                        "session_id": session_id,
+                        "error": _("There is nothing pending to approve in this conversation."),
+                    },
+                )
+                return
+            _relay_aida_stream(
                 session_id,
-                {
-                    "event": "stream_error",
-                    "session_id": session_id,
-                    "error": _("There is nothing pending to approve in this conversation."),
-                },
+                "",
+                None,
+                user,
+                restricted=restricted,
+                continue_from_message_id=message_id or pending["message_id"],
+                model_id=model_id,
+                resume_responses=[r for r in (interrupt_response or []) if isinstance(r, dict)],
             )
             return
 

@@ -209,6 +209,7 @@ def _relay_aida_stream(
     context=None,
     continue_from_message_id=None,
     model_id=None,
+    resume_responses=None,
 ):
     """Stream one AIDA turn to the SPA, persisting the assistant row unless restricted."""
     from ..block_builder import BlockBuilder
@@ -304,87 +305,226 @@ def _relay_aida_stream(
 
         if not restricted and not continue_from_message_id:
             _ensure_assistant_msg(session_id, message_id, context)
-        emit({"event": "stream_start", "message_id": message_id, "model_id": model_used})
-
-        resp = _open_stream(url, headers, make_body(conversation_id))
-        if conversation_id and resp.status_code in (400, 404, 422):
-            # Upstream forgot the conversation: start fresh from the local transcript.
-            resp.close()
-            clear_conversation_id(session_id)
-            conversation_id = None
-            resp = _open_stream(url, headers, make_body(None))
-        if resp.status_code != 200:
-            frappe.log_error(
-                title="AIDA Chat API Error", message=f"HTTP {resp.status_code}: {resp.text[:500]}"
-            )
-            fail(_friendly_error(status=resp.status_code))
-            return
+        emit(
+            {
+                "event": "stream_start",
+                "message_id": message_id,
+                "model_id": model_used,
+                **({"resumed": True} if resume_responses is not None else {}),
+            }
+        )
 
         finish_reason = None
         tokens = {}
         done = False
         started_at = time.monotonic()
-        sent_conv = conversation_id
         new_chars = 0
-        retried = False
-        while True:
-            retry_needed = False
-            for event in _iter_events_polled(resp, session_id):
-                if is_cancelled(session_id):
-                    if restricted:
-                        _abort_unpersisted(emit, message_id, full_response, block_builder)
-                    else:
-                        _handle_stream_aborted(
-                            session_id, message_id, full_response, block_builder, [], model_used, resp
+        tool_calls_log = []
+        tool_done = False
+
+        from .aida_tools import chat_tool_specs, chunk_text, resume_tool_turn, run_tool_turn, tools_enabled
+
+        resuming = resume_responses is not None
+        if model and tools_enabled() and (resuming or not continue_from_message_id):
+            outcome = None
+            try:
+                specs = chat_tool_specs(user)
+                if resuming:
+                    block_builder.resolve_pending_interactions(resume_responses)
+                    outcome = resume_tool_turn(
+                        session_id=session_id,
+                        user=user,
+                        responses=resume_responses,
+                        api_url=api_url,
+                        api_key=api_key,
+                        specs=specs,
+                        emit=emit,
+                        block_builder=block_builder,
+                    )
+                elif specs:
+                    outcome = run_tool_turn(
+                        session_id=session_id,
+                        user=user,
+                        message=user_text,
+                        message_name=message_name,
+                        message_id=message_id,
+                        api_url=api_url,
+                        api_key=api_key,
+                        provider=provider,
+                        model=model,
+                        specs=specs,
+                        emit=emit,
+                        block_builder=block_builder,
+                    )
+            except Exception as e:
+                frappe.log_error(title="AIDA Tool Turn Error", message=str(e)[:500])
+                if resuming:
+                    fail(_friendly_error(exc=e if isinstance(e, requests.exceptions.RequestException) else None))
+                    return
+            if outcome and outcome.get("expired"):
+                fail(_("This approval has expired. Please ask again."))
+                return
+            if outcome and outcome.get("aborted"):
+                if restricted:
+                    _abort_unpersisted(emit, message_id, full_response, block_builder)
+                else:
+                    _handle_stream_aborted(session_id, message_id, full_response, block_builder, [], model_used, None)
+                return
+            if outcome and outcome.get("text"):
+                model_used = outcome["model"] or model_used
+                text_out = ("\n\n" + outcome["text"]) if prefix.strip() and not new_chars else outcome["text"]
+                for piece in chunk_text(text_out):
+                    full_response += piece
+                    new_chars += len(piece)
+                    block_builder.add_text(piece)
+                    emit({"event": "stream_chunk", "chunk": piece, "accumulated": full_response, "message_id": message_id})
+            if outcome and (outcome.get("text") or outcome.get("interrupted")):
+                model_used = outcome["model"] or model_used
+                tokens = {
+                    "prompt_tokens": outcome["prompt_tokens"],
+                    "completion_tokens": outcome["completion_tokens"],
+                }
+                tool_calls_log = outcome["tool_calls"]
+                done = True
+                tool_done = True
+            if outcome and outcome.get("interrupted"):
+                usage = {
+                    "prompt_tokens": int(tokens.get("prompt_tokens") or 0),
+                    "completion_tokens": int(tokens.get("completion_tokens") or 0),
+                    "duration_ms": int((time.monotonic() - started_at) * 1000),
+                }
+                pending_ids = []
+                for item in outcome["pending"]:
+                    block_builder.add_approval_required(
+                        item["tool_id"], item["tool_name"], item["input"], item["interrupts"]
+                    )
+                    pending_ids += [i["id"] for i in item["interrupts"]]
+                    emit(
+                        {
+                            "event": "approval_required",
+                            "tool_id": item["tool_id"],
+                            "tool_name": item["tool_name"],
+                            "input": item["input"],
+                            "interrupts": item["interrupts"],
+                            "expires_at": frappe.utils.add_to_date(None, seconds=1800, as_string=True),
+                        }
+                    )
+                if not restricted:
+                    row = _find_assistant_msg_by_message_id(session_id, message_id)
+                    if row:
+                        _set_pao_message_with_retry(
+                            row,
+                            {
+                                "content": full_response,
+                                "blocks": json.dumps(block_builder.snapshot()),
+                                "model": model_used or None,
+                                "credits_used": 0,
+                                **usage,
+                                **({"tool_calls": json.dumps(tool_calls_log)} if tool_calls_log else {}),
+                            },
                         )
-                    return
-                if event is None:
-                    continue
-                etype = event.get("type")
-                if etype == "start":
-                    new_id = event.get("conversation_id")
-                    if sent_conv and new_id and new_id != sent_conv and not new_chars and not retried:
-                        # The API answered 200 but opened a NEW conversation: it has no memory.
-                        retry_needed = True
-                        break
-                    conversation_id = new_id or conversation_id
-                    if conversation_id and not restricted:
-                        set_conversation_id(session_id, user, conversation_id)
-                elif etype == "chunk":
-                    chunk = event.get("content") or ""
-                    if chunk:
-                        new_chars += len(chunk)
-                        full_response += chunk
-                        block_builder.add_text(chunk)
-                        emit({"event": "stream_chunk", "chunk": chunk, "accumulated": full_response, "message_id": message_id})
-                elif etype == "tokens":
-                    tokens = event
-                    model_used = event.get("model") or model_used
-                    finish_reason = event.get("finish_reason")
-                elif etype == "done":
-                    conversation_id = event.get("conversation_id") or conversation_id
-                    if conversation_id and not restricted:
-                        set_conversation_id(session_id, user, conversation_id)
-                    done = True
-                    break
-                elif etype == "error":
-                    frappe.log_error(title="AIDA Chat API Error", message=str(event)[:500])
-                    fail(_friendly_error())
-                    return
-            if not retry_needed:
-                break
-            resp.close()
-            clear_conversation_id(session_id)
-            conversation_id = None
-            sent_conv = None
-            retried = True
-            resp = _open_stream(url, headers, make_body(None))
+                emit(
+                    {
+                        "event": "stream_complete",
+                        "message_id": message_id,
+                        "full_response": full_response,
+                        "model_id": model_used,
+                        "blocks": block_builder.snapshot(),
+                        "interrupted": True,
+                        "pending_interrupts": pending_ids,
+                        "quota_remaining": -1,
+                        "quota_used": 0,
+                        "quota_total": -1,
+                        "credits_used": 0,
+                        **usage,
+                    }
+                )
+                return
+
+        if resuming and not tool_done:
+            fail(_("AIDA returned an empty answer. Please try again."))
+            return
+
+        if not tool_done:
+            resp = _open_stream(url, headers, make_body(conversation_id))
+            if conversation_id and resp.status_code in (400, 404, 422):
+                # Upstream forgot the conversation: start fresh from the local transcript.
+                resp.close()
+                clear_conversation_id(session_id)
+                conversation_id = None
+                resp = _open_stream(url, headers, make_body(None))
             if resp.status_code != 200:
                 frappe.log_error(
                     title="AIDA Chat API Error", message=f"HTTP {resp.status_code}: {resp.text[:500]}"
                 )
                 fail(_friendly_error(status=resp.status_code))
                 return
+
+            finish_reason = None
+            tokens = {}
+            done = False
+            started_at = time.monotonic()
+            sent_conv = conversation_id
+            new_chars = 0
+            retried = False
+            while True:
+                retry_needed = False
+                for event in _iter_events_polled(resp, session_id):
+                    if is_cancelled(session_id):
+                        if restricted:
+                            _abort_unpersisted(emit, message_id, full_response, block_builder)
+                        else:
+                            _handle_stream_aborted(
+                                session_id, message_id, full_response, block_builder, [], model_used, resp
+                            )
+                        return
+                    if event is None:
+                        continue
+                    etype = event.get("type")
+                    if etype == "start":
+                        new_id = event.get("conversation_id")
+                        if sent_conv and new_id and new_id != sent_conv and not new_chars and not retried:
+                            # The API answered 200 but opened a NEW conversation: it has no memory.
+                            retry_needed = True
+                            break
+                        conversation_id = new_id or conversation_id
+                        if conversation_id and not restricted:
+                            set_conversation_id(session_id, user, conversation_id)
+                    elif etype == "chunk":
+                        chunk = event.get("content") or ""
+                        if chunk:
+                            new_chars += len(chunk)
+                            full_response += chunk
+                            block_builder.add_text(chunk)
+                            emit({"event": "stream_chunk", "chunk": chunk, "accumulated": full_response, "message_id": message_id})
+                    elif etype == "tokens":
+                        tokens = event
+                        model_used = event.get("model") or model_used
+                        finish_reason = event.get("finish_reason")
+                    elif etype == "done":
+                        conversation_id = event.get("conversation_id") or conversation_id
+                        if conversation_id and not restricted:
+                            set_conversation_id(session_id, user, conversation_id)
+                        done = True
+                        break
+                    elif etype == "error":
+                        frappe.log_error(title="AIDA Chat API Error", message=str(event)[:500])
+                        fail(_friendly_error())
+                        return
+                if not retry_needed:
+                    break
+                resp.close()
+                clear_conversation_id(session_id)
+                conversation_id = None
+                sent_conv = None
+                retried = True
+                resp = _open_stream(url, headers, make_body(None))
+                if resp.status_code != 200:
+                    frappe.log_error(
+                        title="AIDA Chat API Error", message=f"HTTP {resp.status_code}: {resp.text[:500]}"
+                    )
+                    fail(_friendly_error(status=resp.status_code))
+                    return
 
         if not new_chars or not full_response.strip():
             fail(_("AIDA returned an empty answer. Please try again."))
@@ -410,6 +550,7 @@ def _relay_aida_stream(
                         "model": model_used or None,
                         "credits_used": 0,
                         **usage,
+                        **({"tool_calls": json.dumps(tool_calls_log)} if tool_calls_log else {}),
                     },
                 )
 
