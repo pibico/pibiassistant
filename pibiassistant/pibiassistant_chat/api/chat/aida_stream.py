@@ -40,6 +40,20 @@ def acquire_turn(session_id: str) -> bool:
     return bool(frappe.cache().set(_turn_lock_key(session_id), "1", nx=True, ex=_TURN_LOCK_TTL))
 
 
+def acquire_turn_waiting(session_id: str, wait_s: float = 3.0) -> bool:
+    """acquire_turn, but tolerate the second or so a cancelled relay needs to notice Stop and release."""
+    if acquire_turn(session_id):
+        return True
+    if not is_cancelled(session_id):
+        return False
+    deadline = time.monotonic() + wait_s
+    while time.monotonic() < deadline:
+        time.sleep(0.1)
+        if acquire_turn(session_id):
+            return True
+    return False
+
+
 def release_turn(session_id: str) -> None:
     try:
         frappe.cache().delete(_turn_lock_key(session_id))
@@ -209,6 +223,12 @@ def _relay_aida_stream(
             provider, model = chosen.split("/", 1)
         else:
             model = chosen
+    try:
+        import frappe.translate
+
+        frappe.local.lang = frappe.translate.get_user_lang(user)
+    except Exception:
+        pass
     block_builder = BlockBuilder()
     message_id = continue_from_message_id or uuid.uuid4().hex[:10]
     full_response = ""
@@ -304,45 +324,73 @@ def _relay_aida_stream(
         tokens = {}
         done = False
         started_at = time.monotonic()
-        for event in _iter_events_polled(resp, session_id):
-            if is_cancelled(session_id):
-                if restricted:
-                    _abort_unpersisted(emit, message_id, full_response, block_builder)
-                else:
-                    _handle_stream_aborted(
-                        session_id, message_id, full_response, block_builder, [], model_used, resp
-                    )
-                return
-            if event is None:
-                continue
-            etype = event.get("type")
-            if etype == "start":
-                conversation_id = event.get("conversation_id") or conversation_id
-                if conversation_id and not restricted:
-                    set_conversation_id(session_id, user, conversation_id)
-            elif etype == "chunk":
-                chunk = event.get("content") or ""
-                if chunk:
-                    full_response += chunk
-                    block_builder.add_text(chunk)
-                    emit({"event": "stream_chunk", "chunk": chunk, "accumulated": full_response, "message_id": message_id})
-            elif etype == "tokens":
-                tokens = event
-                model_used = event.get("model") or model_used
-                finish_reason = event.get("finish_reason")
-            elif etype == "done":
-                conversation_id = event.get("conversation_id") or conversation_id
-                if conversation_id and not restricted:
-                    set_conversation_id(session_id, user, conversation_id)
-                done = True
+        sent_conv = conversation_id
+        new_chars = 0
+        retried = False
+        while True:
+            retry_needed = False
+            for event in _iter_events_polled(resp, session_id):
+                if is_cancelled(session_id):
+                    if restricted:
+                        _abort_unpersisted(emit, message_id, full_response, block_builder)
+                    else:
+                        _handle_stream_aborted(
+                            session_id, message_id, full_response, block_builder, [], model_used, resp
+                        )
+                    return
+                if event is None:
+                    continue
+                etype = event.get("type")
+                if etype == "start":
+                    new_id = event.get("conversation_id")
+                    if sent_conv and new_id and new_id != sent_conv and not new_chars and not retried:
+                        # The API answered 200 but opened a NEW conversation: it has no memory.
+                        retry_needed = True
+                        break
+                    conversation_id = new_id or conversation_id
+                    if conversation_id and not restricted:
+                        set_conversation_id(session_id, user, conversation_id)
+                elif etype == "chunk":
+                    chunk = event.get("content") or ""
+                    if chunk:
+                        new_chars += len(chunk)
+                        full_response += chunk
+                        block_builder.add_text(chunk)
+                        emit({"event": "stream_chunk", "chunk": chunk, "accumulated": full_response, "message_id": message_id})
+                elif etype == "tokens":
+                    tokens = event
+                    model_used = event.get("model") or model_used
+                    finish_reason = event.get("finish_reason")
+                elif etype == "done":
+                    conversation_id = event.get("conversation_id") or conversation_id
+                    if conversation_id and not restricted:
+                        set_conversation_id(session_id, user, conversation_id)
+                    done = True
+                    break
+                elif etype == "error":
+                    frappe.log_error(title="AIDA Chat API Error", message=str(event)[:500])
+                    fail(_friendly_error())
+                    return
+            if not retry_needed:
                 break
-            elif etype == "error":
-                frappe.log_error(title="AIDA Chat API Error", message=str(event)[:500])
-                fail(_friendly_error())
+            resp.close()
+            clear_conversation_id(session_id)
+            conversation_id = None
+            sent_conv = None
+            retried = True
+            resp = _open_stream(url, headers, make_body(None))
+            if resp.status_code != 200:
+                frappe.log_error(
+                    title="AIDA Chat API Error", message=f"HTTP {resp.status_code}: {resp.text[:500]}"
+                )
+                fail(_friendly_error(status=resp.status_code))
                 return
 
-        if not done and not full_response:
-            fail(_friendly_error())
+        if not new_chars or not full_response.strip():
+            fail(_("AIDA returned an empty answer. Please try again."))
+            return
+        if not done:
+            fail(_("The answer was cut off before it finished. Please try again."))
             return
 
         usage = {

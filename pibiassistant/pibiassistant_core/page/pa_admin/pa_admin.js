@@ -249,8 +249,8 @@ frappe.pages['pa-admin'].on_page_load = function(wrapper) {
                             <div class="pa-sidebar-title"><i class="fa fa-bolt" aria-hidden="true"></i> ${__("Quick actions")}</div>
                         </div>
                         <ul class="pa-quick-list">
-                            <li><a href="/app/assistant-audit-log"><i class="fa fa-history" aria-hidden="true"></i> ${__("Audit log")}</a></li>
-                            <li><a href="/app/assistant-core-settings"><i class="fa fa-cogs" aria-hidden="true"></i> ${__("AIDA Settings")}</a></li>
+                            <li><a href="/app/pa-audit-log"><i class="fa fa-history" aria-hidden="true"></i> ${__("Audit log")}</a></li>
+                            <li><a href="/app/pa-core-settings"><i class="fa fa-cogs" aria-hidden="true"></i> ${__("AIDA Settings")}</a></li>
                             <li><a href="/aida" target="_blank" rel="noopener"><i class="fa fa-external-link" aria-hidden="true"></i> ${__("Open AIDA")}</a></li>
                         </ul>
                     </div>
@@ -259,7 +259,7 @@ frappe.pages['pa-admin'].on_page_load = function(wrapper) {
                     <div class="pa-card pa-sidebar-card">
                         <div class="pa-sidebar-row">
                             <div class="pa-sidebar-title"><i class="fa fa-history" aria-hidden="true"></i> ${__("Recent activity")}</div>
-                            <a href="/app/assistant-audit-log" class="pa-view-all">${__("View all")} <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+                            <a href="/app/pa-audit-log" class="pa-view-all">${__("View all")} <i class="fa fa-arrow-right" aria-hidden="true"></i></a>
                         </div>
                         <div id="recent-activity" class="pa-activity-list">
                             <div style="padding: 12px 0; text-align: center; color: var(--text-muted);">

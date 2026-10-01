@@ -188,7 +188,6 @@ const creditsDoorTitle = computed(
 
 .message-timestamp {
 	font-variant-numeric: tabular-nums;
-	font-family: var(--ql-font-mono);
 }
 
 /* Two doors to the same panel, never both at once: the chip when something

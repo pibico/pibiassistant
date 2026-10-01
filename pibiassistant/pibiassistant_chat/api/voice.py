@@ -13,10 +13,13 @@ from frappe import _
 
 from pibiassistant.pibiassistant_chat.gate import is_chat_enabled
 
+from ._rate_limits import rate_limit, session_user_or_ip
+
 MAX_AUDIO_BYTES = 10_485_760  # 10 MB
 
 
 @frappe.whitelist(methods=["POST"])
+@rate_limit(session_user_or_ip, limit=20, seconds=60)
 def transcribe(duration_ms: int = 0, language: str | None = None) -> dict:
     """Proxy voice transcription to the AIDA Voice API.
 
@@ -24,6 +27,12 @@ def transcribe(duration_ms: int = 0, language: str | None = None) -> dict:
     """
     if not is_chat_enabled():
         frappe.throw(_("AIDA Chat is disabled."), frappe.PermissionError)
+
+    from .settings import can_use_pao
+
+    access = can_use_pao()
+    if not access.get("can_use"):
+        frappe.throw(access.get("reason") or _("Cannot use AIDA"), frappe.PermissionError)
 
     audio_file = frappe.request.files.get("audio")
     if not audio_file:

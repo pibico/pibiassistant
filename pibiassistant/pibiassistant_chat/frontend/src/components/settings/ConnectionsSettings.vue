@@ -408,7 +408,7 @@ onMounted(async () => {
 
 .connections-title {
 	margin: 0;
-	font-family: var(--ql-font-display, Georgia, "Source Serif 4", serif);
+	font-family: var(--ql-font-display);
 	font-size: 22px;
 	line-height: 1.15;
 	letter-spacing: -0.01em;
@@ -468,7 +468,7 @@ onMounted(async () => {
 
 .connections-blank__title {
 	margin: 0;
-	font-family: var(--ql-font-display, Georgia, "Source Serif 4", serif);
+	font-family: var(--ql-font-display);
 	font-size: 17px;
 	color: var(--ql-text);
 }

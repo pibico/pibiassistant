@@ -37,7 +37,7 @@ defineEmits(["cta"]);
 	margin-bottom: 24px;
 }
 .ql-empty-title {
-	font-family: var(--ql-font-display, Georgia, "Source Serif 4", serif);
+	font-family: var(--ql-font-display);
 	font-size: 20px;
 	color: var(--ql-text);
 	margin: 0 0 8px;

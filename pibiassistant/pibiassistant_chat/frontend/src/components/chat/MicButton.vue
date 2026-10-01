@@ -2,6 +2,7 @@
 import { computed, ref, onMounted } from "vue";
 import { useVoiceCapture } from "@/composables/useVoiceCapture";
 import { api } from "@/api/client";
+import { logger } from "@/utils/logger";
 import { resolveWhisperLanguage } from "@/constants/whisperLanguages";
 
 const emit = defineEmits(["transcribed", "error"]);
@@ -35,7 +36,7 @@ async function postAudio(blob, durationMs) {
 	const json = await res.json();
 	const data = json.message || json;
 	if (!res.ok || !data || data.text === undefined) {
-		console.error("AIDA transcribe failed", res.status, json);
+		logger.error("Transcription failed", res.status, json);
 		emit("error", "transcribe-failed");
 		return;
 	}

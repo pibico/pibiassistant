@@ -27,7 +27,7 @@ from ..chat.helpers import (
     _extract_file_attachments,
     _is_processing_restricted,
 )
-from ..chat.aida_stream import acquire_turn, is_aida_mode, release_turn
+from ..chat.aida_stream import acquire_turn_waiting, is_aida_mode, release_turn
 from ..chat.cancel import clear as clear_cancel
 from ..chat.relay import (
     _relay_ar_interrupt_resume,
@@ -235,7 +235,7 @@ def send_message(
 
         aida_mode = is_aida_mode()
         if aida_mode:
-            if not acquire_turn(session_id):
+            if not acquire_turn_waiting(session_id):
                 frappe.throw(
                     _("AIDA is still answering the previous message. Wait for it to finish."),
                     frappe.ValidationError,
@@ -489,7 +489,7 @@ def continue_response(
         effective_client_type = client_type or "spa"
 
         if is_aida_mode():
-            if not acquire_turn(session_id):
+            if not acquire_turn_waiting(session_id):
                 frappe.throw(
                     _("AIDA is still answering the previous message. Wait for it to finish."),
                     frappe.ValidationError,

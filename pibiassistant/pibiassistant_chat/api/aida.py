@@ -6,6 +6,8 @@ import frappe
 import requests
 from frappe import _
 
+from ._rate_limits import rate_limit, session_user_or_ip
+
 _AUDIO_EXTENSIONS = {".mp3", ".wav", ".m4a", ".ogg", ".oga", ".webm", ".mp4", ".flac", ".aac", ".opus"}
 _AUDIO_MAX_BYTES = 25 * 1024 * 1024
 
@@ -140,9 +142,44 @@ def test_connections():
     return results
 
 
+_MAX_MESSAGE_CHARS = 20000
+_MAX_STREAM_SECONDS = 240
+
+
+def _assert_can_use_aida():
+    from .settings import can_use_pao
+
+    check = can_use_pao()
+    if not check.get("can_use"):
+        frappe.throw(check.get("reason") or _("Cannot use AIDA"), frappe.PermissionError)
+
+
 @frappe.whitelist()
+@rate_limit(session_user_or_ip, limit=30, seconds=60)
 def send_message(session_id=None, message=None, **kwargs):
     """Proxy a chat message to the AIDA API and stream the response back via Socket.IO."""
+    from .chat.aida_stream import acquire_turn_waiting, release_turn
+
+    _assert_can_use_aida()
+    if message and len(message) > _MAX_MESSAGE_CHARS:
+        frappe.throw(_("The message is too long."), frappe.ValidationError)
+    if session_id and not frappe.utils.cstr(session_id).replace("_", "").replace("-", "").isalnum():
+        frappe.throw(_("Invalid session"), frappe.ValidationError)
+
+    locked = bool(session_id)
+    if locked and not acquire_turn_waiting(session_id):
+        frappe.throw(
+            _("AIDA is still answering the previous message. Wait for it to finish."),
+            frappe.ValidationError,
+        )
+    try:
+        return _send_message_impl(session_id=session_id, message=message, **kwargs)
+    finally:
+        if locked:
+            release_turn(session_id)
+
+
+def _send_message_impl(session_id=None, message=None, **kwargs):
     if not message:
         frappe.throw(_("Message is required"))
 
@@ -216,6 +253,8 @@ def send_message(session_id=None, message=None, **kwargs):
                 return {"ok": False, "error": error_text}
 
             for line in resp.iter_lines(decode_unicode=True):
+                if time.monotonic() - started_at > _MAX_STREAM_SECONDS:
+                    raise requests.exceptions.Timeout()
                 if not line:
                     continue
                 if line.startswith("data: "):

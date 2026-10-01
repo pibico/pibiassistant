@@ -1129,3 +1129,7 @@ workflow_name is required,Se requiere workflow_name
 {fieldname} must be an integer.,{fieldname} debe ser un número entero.
 {fieldname} must be one of: {options}.,{fieldname} debe ser uno de: {options}.
 ● Approval needed,● Aprobación necesaria
+AIDA returned an empty answer. Please try again.,AIDA devolvió una respuesta vacía. Inténtalo de nuevo.
+The answer was cut off before it finished. Please try again.,La respuesta se cortó antes de terminar. Inténtalo de nuevo.
+The message is too long.,El mensaje es demasiado largo.
+Invalid session,Sesión no válida

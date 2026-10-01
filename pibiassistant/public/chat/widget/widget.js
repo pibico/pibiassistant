@@ -782,7 +782,7 @@ class PAOWidget {
 			if (!res.ok || !data || data.text === undefined) {
 				let detail = "";
 				try { detail = (JSON.parse(json._server_messages || "[]").map((m) => JSON.parse(m).message).join(" ") || json.exception || "").replace(/<[^>]*>/g, "").slice(0, 160); } catch (e) {}
-				console.error("AIDA transcribe failed", res.status, json);
+				PAOLogger.error("Transcription failed", res.status, json);
 				frappe.show_alert({ message: __("Could not transcribe") + (detail ? ": " + detail : ""), indicator: "red" });
 				return;
 			}

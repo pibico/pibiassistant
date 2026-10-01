@@ -28,7 +28,7 @@ defineProps({
 	min-width: 0;
 }
 .ql-header-title {
-	font-family: var(--ql-font-display, Georgia, "Source Serif 4", serif);
+	font-family: var(--ql-font-display);
 	font-size: 22px;
 	line-height: 1.15;
 	letter-spacing: -0.01em;
