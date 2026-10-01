@@ -1,3 +1,7 @@
+import csv
+import os
+import re
+
 import frappe
 
 from pibiassistant.pibiassistant_chat.gate import is_chat_enabled
@@ -34,6 +38,7 @@ def get_context(context):
     context = frappe._dict()
     context.csrf_token = csrf_token
     context.boot = get_boot()
+    context.asset_version = get_asset_version()
     return context
 
 
@@ -71,11 +76,14 @@ def get_boot():
     theme_map = {"Dark": "dark", "Light": "light", "Automatic": "automatic"}
     theme = theme_map.get(user_theme, "light")
 
+    lang = str(frappe.local.lang or "en")
     bootinfo = {
         "site_name": str(frappe.local.site),
         "user": str(frappe.session.user),
         "csrf_token": str(frappe.sessions.get_csrf_token()),
-        "lang": str(frappe.local.lang or "en"),
+        "lang": lang,
+        "aida_lang": lang,
+        "aida_messages": get_messages(lang),
         "theme": theme,
         "socketio_port": frappe.conf.get("socketio_port") or 9000,
         "aida_mode": _is_aida_mode(),
@@ -88,7 +96,54 @@ def get_boot():
     bootinfo["user_fullname"] = user_info.get("full_name") or frappe.session.user
     bootinfo["user_image"] = user_info.get("user_image") or ""
 
-    # AIDA SPA has no translation files and doesn't use __translations
-    bootinfo["__translations"] = {}
-
     return bootinfo
+
+
+_LANG_RE = re.compile(r"^[A-Za-z]{2,3}(?:[-_][A-Za-z0-9]{2,8})?$")
+
+
+def _read_csv(path):
+    out = {}
+    with open(path, encoding="utf-8", newline="") as fh:
+        for row in csv.reader(fh):
+            if len(row) >= 2 and row[0] and row[1] and row[0] != row[1]:
+                out[row[0]] = row[1]
+    return out
+
+
+def get_messages(lang):
+    """{English source: translation} for `lang`, base language first (es-AR -> es)."""
+    lang = str(lang or "en").replace("_", "-")
+    if not _LANG_RE.match(lang) or lang.split("-")[0].lower() == "en":
+        return {}
+    base = frappe.get_app_path("pibiassistant", "translations")
+    files = []
+    for code in dict.fromkeys([lang.split("-")[0], lang]):
+        for name in (code, code.lower()):
+            path = os.path.join(base, name + ".csv")
+            if os.path.isfile(path) and path not in files:
+                files.append(path)
+    if not files:
+        return {}
+    key = "aida_messages:" + lang + ":" + ":".join(str(int(os.path.getmtime(p))) for p in files)
+    cache = frappe.cache()
+    messages = cache.get_value(key)
+    if messages is None:
+        messages = {}
+        for path in files:
+            messages.update(_read_csv(path))
+        cache.set_value(key, messages)
+    return messages
+
+
+def get_asset_version():
+    """Newest mtime under public/aida, used as a cache-busting query string."""
+    newest = 0
+    try:
+        root = frappe.get_app_path("pibiassistant", "public", "aida")
+        for folder, _dirs, names in os.walk(root):
+            for name in names:
+                newest = max(newest, int(os.path.getmtime(os.path.join(folder, name))))
+    except OSError:
+        return "0"
+    return str(newest or 0)

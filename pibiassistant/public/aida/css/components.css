@@ -1,0 +1,184 @@
+.aida-icon { flex-shrink: 0; }
+
+.aida-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--aida-s-2);
+  min-height: 36px;
+  padding: 0 var(--aida-s-3);
+  font: 500 var(--aida-fs-base) var(--aida-font-sans);
+  color: var(--aida-text);
+  background: var(--aida-surface);
+  border: 1px solid var(--aida-border);
+  border-radius: var(--aida-r-md);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--aida-dur-color), border-color var(--aida-dur-color), color var(--aida-dur-color);
+}
+.aida-btn--primary { color: var(--aida-on-accent); background: var(--aida-accent-strong); border-color: var(--aida-accent-strong); }
+.aida-btn--primary:hover { background: var(--aida-accent-hover); border-color: var(--aida-accent-hover); }
+.aida-btn--outline:hover { border-color: var(--aida-border-hover); background: var(--aida-subtle); }
+.aida-btn--ghost { background: transparent; border-color: transparent; }
+.aida-btn--ghost:hover { background: var(--aida-subtle); }
+.aida-btn--danger { color: var(--aida-on-accent); background: var(--aida-danger); border-color: var(--aida-danger); }
+.aida-btn--danger:hover { filter: brightness(1.08); }
+.aida-btn:disabled, .aida-btn.is-disabled { opacity: .5; cursor: not-allowed; }
+
+.aida-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--aida-text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: var(--aida-r-md);
+  cursor: pointer;
+  transition: background-color var(--aida-dur-color), color var(--aida-dur-color);
+}
+.aida-icon-btn:hover { color: var(--aida-text); background: var(--aida-subtle); }
+.aida-icon-btn:disabled { opacity: .4; cursor: not-allowed; }
+@media (max-width: 1023.98px), (hover: none), (pointer: coarse) {
+  .aida-icon-btn { width: var(--aida-tap); height: var(--aida-tap); }
+  .aida-btn { min-height: var(--aida-tap); }
+}
+
+.aida-link-btn {
+  min-height: var(--aida-tap);
+  padding: 0 var(--aida-s-2);
+  font: 500 var(--aida-fs-sm) var(--aida-font-sans);
+  color: var(--aida-accent-hover);
+  background: none;
+  border: 0;
+  border-radius: var(--aida-r-sm);
+  cursor: pointer;
+}
+.aida-link-btn:hover { text-decoration: underline; }
+
+.aida-menu {
+  min-width: 0;
+  padding: var(--aida-s-1);
+  background: var(--aida-surface);
+  border: 1px solid var(--aida-border);
+  border-radius: var(--aida-r-md);
+  box-shadow: var(--aida-shadow-pop);
+  z-index: var(--aida-z-popover);
+}
+.aida-menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--aida-s-2);
+  width: 100%;
+  min-height: var(--aida-tap);
+  padding: 0 var(--aida-s-3);
+  box-sizing: border-box;
+  font: 400 var(--aida-fs-base) var(--aida-font-sans);
+  color: var(--aida-text);
+  text-align: left;
+  text-decoration: none;
+  background: none;
+  border: 0;
+  border-radius: var(--aida-r-sm);
+  cursor: pointer;
+}
+.aida-menu__item:hover { background: var(--aida-subtle); }
+.aida-menu__divider { height: 1px; margin: var(--aida-s-1) 0; background: var(--aida-border); border: 0; }
+
+.aida-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  border: 2px solid var(--aida-border);
+  border-top-color: var(--aida-accent);
+  border-radius: var(--aida-r-circle);
+  animation: aida-spin .8s linear infinite;
+}
+@keyframes aida-spin { to { transform: rotate(360deg); } }
+
+.aida-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--aida-z-scrim);
+  background: var(--aida-scrim);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--aida-dur-menu) var(--aida-ease);
+}
+.aida-scrim.is-open { opacity: 1; pointer-events: auto; }
+@media (min-width: 1024px) { .aida-scrim { display: none; } }
+
+.aida-toasts {
+  position: fixed;
+  right: calc(var(--aida-s-4) + var(--aida-safe-right));
+  bottom: calc(var(--aida-s-4) + var(--aida-safe-bottom));
+  left: auto;
+  z-index: var(--aida-z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--aida-s-2);
+  width: min(380px, calc(100% - 2 * var(--aida-s-4)));
+  pointer-events: none;
+}
+@media (max-width: 639.98px) {
+  .aida-toasts { right: auto; left: 50%; transform: translateX(-50%); }
+}
+.aida-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--aida-s-2);
+  padding: var(--aida-s-2) var(--aida-s-2) var(--aida-s-2) var(--aida-s-4);
+  font-size: var(--aida-fs-sm);
+  color: var(--aida-text);
+  background: var(--aida-surface);
+  border: 1px solid var(--aida-border);
+  border-left-width: 3px;
+  border-radius: var(--aida-r-lg);
+  box-shadow: var(--aida-shadow-pop);
+  pointer-events: auto;
+}
+.aida-toast__text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.aida-toast.is-info { border-left-color: var(--aida-accent); }
+.aida-toast.is-error { border-left-color: var(--aida-danger); }
+.aida-toast.is-success { border-left-color: var(--aida-success); }
+
+.aida-dialog__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--aida-z-dialog);
+  background: var(--aida-scrim);
+}
+.aida-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: var(--aida-z-dialog);
+  box-sizing: border-box;
+  width: min(420px, calc(100% - 2 * var(--aida-s-4)));
+  max-height: calc(100% - 2 * var(--aida-s-4));
+  overflow-y: auto;
+  padding: var(--aida-s-6);
+  color: var(--aida-text);
+  background: var(--aida-surface);
+  border: 1px solid var(--aida-border);
+  border-radius: var(--aida-r-xl);
+  box-shadow: var(--aida-shadow-pop);
+  transform: translate(-50%, -50%);
+}
+.aida-dialog__title { margin: 0 0 var(--aida-s-2); font-size: var(--aida-fs-h3); font-weight: 600; }
+.aida-dialog__message { margin: 0 0 var(--aida-s-6); font-size: var(--aida-fs-base); color: var(--aida-text-secondary); }
+.aida-dialog__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--aida-s-2); }
+
+.aida-skeleton {
+  background: linear-gradient(90deg, var(--aida-subtle) 25%, var(--aida-border) 50%, var(--aida-subtle) 75%);
+  background-size: 200% 100%;
+  border-radius: var(--aida-r-sm);
+  animation: aida-shimmer 1.4s linear infinite;
+}
+@keyframes aida-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .aida-skeleton, .aida-spinner { animation: none; }
+}
