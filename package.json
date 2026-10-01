@@ -1,12 +1,9 @@
 {
   "name": "pibiassistant",
   "private": true,
-  "description": "Node dev dependencies for commit-message linting. Pinned to v19 because Frappe v15's bench environment uses Node 18, and commitlint v20's transitive deps require Node >=20. NOTE: the `build` script compiles the chat/frontend SPA, which requires Node >=22 (see pibiassistant/chat/frontend/package.json engines) — run `bench build` on a bench whose Node is >=22.",
+  "description": "Node dev dependencies for commit-message linting. Pinned to v19 because Frappe v15's bench environment uses Node 18, and commitlint v20's transitive deps require Node >=20.",
   "engines": {
     "node": ">=18"
-  },
-  "scripts": {
-    "build": "cd pibiassistant/pibiassistant_chat/frontend && { [ -d node_modules ] || npm ci; } && npm run build"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.0",
