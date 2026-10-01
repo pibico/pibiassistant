@@ -28,6 +28,7 @@
   <noscript>{{ _("AIDA needs JavaScript to run. Please enable JavaScript in your browser.") }}</noscript>
   <script>{% for key in boot %}window["{{ key }}"] = {{ boot[key] | tojson }};{% endfor %}</script>
   <script src="/assets/frappe/node_modules/socket.io-client/dist/socket.io.min.js"></script>
+  <script type="importmap">{{ import_map | tojson }}</script>
   <script type="module" src="/assets/pibiassistant/aida/js/main.js?v={{ asset_version }}"></script>
 </body>
 </html>

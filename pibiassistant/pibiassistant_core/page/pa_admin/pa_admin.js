@@ -5,10 +5,18 @@ frappe.pages['pa-admin'].on_page_load = function (wrapper) {
         single_column: true,
     });
 
-    frappe.require('/assets/pibiassistant/css/pa_admin.css');
-
-    const V = '202610012';
-    const entry = '/assets/pibiassistant/js/pa_admin/main.js?v=' + V;
+    // nginx caches /assets for a year: versioned module URLs come from the server as an import map
+    const entry = '/assets/pibiassistant/js/pa_admin/main.js';
+    async function installAssetVersions() {
+        if (document.getElementById('pa-admin-importmap')) return;
+        const versions = await frappe.xcall('pibiassistant.api.admin_api.get_import_map');
+        const map = document.createElement('script');
+        map.type = 'importmap';
+        map.id = 'pa-admin-importmap';
+        map.textContent = JSON.stringify({ imports: versions.imports });
+        document.head.appendChild(map);
+        frappe.require(versions.css);
+    }
     const host = () => page.main.get(0);
     let mod = null;
     let unmountFn = null;
@@ -18,6 +26,7 @@ frappe.pages['pa-admin'].on_page_load = function (wrapper) {
         if (mounting) return mounting;
         mounting = (async () => {
             try {
+                await installAssetVersions();
                 mod = mod || (await import(entry));
                 if (unmountFn) {
                     mod.refreshAll();

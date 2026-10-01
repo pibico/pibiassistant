@@ -4,6 +4,9 @@ import re
 
 import frappe
 
+from pibiassistant.utils.asset_versions import module_import_map
+
+
 from pibiassistant.pibiassistant_chat.gate import is_chat_enabled
 from pibiassistant.pibiassistant_chat.utils.security_headers import apply_spa_headers
 
@@ -39,6 +42,7 @@ def get_context(context):
     context.csrf_token = csrf_token
     context.boot = get_boot()
     context.asset_version = get_asset_version()
+    context.import_map = {"imports": module_import_map("aida/js")}
     return context
 
 

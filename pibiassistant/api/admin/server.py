@@ -14,8 +14,25 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import hashlib
+
 import frappe
 from frappe import _
+
+
+@frappe.whitelist()
+def get_import_map() -> dict:
+    """Content-hashed URLs of the PA Admin ES modules (see utils/asset_versions.py)."""
+    frappe.only_for(["System Manager", "PA Admin"])
+    from pibiassistant.utils.asset_versions import module_import_map
+
+    css = "/assets/pibiassistant/css/pa_admin.css"
+    try:
+        with open(frappe.get_app_path("pibiassistant", "public", "css", "pa_admin.css"), "rb") as f:
+            css += "?v=" + hashlib.sha1(f.read()).hexdigest()[:10]
+    except OSError:
+        pass
+    return {"imports": module_import_map("js/pa_admin"), "css": css}
 
 
 @frappe.whitelist()
