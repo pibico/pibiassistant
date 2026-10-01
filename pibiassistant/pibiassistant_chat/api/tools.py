@@ -31,6 +31,19 @@ _DEFAULT_APPROVAL_TOOLS = frozenset(
 )
 
 
+_LOCAL_PREFS_KEY = "aida_tool_preferences"
+
+
+def _local_tool_preferences() -> dict:
+    """Per-user tool preferences stored on this site (used when PA Cloud isn't connected)."""
+    raw = frappe.defaults.get_user_default(_LOCAL_PREFS_KEY, frappe.session.user)
+    try:
+        prefs = frappe.parse_json(raw) if raw else {}
+    except Exception:
+        prefs = {}
+    return prefs if isinstance(prefs, dict) else {}
+
+
 def _tool_to_ui_dict(tool_meta: dict, read_only: bool = False) -> dict:
     """Project a PA tool metadata dict down to the fields the UI needs.
 
@@ -120,8 +133,7 @@ def list_tool_preferences():
 
     client = get_pa_cloud_client()
     if not client:
-        # Not registered with AR yet — return empty, don't error the UI.
-        return {"preferences": {}}
+        return {"preferences": _local_tool_preferences()}
 
     result = client.list_tool_preferences(user_id=_ar_user_id(frappe.session.user))
     return result or {"preferences": {}}
@@ -152,7 +164,13 @@ def set_tool_preference(tool_name: str | None = None, preference: str | None = N
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
+            prefs = _local_tool_preferences()
+            if preference == "ask":
+                prefs.pop(tool_name, None)
+            else:
+                prefs[tool_name] = preference
+            frappe.defaults.set_user_default(_LOCAL_PREFS_KEY, frappe.as_json(prefs), frappe.session.user)
+            return {"success": True, "tool_name": tool_name, "preference": preference}
 
         return client.set_tool_preference(
             user_id=_ar_user_id(frappe.session.user),

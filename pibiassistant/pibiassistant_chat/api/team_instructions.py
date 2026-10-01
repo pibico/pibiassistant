@@ -9,6 +9,8 @@ from frappe import _
 
 from .auth import _ar_user_id
 
+_LOCAL_NOTES_KEY = "aida_team_notes"
+
 
 @frappe.whitelist(methods=["GET"])
 def get_shared_knowledge():
@@ -19,7 +21,7 @@ def get_shared_knowledge():
         client = get_pa_cloud_client()
         if not client:
             return {
-                "content": "",
+                "content": frappe.db.get_default(_LOCAL_NOTES_KEY) or "",
                 "embedding_status": "Pending",
                 "total_chunks": 0,
                 "document_id": None,
@@ -46,7 +48,13 @@ def update_shared_knowledge(content: str | None = None):
 
         client = get_pa_cloud_client()
         if not client:
-            frappe.throw(_("Not connected to the cloud service"))
+            frappe.db.set_default(_LOCAL_NOTES_KEY, content)
+            return {
+                "content": content,
+                "embedding_status": "Pending",
+                "total_chunks": 0,
+                "document_id": None,
+            }
 
         return client.update_shared_knowledge(content=content)
 
