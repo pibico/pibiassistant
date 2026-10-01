@@ -1276,3 +1276,23 @@ Run a workflow action,Ejecutar una acción de flujo de trabajo
 Generate a document,Generar un documento
 This approval has expired. Please ask again.,Esta aprobación ha caducado. Vuelve a pedirlo.
 Changing data from the chat is not enabled on this site.,Modificar datos desde el chat no está activado en este sitio.
+{0} tools,{0} herramientas
+Active,Activo
+Inactive,Inactivo
+Plugin System Status,Estado del sistema de plugins
+Active Tools,Herramientas activas
+Operational,Operativo
+Open PA Admin,Abrir PA Admin
+"For individual tool management, role-based access control, and category filtering, use the PA Admin page.","Para gestionar herramientas una a una, el control de acceso por roles y el filtrado por categorías, usa la página PA Admin."
+Error loading plugin status,Error al cargar el estado de los plugins
+(none),(ninguna)
+The file is empty.,El archivo está vacío.
+The file is larger than {0} MB.,El archivo supera los {0} MB.
+The file content does not match its extension.,El contenido del archivo no coincide con su extensión.
+The file content is not valid base64.,El contenido del archivo no es base64 válido.
+Document not found: {0} {1},Documento no encontrado: {0} {1}
+You do not have permission to attach files to {0} {1}.,No tienes permiso para adjuntar archivos a {0} {1}.
+Only files stored in Frappe can be attached by URL.,Solo se pueden adjuntar por URL archivos guardados en Frappe.
+File not found: {0},Archivo no encontrado: {0}
+This upload link is invalid or has expired.,Este enlace de subida no es válido o ha caducado.
+No file was sent.,No se envió ningún archivo.
