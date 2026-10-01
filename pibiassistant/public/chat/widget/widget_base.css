@@ -1,11 +1,11 @@
 /* pibiAssistant Copilot - Powered by PA Cloud - Widget Base Styles */
 /* Theme CSS Variables - Matched to Vue app (theme.css / Quiet Ledger) for consistent UX */
 
-/* Accent Colors - Quiet Ledger family (teal + gold) */
+/* Accent Colors - pibiCo steelblue */
 :root {
-	--pao-indigo: #0F6E5C;
+	--pao-indigo: #4682B4;
 	--pao-purple: #C9A227;
-	--pao-blue: #0F6E5C;
+	--pao-blue: #4682B4;
 	--pao-green: #1E7A52;
 	--pao-orange: #B8791A;
 }
@@ -35,9 +35,9 @@
 	--pao-code-bg: #F5F3EF;
 	--pao-shadow: rgba(0, 0, 0, 0.08);
 
-	/* Primary - Teal (Quiet Ledger) */
-	--pao-primary: #0F6E5C;
-	--pao-primary-hover: #0B5A4B;
+	/* Primary - pibiCo steelblue */
+	--pao-primary: #4682B4;
+	--pao-primary-hover: #386890;
 }
 
 /* Dark Theme - Quiet Ledger "Ink Ledger" (warm charcoal) */
@@ -59,9 +59,9 @@ html[data-theme="dark"] .pao-widget {
 	--pao-code-bg: #26241B;
 	--pao-shadow: rgba(0, 0, 0, 0.3);
 
-	/* Primary - Teal (Quiet Ledger, brightened for dark) */
-	--pao-primary: #2DAA8F;
-	--pao-primary-hover: #3FBBA0;
+	/* Primary - pibiCo steelblue (brightened for dark) */
+	--pao-primary: #5BA3D9;
+	--pao-primary-hover: #7DB8E3;
 }
 
 /* Widget Container */
@@ -275,7 +275,7 @@ html[data-theme="dark"] .pao-widget {
 
 .pao-logo {
 	flex-shrink: 0;
-	color: var(--pao-primary, #0F6E5C);
+	color: var(--pao-primary, #4682B4);
 }
 
 .pao-brand-text {
@@ -332,13 +332,13 @@ html[data-theme="dark"] .pao-widget {
 	font-size: 16px;
 }
 
-/* Prominent expand button with text - teal gradient (Quiet Ledger) */
+/* Prominent expand button with text - steelblue gradient */
 .pao-expand-prominent {
 	display: flex;
 	align-items: center;
 	gap: 6px;
 	padding: 6px 12px;
-	background: linear-gradient(135deg, #0F6E5C 0%, #0B5A4B 100%);
+	background: linear-gradient(135deg, #3A74A3 0%, #2F6A9A 100%);
 	color: white;
 	border-radius: 6px;
 	font-size: 12px;
@@ -346,14 +346,14 @@ html[data-theme="dark"] .pao-widget {
 	border: none;
 	cursor: pointer;
 	transition: all 0.2s ease;
-	box-shadow: 0 2px 4px rgba(15, 110, 92, 0.2);
+	box-shadow: 0 2px 4px rgba(70, 130, 180, 0.2);
 }
 
 .pao-expand-prominent:hover {
-	background: linear-gradient(135deg, #0B5A4B 0%, #094539 100%);
+	background: linear-gradient(135deg, #386890 0%, #094539 100%);
 	color: white;
 	transform: translateY(-1px);
-	box-shadow: 0 4px 8px rgba(15, 110, 92, 0.3);
+	box-shadow: 0 4px 8px rgba(70, 130, 180, 0.3);
 }
 
 .pao-expand-prominent .ph {
@@ -465,13 +465,13 @@ html[data-theme="dark"] .pao-widget .pao-file-upload-btn:hover {
 }
 
 .pao-file-preview:hover {
-	border-color: var(--pao-primary, #0F6E5C);
-	box-shadow: 0 2px 6px rgba(15, 110, 92, 0.1);
+	border-color: var(--pao-primary, #4682B4);
+	box-shadow: 0 2px 6px rgba(70, 130, 180, 0.1);
 }
 
 .pao-file-icon {
 	flex-shrink: 0;
-	color: var(--pao-primary, #0F6E5C);
+	color: var(--pao-primary, #4682B4);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -524,8 +524,8 @@ html[data-theme="dark"] .pao-widget .pao-file-preview {
 }
 
 html[data-theme="dark"] .pao-widget .pao-file-preview:hover {
-	border-color: var(--pao-primary, #2DAA8F);
-	box-shadow: 0 2px 6px rgba(45, 170, 143, 0.2);
+	border-color: var(--pao-primary, #5BA3D9);
+	box-shadow: 0 2px 6px rgba(91, 163, 217, 0.2);
 }
 
 html[data-theme="dark"] .pao-widget .pao-file-name {
@@ -557,8 +557,8 @@ html[data-theme="dark"] .pao-widget .pao-file-remove:hover {
 }
 
 .pao-input-wrapper:focus-within {
-	border-color: var(--pao-primary, #0F6E5C);
-	box-shadow: 0 0 0 3px rgba(15, 110, 92, 0.12);
+	border-color: var(--pao-primary, #4682B4);
+	box-shadow: 0 0 0 3px rgba(70, 130, 180, 0.12);
 }
 
 html[data-theme="dark"] .pao-widget .pao-input-wrapper {
@@ -616,14 +616,14 @@ html[data-theme="dark"] .pao-widget .pao-input::placeholder {
 	color: var(--pao-text-primary, #18181b);
 }
 
-/* Active (has text) — teal fill */
+/* Active (has text) — steelblue fill */
 .pao-send-btn.is-active {
-	background: var(--pao-primary, #0F6E5C);
+	background: var(--pao-primary, #4682B4);
 	color: #fff;
 }
 
 .pao-send-btn.is-active:hover:not(:disabled) {
-	background: var(--pao-primary-hover, #0B5A4B);
+	background: var(--pao-primary-hover, #386890);
 	color: #fff;
 }
 

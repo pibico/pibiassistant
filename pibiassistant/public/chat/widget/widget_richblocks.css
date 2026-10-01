@@ -50,11 +50,11 @@
 
 /* Callout variants */
 .pao-rb-callout-info {
-	background: rgba(15, 110, 92, 0.08);
-	border-left-color: #0F6E5C;
-	color: #0B5A4B;
+	background: rgba(70, 130, 180, 0.08);
+	border-left-color: #4682B4;
+	color: #386890;
 }
-.pao-rb-callout-info .pao-rb-callout-icon { color: #0F6E5C; }
+.pao-rb-callout-info .pao-rb-callout-icon { color: #4682B4; }
 
 .pao-rb-callout-warning {
 	background: rgba(245, 158, 11, 0.08);
@@ -86,7 +86,7 @@
 
 /* Callout dark mode */
 html[data-theme="dark"] .pao-widget .pao-rb-callout-info {
-	background: rgba(45, 170, 143, 0.12);
+	background: rgba(91, 163, 217, 0.12);
 	color: #5fc9b1;
 }
 html[data-theme="dark"] .pao-widget .pao-rb-callout-warning {
@@ -261,9 +261,9 @@ html[data-theme="dark"] .pao-widget .pao-rb-metric-value {
 }
 
 .pao-rb-step-active .pao-rb-step-marker {
-	background: var(--pao-primary, #0F6E5C);
+	background: var(--pao-primary, #4682B4);
 	color: #fff;
-	box-shadow: 0 0 0 3px rgba(15, 110, 92, 0.2);
+	box-shadow: 0 0 0 3px rgba(70, 130, 180, 0.2);
 }
 
 .pao-rb-step-done .pao-rb-step-marker {
@@ -449,8 +449,8 @@ html[data-theme="dark"] .pao-widget .pao-rb-accordion-body {
 }
 
 .pao-rb-tab-btn.pao-rb-active {
-	color: var(--pao-primary, #0F6E5C);
-	border-bottom-color: var(--pao-primary, #0F6E5C);
+	color: var(--pao-primary, #4682B4);
+	border-bottom-color: var(--pao-primary, #4682B4);
 	font-weight: 600;
 }
 
@@ -553,9 +553,9 @@ html[data-theme="dark"] .pao-widget .pao-rb-tab-panel {
 	padding: 0.375rem 0.75rem;
 	font-size: 0.75rem;
 	font-weight: 500;
-	color: var(--pao-primary, #0F6E5C);
+	color: var(--pao-primary, #4682B4);
 	background: none;
-	border: 1px solid var(--pao-primary, #0F6E5C);
+	border: 1px solid var(--pao-primary, #4682B4);
 	border-radius: 0.375rem;
 	cursor: pointer;
 	white-space: nowrap;
@@ -563,7 +563,7 @@ html[data-theme="dark"] .pao-widget .pao-rb-tab-panel {
 }
 
 .pao-rb-view-full:hover {
-	background: var(--pao-primary, #0F6E5C);
+	background: var(--pao-primary, #4682B4);
 	color: #fff;
 }
 

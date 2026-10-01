@@ -45,17 +45,17 @@
 	font-weight: 500;
 	border-radius: 8px;
 	border: none;
-	background: var(--pao-primary, #0F6E5C);
+	background: var(--pao-primary, #4682B4);
 	color: white;
 	cursor: pointer;
 	transition: all 0.2s ease;
-	box-shadow: 0 2px 8px rgba(15, 110, 92, 0.3);
+	box-shadow: 0 2px 8px rgba(70, 130, 180, 0.3);
 }
 
 .pao-setup-btn:hover:not(:disabled) {
-	background: var(--pao-primary-hover, #0B5A4B);
+	background: var(--pao-primary-hover, #386890);
 	transform: translateY(-1px);
-	box-shadow: 0 4px 12px rgba(15, 110, 92, 0.4);
+	box-shadow: 0 4px 12px rgba(70, 130, 180, 0.4);
 }
 
 .pao-setup-btn:disabled {
@@ -180,8 +180,8 @@ html[data-theme="dark"] .pao-widget .pao-contact-admin p {
 }
 
 .pao-plan-card:hover {
-	border-color: #0F6E5C;
-	box-shadow: 0 4px 12px rgba(15, 110, 92, 0.15);
+	border-color: #4682B4;
+	box-shadow: 0 4px 12px rgba(70, 130, 180, 0.15);
 }
 
 .pao-plan-card.pao-plan-current {
@@ -190,8 +190,8 @@ html[data-theme="dark"] .pao-widget .pao-contact-admin p {
 }
 
 .pao-plan-card.pao-plan-popular {
-	border-color: #0F6E5C;
-	box-shadow: 0 4px 12px rgba(15, 110, 92, 0.2);
+	border-color: #4682B4;
+	box-shadow: 0 4px 12px rgba(70, 130, 180, 0.2);
 }
 
 .pao-plan-badge {
@@ -203,7 +203,7 @@ html[data-theme="dark"] .pao-widget .pao-contact-admin p {
 	font-size: 10px;
 	font-weight: 600;
 	color: white;
-	background: linear-gradient(135deg, #0F6E5C 0%, #0B5A4B 100%);
+	background: linear-gradient(135deg, #3A74A3 0%, #2F6A9A 100%);
 	border-radius: 12px;
 	text-transform: uppercase;
 	letter-spacing: 0.5px;
@@ -280,13 +280,13 @@ html[data-theme="dark"] .pao-widget .pao-contact-admin p {
 }
 
 .pao-plan-btn.btn-primary {
-	background: linear-gradient(135deg, #0F6E5C 0%, #0B5A4B 100%);
+	background: linear-gradient(135deg, #3A74A3 0%, #2F6A9A 100%);
 	border: none;
 	color: white;
 }
 
 .pao-plan-btn.btn-primary:hover {
-	background: linear-gradient(135deg, #0B5A4B 0%, #094539 100%);
+	background: linear-gradient(135deg, #386890 0%, #094539 100%);
 	transform: translateY(-1px);
 }
 
