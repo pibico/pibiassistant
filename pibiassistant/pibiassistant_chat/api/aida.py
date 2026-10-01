@@ -227,7 +227,7 @@ def convert_bytes_to_markdown(content, filename):
         )
     except requests.exceptions.RequestException as e:
         return "", f"Convert API unreachable: {str(e)[:150]}"
-    if resp.status_code != 200:
+    if resp.status_code not in (200, 201):
         return "", f"Convert API error {resp.status_code}: {resp.text[:200]}"
     result = resp.json()
     if result.get("success") is False:
@@ -280,7 +280,7 @@ def transcribe_audio(file_url=None):
             timeout=120,
         )
 
-    if resp.status_code != 200:
+    if resp.status_code not in (200, 201):
         return {"ok": False, "error": f"Voice API error {resp.status_code}: {resp.text[:200]}"}
 
     result = resp.json()

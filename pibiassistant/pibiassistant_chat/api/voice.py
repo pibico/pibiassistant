@@ -53,7 +53,7 @@ def transcribe(duration_ms: int = 0, language: str | None = None) -> dict:
             data={"language": lang, "task": "transcribe"},
             timeout=120,
         )
-        if resp.status_code != 200:
+        if resp.status_code not in (200, 201):
             frappe.throw(_("Voice API error {0}: {1}").format(resp.status_code, resp.text[:200]))
 
         result = resp.json()
