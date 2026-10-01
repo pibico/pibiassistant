@@ -232,11 +232,13 @@ def _approval_card(call: dict) -> dict:
         "generate_document": _("Generate a document"),
     }
     summary = json.dumps(call["arguments"], ensure_ascii=False, default=str)
+    action = labels.get(call["name"], call["name"])
+    target = " · ".join(str(call["arguments"][k]) for k in ("doctype", "name") if call["arguments"].get(k))
     return {
         "id": call["interrupt_id"],
         "reason": {
             "type": "approval",
-            "action": labels.get(call["name"], call["name"]),
+            "action": f"{action}: {target[:80]}" if target else action,
             "description": summary[:800],
         },
     }
