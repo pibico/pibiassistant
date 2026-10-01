@@ -8,6 +8,7 @@ import { loadHistory, recover } from "./session-history.js";
 
 export { loadHistory, recover };
 import { applyStreamEvent, isTerminal } from "./stream.js";
+import { decide, expireApprovals, pendingApprovals, responsesFor } from "./activity.js";
 import * as router from "../router.js";
 import { show as showToast } from "../components/toast.js";
 import { confirm } from "../components/dialog.js";
@@ -102,7 +103,13 @@ function handleStream(payload) {
     store.set({ streaming: IDLE_STREAMING });
     setUi({
       announce:
-        next.status === "done" ? __("Answer complete") : next.status === "aborted" ? __("Stopped.") : next.errorText,
+        next.status === "done"
+          ? __("Answer complete")
+          : next.status === "awaiting"
+            ? __("AIDA is waiting for your approval")
+            : next.status === "aborted"
+              ? __("Stopped.")
+              : next.errorText,
     });
     refreshSessions();
   }
@@ -153,7 +160,7 @@ export function sendMessage({ text = "", fileUrls = [], files = [] } = {}) {
   });
   const bubble = newMessage({ role: "assistant", status: "streaming" });
   store.set({
-    messages: [...store.get().messages, user, bubble],
+    messages: [...expireApprovals([...store.get().messages, user]), bubble],
     streaming: { active: true, key: bubble.key, stopping: false, slow: false },
   });
   setUi({ announce: __("AIDA is thinking...") });
@@ -184,6 +191,44 @@ export function sendMessage({ text = "", fileUrls = [], files = [] } = {}) {
       emit("aida:restore-draft", {
         text,
         files: user.files.map((f) => ({ name: f.name, file_name: f.name, file_url: f.url, size: f.size })),
+      });
+    });
+  return true;
+}
+
+// Records one decision; once every approval of the turn is answered the turn resumes on the server.
+export function respondApproval(messageKey, toolId, response) {
+  const { messages, streaming, activeSessionId, selectedModel } = store.get();
+  const msg = messages.find((m) => m.key === messageKey);
+  if (!msg || streaming.active || !activeSessionId) return false;
+  const decided = decide(msg, toolId, response);
+  if (pendingApprovals(decided).length) {
+    store.set({ messages: messages.map((m) => (m === msg ? decided : m)) });
+    return true;
+  }
+  const resumed = { ...decided, status: "streaming" };
+  store.set({
+    messages: messages.map((m) => (m === msg ? resumed : m)),
+    streaming: { active: true, key: msg.key, stopping: false, slow: false },
+  });
+  setUi({ announce: __("AIDA is thinking...") });
+  arm();
+  api
+    .post("resume_interrupt", {
+      session_id: activeSessionId,
+      interrupt_response: JSON.stringify(responsesFor(decided)),
+      message_id: msg.messageId || null,
+      client_type: "spa",
+      ...(selectedModel && selectedModel !== "auto" ? { model_id: selectedModel } : {}),
+    })
+    .catch((err) => {
+      if (store.get().streaming.key !== msg.key) return;
+      clearTimers();
+      store.set({
+        messages: store.get().messages.map((m) =>
+          m.key === msg.key ? { ...m, status: "error", errorText: err instanceof api.ApiError ? err.message : genericError() } : m,
+        ),
+        streaming: IDLE_STREAMING,
       });
     });
   return true;

@@ -305,3 +305,52 @@
   .aida-caret { animation: none; }
   .aida-dock.is-entering { animation: none; }
 }
+
+/* Tool activity and approval cards */
+.aida-activity { display: flex; flex-wrap: wrap; gap: var(--pad-y-sm); margin-bottom: var(--pad-y-sm); }
+.aida-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pad-y-sm);
+  padding: var(--pad-y-xs) var(--aida-s-2);
+  font-size: var(--aida-fs-xs);
+  color: var(--aida-text-secondary);
+  background: var(--aida-subtle);
+  border: 1px solid var(--aida-border);
+  border-radius: var(--aida-r-pill);
+}
+.aida-tool--success .aida-icon { color: var(--aida-success); }
+.aida-tool--error { color: var(--aida-danger); }
+.aida-tool--error .aida-icon { color: var(--aida-danger); }
+.aida-tool .aida-spin { animation: aida-spin 1s linear infinite; }
+.aida-approvals { display: grid; gap: var(--pad-y-md); margin-top: var(--pad-y-md); }
+.aida-approval {
+  padding: var(--pad-y-lg) var(--aida-s-3);
+  background: var(--aida-warning-soft);
+  border: 1px solid var(--aida-border-hover);
+  border-left: 3px solid var(--aida-gold);
+  border-radius: var(--aida-r-md);
+}
+.aida-approval--approved { border-left-color: var(--aida-success); background: var(--aida-subtle); }
+.aida-approval--rejected, .aida-approval--expired { border-left-color: var(--aida-border-hover); background: var(--aida-subtle); }
+.aida-approval__head { display: flex; align-items: center; flex-wrap: wrap; gap: var(--pad-y-sm); font-size: var(--aida-fs-base); }
+.aida-approval__tool { font-size: var(--aida-fs-xs); color: var(--aida-text-muted); }
+.aida-approval__why { margin: var(--pad-y-sm) 0 0; font-size: var(--aida-fs-sm, var(--aida-fs-base)); color: var(--aida-text-secondary); }
+.aida-approval__details { margin-top: var(--pad-y-sm); font-size: var(--aida-fs-xs); }
+.aida-approval__details summary { cursor: pointer; color: var(--aida-text-secondary); }
+.aida-approval__args {
+  margin: var(--pad-y-sm) 0 0;
+  padding: var(--pad-y-md) var(--aida-s-3);
+  max-height: 200px;
+  overflow: auto;
+  font-family: var(--aida-font-mono, monospace);
+  font-size: var(--aida-fs-xs);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--aida-code-bg);
+  border-radius: var(--aida-r-sm, var(--aida-r-md));
+}
+.aida-approval__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--pad-y-md); margin-top: var(--pad-y-md); }
+.aida-approval__state { margin-top: var(--pad-y-sm); font-size: var(--aida-fs-xs); font-weight: 600; color: var(--aida-text-secondary); }
+.aida-approval__state.is-approved { color: var(--aida-success); }
+@media (prefers-reduced-motion: reduce) { .aida-tool .aida-spin { animation: none; } }

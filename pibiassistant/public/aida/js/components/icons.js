@@ -28,6 +28,11 @@ const PH = {
   user: "user",
   sun: "sun",
   moon: "moon",
+  wrench: "wrench",
+  spinner: "spinner",
+  "check-circle": "check-circle",
+  "warning-circle": "warning-circle",
+  "shield-warning": "shield-warning",
 };
 
 export function icon(name, size = 20) {

@@ -1,5 +1,6 @@
 import { __ } from "./i18n.js";
 import { stripStopMarker } from "./format.js";
+import { activityFromBlocks, applyActivityEvent } from "./activity.js";
 
 const TERMINAL = new Set(["stream_complete", "stream_error", "stream_aborted"]);
 
@@ -21,11 +22,16 @@ export function applyStreamEvent(msg, payload, now) {
           : msg.content + (payload.chunk || "");
       return content === msg.content ? msg : { ...msg, content };
     }
+    case "tool_call_start":
+    case "tool_call_result":
+    case "approval_required":
+      return msg.status === "streaming" ? applyActivityEvent(msg, payload) : msg;
     case "stream_complete":
       if (msg.status !== "streaming") return msg;
       return {
         ...msg,
-        status: "done",
+        ...(Array.isArray(payload.blocks) ? activityFromBlocks(payload.blocks) : {}),
+        status: payload.interrupted ? "awaiting" : "done",
         content: payload.full_response || msg.content,
         model: payload.model_id || msg.model,
         promptTokens: positive(payload.prompt_tokens),

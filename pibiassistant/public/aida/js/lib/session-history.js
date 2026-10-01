@@ -2,6 +2,7 @@ import * as api from "./api.js";
 import { store, setUi } from "./store.js";
 import { __ } from "./i18n.js";
 import { fromHistoryRow, isStaleShellRow } from "./format.js";
+import { expireApprovals } from "./activity.js";
 import { IDLE_STREAMING, clearTimers } from "./chat-live.js";
 
 async function fetchRows(id, { flagStale = false } = {}) {
@@ -12,7 +13,7 @@ async function fetchRows(id, { flagStale = false } = {}) {
   if (flagStale && tail && isStaleShellRow(tail, Date.now())) {
     messages.push({ ...fromHistoryRow({ ...tail, errored: 1 }), retryable: true });
   }
-  return messages;
+  return expireApprovals(messages);
 }
 
 function applyServerRows(rows) {

@@ -1,3 +1,4 @@
+import { activityFromBlocks, parseBlocks } from "./activity.js";
 import { __, getLang } from "./i18n.js";
 
 const DAY = 86400000;
@@ -96,6 +97,8 @@ export function fromHistoryRow(row) {
     completionTokens: null,
     durationMs: null,
     files,
+    tools: [],
+    approvals: [],
     source: "history",
   };
   if (row.role === "user") {
@@ -104,11 +107,14 @@ export function fromHistoryRow(row) {
   const errored = !!row.errored;
   const aborted = !!row.aborted;
   const content = errored ? "" : stripStopMarker(row.content || contentFromBlocks(row.blocks));
-  if (!errored && !aborted && !content) return null;
+  const activity = errored ? { tools: [], approvals: [] } : activityFromBlocks(parseBlocks(row.blocks));
+  if (!errored && !aborted && !content && !activity.tools.length && !activity.approvals.length) return null;
+  const awaiting = !errored && !aborted && activity.approvals.some((a) => a.status === "pending");
   return {
     ...base,
+    ...activity,
     content,
-    status: errored ? "error" : aborted ? "aborted" : "done",
+    status: errored ? "error" : aborted ? "aborted" : awaiting ? "awaiting" : "done",
     errorText: errored ? __("AIDA couldn't finish this answer. Please try again.") : null,
     model: row.model || null,
     promptTokens: numberOrNull(row.prompt_tokens),

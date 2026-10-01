@@ -5,6 +5,8 @@ import { renderInto, safeHref } from "../lib/markdown.js";
 import { formatTime, isoOf, stripProvider, tokensPerSecond } from "../lib/format.js";
 import { initialOf } from "../lib/greeting.js";
 import { icon } from "./icons.js";
+import { toolChip, approvalCard } from "./activity.js";
+import { respondApproval } from "../lib/chat.js";
 import { show as showToast } from "./toast.js";
 
 const AVATAR_SRC = "/assets/pibiassistant/chat/widget/aida-icon.svg";
@@ -18,7 +20,19 @@ function caretHost(body) {
 }
 
 const signature = (m) =>
-  [m.status, m.model, m.promptTokens, m.completionTokens, m.durationMs, m.ts, m.errorText, m.truncated, m.retryable].join("|");
+  [
+    m.status,
+    m.model,
+    m.promptTokens,
+    m.completionTokens,
+    m.durationMs,
+    m.ts,
+    m.errorText,
+    m.truncated,
+    m.retryable,
+    (m.tools || []).map((t) => t.id + t.status).join(","),
+    (m.approvals || []).map((a) => a.id + a.status).join(","),
+  ].join("|");
 
 function avatar(role) {
   if (role === "assistant") {
@@ -78,6 +92,8 @@ export function createTurn(msg, { onRetry } = {}) {
 
   const label = h("div", { class: "aida-turn__label" }, isAssistant ? __("AIDA") : __("You"));
   const files = h("div", { class: "aida-turn__files", hidden: true });
+  const tools = h("div", { class: "aida-activity", hidden: true });
+  const approvals = h("div", { class: "aida-approvals", hidden: true });
   const body = h("div", { class: isAssistant ? "aida-turn__body aida-md" : "aida-turn__body" });
   const notice = h("div", { class: "aida-turn__notices" });
   const actions = h("div", { class: "aida-turn__actions" });
@@ -86,7 +102,7 @@ export function createTurn(msg, { onRetry } = {}) {
     "article",
     { class: ["aida-turn", isAssistant ? "aida-turn--assistant" : "aida-turn--user"] },
     h("div", { class: "aida-turn__avatar" }, avatar(msg.role)),
-    h("div", { class: "aida-turn__content" }, label, files, body, notice, actions, footer),
+    h("div", { class: "aida-turn__content" }, label, files, tools, body, approvals, notice, actions, footer),
   );
 
   function renderBody() {
@@ -170,8 +186,22 @@ export function createTurn(msg, { onRetry } = {}) {
     notice.replaceChildren(...out);
   }
 
+  function renderActivity() {
+    const m = current;
+    const list = m.tools || [];
+    tools.hidden = !list.length;
+    tools.replaceChildren(...list.map(toolChip));
+    const cards = m.approvals || [];
+    approvals.hidden = !cards.length;
+    const busy = store.get().streaming.active;
+    approvals.replaceChildren(
+      ...cards.map((a) => approvalCard(a, { disabled: busy, onDecide: (id, response) => respondApproval(m.key, id, response) })),
+    );
+  }
+
   function renderExtras() {
     const m = current;
+    renderActivity();
     renderNotices();
     actions.replaceChildren(...(isAssistant && m.content && m.status !== "streaming" ? [copyButton()] : []));
     const items = footerItems(m, store.get().prefs.showTimestamps);
@@ -183,7 +213,7 @@ export function createTurn(msg, { onRetry } = {}) {
     const m = current;
     el.classList.toggle("is-streaming", m.status === "streaming");
     el.classList.toggle("is-error", m.status === "error");
-    const sig = signature(m) + "|" + store.get().prefs.showTimestamps + "|" + store.get().streaming.slow;
+    const sig = signature(m) + "|" + store.get().prefs.showTimestamps + "|" + store.get().streaming.slow + "|" + store.get().streaming.active;
     scheduleBody();
     if (sig !== lastSig) {
       lastSig = sig;

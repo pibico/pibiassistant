@@ -31,6 +31,8 @@ export function newMessage(fields) {
     completionTokens: null,
     durationMs: null,
     files: [],
+    tools: [],
+    approvals: [],
     source: "live",
     ...fields,
   };
