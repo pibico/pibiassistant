@@ -1133,3 +1133,129 @@ AIDA returned an empty answer. Please try again.,AIDA devolvió una respuesta va
 The answer was cut off before it finished. Please try again.,La respuesta se cortó antes de terminar. Inténtalo de nuevo.
 The message is too long.,El mensaje es demasiado largo.
 Invalid session,Sesión no válida
+Back to Desk,Volver al escritorio
+Recent Chats,Chats recientes
+Log out,Cerrar sesión
+Main navigation,Navegación principal
+Navigation,Navegación
+Open navigation,Abrir navegación
+Close navigation,Cerrar navegación
+Skip to conversation,Saltar a la conversación
+User menu,Menú de usuario
+New Chat,Nuevo chat
+New chat,Nuevo chat
+Select model,Seleccionar modelo
+Today,Hoy
+Yesterday,Ayer
+This week,Esta semana
+Recent,Reciente
+Show All ({0}),Mostrar todos ({0})
+Show Less,Mostrar menos
+No conversations yet,Aún no hay conversaciones
+Start a new chat to begin,Empieza un chat nuevo
+Archive conversation,Archivar conversación
+Archive?,¿Archivar?
+Confirm archive,Confirmar archivado
+Archiving...,Archivando...
+Couldn't archive the conversation.,No se pudo archivar la conversación.
+AIDA is still answering. Stop and archive?,AIDA sigue respondiendo. ¿Detener y archivar?
+Auto,Automático
+Automatically selects the best model,Selecciona automáticamente el mejor modelo
+Loading models...,Cargando modelos...
+No models available,No hay modelos disponibles
+Couldn't load the models.,No se pudieron cargar los modelos.
+Retry,Reintentar
+Good morning,Buenos días
+Good afternoon,Buenas tardes
+Good evening,Buenas noches
+What should we work through today?,¿En qué trabajamos hoy?
+Or try one of these,O prueba una de estas
+Summarise a document,Resumir un documento
+Paste text or attach a file,Pega texto o adjunta un archivo
+Draft a professional email,Redactar un correo profesional
+Tell me the context and tone,Dime el contexto y el tono
+Translate a text,Traducir un texto
+"Between Spanish, English and more","Entre español, inglés y más"
+Explain a concept simply,Explicar un concepto con sencillez
+"Step by step, with examples","Paso a paso, con ejemplos"
+Summarise the document I will share with you.,Resume el documento que voy a compartir contigo.
+Help me draft a professional email.,Ayúdame a redactar un correo profesional.
+Translate a text for me.,Tradúceme un texto.
+Explain a concept to me in simple terms.,Explícame un concepto en términos sencillos.
+You,Tú
+Copy message,Copiar mensaje
+Copied,Copiado
+Couldn't copy to the clipboard.,No se pudo copiar al portapapeles.
+Stopped.,Detenido.
+Latest,Último
+Latest · responding,Último · respondiendo
+Loading conversation...,Cargando conversación...
+This conversation is empty.,Esta conversación está vacía.
+We couldn't find this conversation.,No encontramos esta conversación.
+Couldn't load this conversation.,No se pudo cargar esta conversación.
+Try again,Reintentar
+Start a new chat,Empezar un chat nuevo
+AIDA is thinking...,AIDA está pensando...
+AIDA is responding,AIDA está respondiendo
+Answer complete,Respuesta completa
+The answer was cut off at the length limit.,La respuesta se cortó por el límite de longitud.
+Model used,Modelo utilizado
+{0} tokens/s,{0} tokens/s
+Ask me anything...,Pregúntame lo que quieras...
+AIDA is responding. Press Stop to interrupt.,AIDA está respondiendo. Pulsa Detener para interrumpir.
+Listening...,Escuchando...
+Message,Mensaje
+Attach files,Adjuntar archivos
+Attach a file,Adjuntar un archivo
+Stop generating,Detener generación
+Stopping...,Deteniendo...
+Remove file,Quitar archivo
+Messages can be up to 20000 characters.,Los mensajes pueden tener hasta 20000 caracteres.
+Wait for the answer or press Stop,Espera la respuesta o pulsa Detener
+{0} send,{0} enviar
+{0} new line,{0} nueva línea
+Uploading...,Subiendo...
+Upload failed,Error al subir
+Voice input (Ctrl+Shift+Space),Entrada de voz (Ctrl+Mayús+Espacio)
+Tap to stop,Toca para detener
+Transcribing...,Transcribiendo...
+Couldn't send your message. Check your connection and try again.,No se pudo enviar tu mensaje. Comprueba tu conexión e inténtalo de nuevo.
+AIDA couldn't finish this answer. Please try again.,AIDA no pudo terminar esta respuesta. Inténtalo de nuevo.
+"AIDA is taking longer than expected. You can wait, or press Stop and try again.","AIDA está tardando más de lo esperado. Puedes esperar, o pulsar Detener e intentarlo de nuevo."
+Your session has expired. Reload the page to sign in again.,Tu sesión ha caducado. Recarga la página para iniciar sesión de nuevo.
+Reload,Recargar
+AIDA is busy right now. Please try again in a moment.,AIDA está ocupada ahora mismo. Inténtalo de nuevo en un momento.
+Couldn't upload {0}. Try a smaller file or a different format.,No se pudo subir {0}. Prueba con un archivo más pequeño o con otro formato.
+{0} is too large (maximum {1}).,{0} es demasiado grande (máximo {1}).
+You can attach up to {0} files.,Puedes adjuntar hasta {0} archivos.
+Couldn't transcribe. Try again or type instead.,No se pudo transcribir. Inténtalo de nuevo o escribe.
+Couldn't start recording. Try again.,No se pudo iniciar la grabación. Inténtalo de nuevo.
+Voice input isn't supported in this browser.,La entrada de voz no es compatible con este navegador.
+Connection lost. Replies may be delayed.,Conexión perdida. Las respuestas pueden retrasarse.
+Reconnecting...,Reconectando...
+Appearance,Apariencia
+Personalise how AIDA looks. These settings apply to this browser only.,Personaliza el aspecto de AIDA. Estos ajustes solo se aplican a este navegador.
+Theme,Tema
+Auto follows your device setting.,Automático sigue el ajuste de tu dispositivo.
+Light,Claro
+Dark,Oscuro
+Density,Densidad
+Compact reduces spacing in the conversation.,Compacto reduce el espaciado en la conversación.
+Comfortable,Cómodo
+Compact,Compacto
+Show message timestamps,Mostrar la hora de los mensajes
+Show the time under your own messages. Replies always show it.,Muestra la hora bajo tus propios mensajes. Las respuestas siempre la muestran.
+Back to chat,Volver al chat
+Settings - AIDA,Ajustes - AIDA
+{0} - AIDA,{0} - AIDA
+"{0} / {1}","{0} / {1}"
+Resize chat,Cambiar tamaño del chat
+"Resize chat (Alt+arrows, Alt+Home resets)",Cambiar tamaño del chat (Alt+flechas; Alt+Inicio restablece)
+Drag to move the chat (double-click resets),Arrastra para mover el chat (doble clic lo restablece)
+Saving...,Guardando...
+Failed to load AIDA Admin,No se pudo cargar la administración de AIDA
+Unavailable,No disponible
+Failed to load server status,No se pudo cargar el estado del servidor
+Error updating server settings,Error al actualizar la configuración del servidor
+Request failed,Solicitud fallida
+Error toggling chat,Error al cambiar el chat
