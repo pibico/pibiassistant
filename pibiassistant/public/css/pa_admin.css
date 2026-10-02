@@ -460,6 +460,7 @@
     margin: 0;
 }
 .pa-admin-container .pa-top-tab {
+    font-family: var(--pibico-font-button);
     padding: 6px 12px;
     min-height: 34px;
     border: none;
@@ -1057,4 +1058,25 @@
         transform: translateY(-50%);
     }
     .pa-admin-container .pa-plugin-toggle { min-width: 44px; min-height: 44px; }
+}
+
+/* Narrow phones: filter rows wrap instead of squeezing the search box, and the three tabs fit without scrolling */
+@media (max-width: 400px) {
+    .pa-admin-container .pa-filter-bar { flex-wrap: wrap; }
+    .pa-admin-container .pa-filter-input { flex: 1 1 100%; min-width: 0; }
+    .pa-admin-container .pa-filter-select { flex: 1 1 calc(50% - 4px); min-width: 0; }
+    .pa-admin-container .pa-view-tabs { flex-wrap: wrap; overflow-x: visible; }
+}
+@media (max-width: 440px) {
+    .pa-admin-container .pa-top-tabs { gap: 2px; }
+    .pa-admin-container .pa-top-tab { padding: 6px 8px; font-size: 0.85rem; gap: 4px; }
+    .pa-admin-container .pa-top-tab > i.ph { display: none; }
+}
+@media (max-width: 360px) {
+    .pa-admin-container .pa-top-tab { padding: 6px 5px; font-size: 0.8rem; gap: 3px; }
+    .pa-admin-container .pa-tab-count { padding: 0 5px; font-size: 0.7rem; margin-left: 0; }
+}
+@media (max-width: 340px) {
+    .pa-admin-container .pa-top-tab { padding: 6px 3px; font-size: 0.75rem; gap: 2px; }
+    .pa-admin-container .pa-tab-count { padding: 0 4px; }
 }

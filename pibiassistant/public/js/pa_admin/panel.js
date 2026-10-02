@@ -45,15 +45,26 @@ function bindKeys() {
     if (keyBound) return;
     document.addEventListener('keydown', onKeydown, true);
     keyBound = true;
-    prevOverflow = document.body.style.overflow;
+    // Frappe reserves a scrollbar gutter on <html> (scrollbar-gutter: stable), which keeps a fixed layer 15px short of the edge
+    const root = document.documentElement;
+    const gutter = Math.max(0, Math.round(window.innerWidth - document.body.getBoundingClientRect().width));
+    prevOverflow = { body: document.body.style.overflow, html: root.style.overflow, pad: root.style.paddingRight, gutter: root.style.scrollbarGutter };
+    root.style.scrollbarGutter = 'auto';
+    root.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
+    if (gutter > 0) root.style.paddingRight = gutter + 'px';
 }
 
 function unbindKeys() {
     if (!keyBound || stack.length) return;
     document.removeEventListener('keydown', onKeydown, true);
     keyBound = false;
-    document.body.style.overflow = prevOverflow || '';
+    if (prevOverflow) {
+        document.body.style.overflow = prevOverflow.body;
+        document.documentElement.style.overflow = prevOverflow.html;
+        document.documentElement.style.paddingRight = prevOverflow.pad;
+        document.documentElement.style.scrollbarGutter = prevOverflow.gutter;
+    }
     prevOverflow = null;
 }
 
