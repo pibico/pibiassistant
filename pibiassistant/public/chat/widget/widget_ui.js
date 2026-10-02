@@ -136,13 +136,6 @@ window.PAOWidgetUI = {
 					</button>
 				</div>
 
-				<!-- Quota Display -->
-				<div class="pao-quota-display" style="display: none;">
-					<span class="pao-quota-text"></span>
-					<div class="pao-quota-bar">
-						<div class="pao-quota-fill"></div>
-					</div>
-				</div>
 			</div>
 		`;
 	},

@@ -1362,9 +1362,6 @@ window.PAOWidgetStreaming = {
 
 			$streamingMsg.removeClass("pao-message-streaming");
 
-			widget.preferences.quota_used += tokensUsed;
-			widget.update_quota_display();
-
 			// The live turn's landing point — a THIRD place that kept only
 			// {role, content}. It goes through the same field list as the two
 			// history readers, and draws the chip now rather than leaving it to

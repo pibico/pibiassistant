@@ -413,7 +413,6 @@ app_include_js = [
     _widget_asset("/assets/pibiassistant/chat/widget/widget_plan.js"),
     _widget_asset("/assets/pibiassistant/chat/widget/widget_templates.js"),
     _widget_asset("/assets/pibiassistant/chat/widget/widget_slash_menu.js"),
-    _widget_asset("/assets/pibiassistant/chat/widget/widget_quota.js"),
     _widget_asset("/assets/pibiassistant/chat/widget/widget_browser_tools.js"),
     _widget_asset("/assets/pibiassistant/chat/widget/widget_positioning.js"),
     _widget_asset("/assets/pibiassistant/chat/widget/widget_tooltips.js"),

@@ -1590,9 +1590,6 @@ html[data-theme="dark"] .pao-panel .pao-arg-input:focus { background: #1E2330; }
 .pao-panel .pao-template-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; padding: 0; border: none; background: transparent; }
 .pao-panel .pao-arg-empty { padding: 4px 0; text-align: left; background: transparent; }
 
-.pao-panel [class*="pao-quota-"][class$="-content"] { text-align: center; }
-.pao-panel [class*="pao-quota-"][class$="-icon"] .ph { font-size: 28px; color: #4682B4; }
-.pao-panel .pao-quota-blocked-icon .ph { color: #B33A2B; }
 
 @media (max-width: 767px) {
 	.pao-panel { width: 100%; }

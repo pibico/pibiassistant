@@ -309,49 +309,6 @@ html[data-theme="dark"] .pao-widget .pao-contact-admin p {
 }
 
 /* ===================================
-   QUOTA WARNING MODAL STYLES
-   =================================== */
-
-.pao-quota-warning-content,
-.pao-quota-blocked-content,
-.pao-quota-overage-content {
-	text-align: center;
-	padding: 8px 0;
-}
-
-.pao-quota-warning-icon,
-.pao-quota-blocked-icon,
-.pao-quota-overage-icon {
-	font-size: 48px;
-	line-height: 1;
-	margin-bottom: 12px;
-}
-
-.pao-quota-blocked-icon .ph,
-.pao-quota-overage-icon .ph,
-.pao-quota-warning-icon .ph {
-	font-size: 40px;
-}
-
-.pao-quota-warning-content h4,
-.pao-quota-blocked-content h4,
-.pao-quota-overage-content h4 {
-	margin: 0 0 12px;
-	font-size: 16px;
-	font-weight: 600;
-	color: var(--text-color);
-}
-
-.pao-quota-warning-content p,
-.pao-quota-blocked-content p,
-.pao-quota-overage-content p {
-	margin: 0;
-	font-size: 14px;
-	color: var(--text-muted);
-	line-height: 1.5;
-}
-
-/* ===================================
    SUCCESS MODAL STYLES
    =================================== */
 
