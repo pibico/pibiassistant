@@ -33,6 +33,7 @@ SENSITIVE_FIELDS = {
         "new_password",
         "api_key",
         "api_secret",
+        "client_secret",
         "secret_key",
         "private_key",
         "access_token",
@@ -93,6 +94,9 @@ SENSITIVE_FIELDS = {
         "refresh_token",
         "scopes",
         "expires_in",
+    ],
+    "OAuth Client": [
+        "client_secret",
     ],
     "Connected App": [
         "client_secret",
@@ -229,6 +233,25 @@ WRITE_PROTECTED_DOCTYPES = [
     "Workflow Transition",
 ]
 
+# Writable by no one through the chat/MCP tools, System Manager included: a prompt-injected
+# instruction must not be able to grant roles, enable accounts or widen permissions. Admins
+# change these in the Desk, where the action is deliberate.
+PRIVILEGE_DOCTYPES = frozenset(
+    {
+        "Role", "Custom Role", "Role Permission", "Custom DocPerm", "DocPerm", "User Permission",
+        "DocShare", "Module Profile", "Role Profile", "Has Role", "OAuth Client", "OAuth Bearer Token",
+    }
+)
+PRIVILEGE_FIELDS = {
+    "User": frozenset(
+        {
+            "roles", "enabled", "user_type", "role_profile_name", "module_profile", "user_permissions",
+            "block_modules", "new_password", "api_key", "api_secret", "simultaneous_sessions",
+            "restrict_ip", "login_after", "login_before", "social_logins", "allowed_in_mentions",
+        }
+    ),
+}
+
 # Permission types treated as mutating for the purposes of WRITE_PROTECTED_DOCTYPES.
 WRITE_PERM_TYPES = frozenset({"write", "create", "delete", "submit", "cancel", "amend"})
 
@@ -251,9 +274,6 @@ def filter_sensitive_fields(doc_dict: Dict[str, Any], doctype: str, user_role: s
     Returns:
         Filtered document dictionary
     """
-    if user_role == "System Manager":
-        return doc_dict  # System Manager can see all fields
-
     filtered_doc = doc_dict.copy()
 
     # Get sensitive fields for this doctype
@@ -264,6 +284,18 @@ def filter_sensitive_fields(doc_dict: Dict[str, Any], doctype: str, user_role: s
 
     # Add doctype-specific sensitive fields
     sensitive_fields.update(SENSITIVE_FIELDS.get(doctype, []))
+
+    # Password-type fields are secrets whoever reads them; the model must never see them.
+    try:
+        sensitive_fields.update(f.fieldname for f in frappe.get_meta(doctype).fields if f.fieldtype == "Password")
+    except Exception:
+        pass
+
+    if user_role == "System Manager":
+        for field in sensitive_fields:
+            if field in filtered_doc:
+                filtered_doc[field] = "***RESTRICTED***"
+        return filtered_doc
 
     # Add admin-only fields for PA Users
     if user_role == "PA User":
@@ -305,11 +337,14 @@ def is_doctype_accessible(doctype: str, user_role: str, perm_type: str = "read")
     Returns:
         bool: True if PA allows the operation to proceed to the Frappe permission check
     """
-    if user_role == "System Manager":
-        return True  # System Manager is trusted at this layer
-
     if perm_type not in WRITE_PERM_TYPES:
         return True  # Reads and anything non-mutating defer entirely to Frappe
+
+    if doctype in PRIVILEGE_DOCTYPES:
+        return False
+
+    if user_role == "System Manager":
+        return True  # System Manager is trusted at this layer
 
     return doctype not in WRITE_PROTECTED_DOCTYPES
 

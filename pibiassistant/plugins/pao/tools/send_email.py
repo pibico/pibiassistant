@@ -86,6 +86,9 @@ class SendEmail(BaseTool):
 
     def execute(self, arguments: dict[str, Any]) -> dict[str, Any]:
         """Queue email via frappe.sendmail() using the site's Email Account."""
+        if not frappe.has_permission("Communication", "create"):
+            return {"success": False, "error": _("You do not have permission to send email.")}
+
         recipients = arguments.get("recipients") or []
         cc = arguments.get("cc") or []
         if isinstance(recipients, str):

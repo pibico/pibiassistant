@@ -25,7 +25,11 @@ import frappe
 from frappe import _
 
 from pibiassistant.core.base_tool import BaseTool
-from pibiassistant.plugins.core.field_guard import check_field_names, restricted_fields_for_doctype
+from pibiassistant.plugins.core.field_guard import (
+    check_field_names,
+    privileged_fields_attempted,
+    restricted_fields_for_doctype,
+)
 from pibiassistant.plugins.query_errors import DB_ERRORS, client_error_message, log_failure, permission_error_result
 
 
@@ -113,6 +117,14 @@ class DocumentCreate(BaseTool):
             field_error = check_field_names(frappe.get_meta(doctype), data.keys(), creating=True)
             if field_error:
                 return field_error
+
+            privileged = privileged_fields_attempted(doctype, data.keys())
+            if privileged:
+                return {
+                    "success": False,
+                    "error": f"Cannot set {', '.join(privileged)} through the assistant. Manage roles, access and account status in the Desk.",
+                    "error_type": "privileged_field",
+                }
 
             submit_ignored = bool(submit) and not frappe.get_meta(doctype).is_submittable
             if submit_ignored:

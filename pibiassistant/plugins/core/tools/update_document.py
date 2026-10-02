@@ -25,7 +25,11 @@ import frappe
 from frappe import _
 
 from pibiassistant.core.base_tool import BaseTool
-from pibiassistant.plugins.core.field_guard import check_field_names, restricted_fields_for_doctype
+from pibiassistant.plugins.core.field_guard import (
+    check_field_names,
+    privileged_fields_attempted,
+    restricted_fields_for_doctype,
+)
 from pibiassistant.plugins.query_errors import client_error_message, log_failure, permission_error_result
 
 
@@ -311,6 +315,14 @@ class DocumentUpdate(BaseTool):
             field_error = check_field_names(meta, data.keys(), creating=False)
             if field_error:
                 return field_error
+
+            privileged = privileged_fields_attempted(doctype, data.keys())
+            if privileged:
+                return {
+                    "success": False,
+                    "error": f"Cannot update {', '.join(privileged)} through the assistant. Change roles, access and account status in the Desk.",
+                    "error_type": "privileged_field",
+                }
 
             # Top-level restricted-field check (excludes child-table fields, which are checked
             # separately against the child doctype's restricted set).

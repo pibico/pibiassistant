@@ -56,3 +56,11 @@ def restricted_fields_for_doctype(doctype: str, user_role: str) -> Set[str]:
         if doctype_admin_fields != "*":
             restricted.update(doctype_admin_fields)
     return restricted
+
+
+def privileged_fields_attempted(doctype: str, keys: Iterable[str]) -> list:
+    """Fields no chat/MCP caller may write whatever their role (see PRIVILEGE_FIELDS)."""
+    from pibiassistant.core.security_config import PRIVILEGE_FIELDS
+
+    blocked = PRIVILEGE_FIELDS.get(doctype, frozenset())
+    return [k for k in keys if k in blocked]

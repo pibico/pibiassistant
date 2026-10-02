@@ -32,6 +32,20 @@ from pibiassistant.plugins.limits import clamp_limit
 from pibiassistant.plugins.query_errors import log_failure, strip_schema
 
 
+# Credentials, sessions, tokens and server-side file or timing primitives stay out of reach even for
+# System Managers: a prompt-injected query must not be able to exfiltrate them.
+_FORBIDDEN_SQL = (
+    r"__AUTH",
+    r"\bTABSESSIONS\b|\bTABSESSION DEFAULTS\b",
+    r"\bTABOAUTH (BEARER TOKEN|AUTHORIZATION CODE|CLIENT)\b",
+    r"\bTABSOCIAL LOGIN KEY\b|\bTABEMAIL ACCOUNT\b|\bTABCONNECTED APP\b|\bTABTOKEN CACHE\b",
+    r"\bRESET_PASSWORD_KEY\b|\bAPI_SECRET\b|\bCLIENT_SECRET\b|\bACCESS_TOKEN\b|\bREFRESH_TOKEN\b|\bUNSUBSCRIBE_KEY\b",
+    r"\bINFORMATION_SCHEMA\b|\bMYSQL\s*\.|\bPERFORMANCE_SCHEMA\b|\bSYS\s*\.",
+    r"\bLOAD_FILE\b|\bINTO\s+(OUTFILE|DUMPFILE)\b|\bSLEEP\s*\(|\bBENCHMARK\s*\(|\bGET_LOCK\b",
+)
+QUERY_TIMEOUT_SECONDS = 15
+
+
 class QueryAndAnalyse(BaseTool):
     """
     Tool for executing complex SQL queries and analyzing data.
@@ -182,6 +196,15 @@ class QueryAndAnalyse(BaseTool):
                     "error": f"Query contains forbidden keyword: {keyword}. Only SELECT statements are allowed.",
                 }
 
+        flat = query_clean.replace("`", "").replace('"', "")
+        for pattern in _FORBIDDEN_SQL:
+            if re.search(pattern, flat):
+                return {
+                    "is_valid": False,
+                    "error": "Query touches credentials, sessions or server files, which are not available here.",
+                    "security_violation": True,
+                }
+
         # Check for multiple statements (basic check)
         if ";" in query.rstrip(";"):  # Allow single trailing semicolon
             return {
@@ -202,8 +225,9 @@ class QueryAndAnalyse(BaseTool):
             # (or hid in a comment/identifier).
             inner = query.rstrip().rstrip(";")
             try:
+                timeout = f"SET STATEMENT max_statement_time={QUERY_TIMEOUT_SECONDS} FOR " if frappe.db.db_type == "mariadb" else ""
                 result = rows_to_dicts(
-                    frappe.db.sql(f"SELECT * FROM ({inner}\n) AS pa_limited LIMIT {limit}", as_dict=True)
+                    frappe.db.sql(f"{timeout}SELECT * FROM ({inner}\n) AS pa_limited LIMIT {limit}", as_dict=True)
                 )
             except Exception as e:
                 # Joins selecting same-named columns cannot be wrapped as a derived table.
