@@ -1,11 +1,6 @@
 import unittest
-from unittest.mock import patch
 
-from pibiassistant.pibiassistant_chat.api._helpers import (
-    _redact_upstream_internals,
-    _summarize_stream_error_for_log,
-)
-from pibiassistant.pibiassistant_chat.api.chat.helpers import _log_stream_error_detail
+from pibiassistant.pibiassistant_chat.api._helpers import _redact_upstream_internals
 
 
 class TestRedactUpstreamInternals(unittest.TestCase):
@@ -32,44 +27,3 @@ class TestRedactUpstreamInternals(unittest.TestCase):
         out = _redact_upstream_internals("AR stream_error: LLM_UNAVAILABLE")
         self.assertNotIn("AR stream_error", out)
         self.assertIn("PA Chat stream error", out)
-
-
-class TestLogStreamErrorDetail(unittest.TestCase):
-    def test_drops_detail_and_never_logs_table_names(self):
-        data = {
-            "error": "The AI is temporarily unavailable.",
-            "error_code": "LLM_UNAVAILABLE",
-            "_detail": (
-                '(1020, "Record has changed since last read in table '
-                "'tabAR Tenant User'; try restarting transaction\")"
-            ),
-        }
-        logged = {}
-
-        def fake_log(*, title, detail):
-            logged["title"] = title
-            logged["detail"] = detail
-
-        with patch("pibiassistant.pibiassistant_chat.api._helpers._log", side_effect=fake_log):
-            _log_stream_error_detail(data)
-
-        self.assertNotIn("_detail", data)
-        self.assertEqual(logged["title"], "PA Chat stream error: LLM_UNAVAILABLE")
-        self.assertNotIn("tabAR", logged["detail"])
-        self.assertNotIn("AR stream_error", logged["title"])
-        self.assertIn("LLM_UNAVAILABLE", logged["detail"])
-
-    def test_summary_never_embeds_raw_exception(self):
-        body = _summarize_stream_error_for_log("LLM_UNAVAILABLE")
-        self.assertIn("LLM_UNAVAILABLE", body)
-        self.assertNotIn("tabAR", body)
-        self.assertNotIn("1020", body)
-
-    def test_skips_log_when_no_upstream_detail(self):
-        logged = []
-        with patch(
-            "pibiassistant.pibiassistant_chat.api._helpers._log",
-            side_effect=lambda **kw: logged.append(kw),
-        ):
-            _log_stream_error_detail({"error_code": "LLM_UNAVAILABLE"})
-        self.assertEqual(logged, [])

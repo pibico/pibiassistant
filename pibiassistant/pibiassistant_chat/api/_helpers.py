@@ -169,16 +169,6 @@ def _redact_upstream_internals(text: str) -> str:
     return out
 
 
-def _summarize_stream_error_for_log(error_code: str | None) -> str:
-    """Error Log body for a stream failure — code only, never the raw exception."""
-    code = error_code or "UNKNOWN"
-    return (
-        f"error_code: {code}\n"
-        "The assistant service reported a failure. "
-        "Technical detail is not stored on this site."
-    )
-
-
 def _log(title: str, detail: str | None = None, *, message: str | None = None) -> None:
     """Write a server-side Error Log entry with correct title/message order.
 

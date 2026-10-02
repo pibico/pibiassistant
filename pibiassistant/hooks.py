@@ -241,7 +241,7 @@ standard_roles = [
 # Boot
 # -----
 
-# boot_session = "pibiassistant.boot.boot_session"
+boot_session = "pibiassistant.boot.boot_session"
 
 # Startup
 # -------
@@ -293,7 +293,6 @@ assistant_tool_configs = {
 #   - Widget JS: `initAIDAWidget()` early-returns when the gate is off
 #   - SPA `/aida` controller: returns 404 when off
 #   - `add_to_apps_screen`: `has_permission` (can_use_pao gate) returns False
-#   - `doc_events` dispatcher: early-returns when off
 #   - `scheduler_events`: handlers early-return when off
 #   - Permission hooks: cheap to keep registered; only invoked when querying
 #     chat DocTypes, which doesn't happen meaningfully when chat is off
@@ -469,47 +468,7 @@ has_permission = {
     ),
 }
 
-# Wildcard doc_events dispatcher.
-#
-# WHY A WILDCARD: PA Chat lets an admin attach a workflow to any DocType on
-# their own site, including custom ones that do not exist when this file is
-# read. The set of watched DocTypes is therefore only knowable at runtime, so
-# there is no finite `doc_events` map that could express it. Frappe's own
-# Server Script solves the same problem the same way — see
-# `frappe/core/doctype/server_script/server_script_utils.py`.
-#
-# WHY IT IS SAFE (see chat/workflows/triggers/dispatcher.py):
-#   1. Bails on in_migrate / in_install / in_patch / in_import BEFORE any DB
-#      read, so schema operations are untouched and a half-migrated site can
-#      never be queried through it.
-#   2. Then `is_chat_enabled()` — a per-request cached flag that is 0 by
-#      default. On an MCP-only site chat is off forever, so the hot path is a
-#      cached boolean check and nothing else: no trigger map is loaded.
-#   3. Then event allow-list, DocType blocklist, and a trigger-map lookup —
-#      all in-memory, all early-returning.
-#   4. `dispatch()` wraps everything in try/except and logs. A workflow-trigger
-#      failure can never block or roll back a customer's document save.
-#
-# NOTE FOR MARKETPLACE REVIEW: the FC auditor flags any wildcard doc_events.
-# This is the justification; the guards above are the mitigation.
-doc_events.update(
-    {
-        "*": {
-            "after_insert": ("pibiassistant.pibiassistant_chat.workflows.triggers.dispatcher.dispatch"),
-            "on_update": ("pibiassistant.pibiassistant_chat.workflows.triggers.dispatcher.dispatch"),
-            "on_submit": ("pibiassistant.pibiassistant_chat.workflows.triggers.dispatcher.dispatch"),
-            "on_cancel": ("pibiassistant.pibiassistant_chat.workflows.triggers.dispatcher.dispatch"),
-            "on_trash": ("pibiassistant.pibiassistant_chat.workflows.triggers.dispatcher.dispatch"),
-        }
-    }
-)
-
 # Scheduled jobs — each handler early-returns when chat is off.
-scheduler_events["cron"].update(
-    {
-        "0 */6 * * *": ["pibiassistant.pibiassistant_chat.api.billing.sync.scheduled_sync_subscription"],
-    }
-)
 scheduler_events.setdefault("daily", [])
 scheduler_events["daily"].extend(
     [
@@ -517,13 +476,6 @@ scheduler_events["daily"].extend(
         "pibiassistant.pibiassistant_chat.scheduler.attachment_sweep.sweep_orphan_chat_attachments",
         "pibiassistant.pibiassistant_chat.workflows.triggers.cleanup.prune_trigger_logs",
     ]
-)
-
-# frappe.enqueue has no retry policy, so a trigger fire lost to an AR outage is
-# gone unless something sweeps it back up.
-scheduler_events.setdefault("hourly", [])
-scheduler_events["hourly"].append(
-    "pibiassistant.pibiassistant_chat.workflows.triggers.sweeper.sweep_failed_trigger_fires"
 )
 
 default_log_clearing_doctypes = {

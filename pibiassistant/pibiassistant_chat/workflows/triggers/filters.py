@@ -41,7 +41,7 @@ def first_failing_filter(doc_dict: dict[str, Any], filter_rows: list[Any]) -> An
     """Return the first row that does not pass, or None when all of them do.
 
     Filters are AND-only, so the first failure is the whole reason the trigger
-    did not fire — which is what the dispatcher names in its log row.
+    did not fire.
     """
     if not filter_rows:
         return None
@@ -154,42 +154,6 @@ def _safe(parser: Any, value: Any) -> Any:
         return parser(value)
     except Exception:
         return None
-
-
-def get_changed_fields(doc, watch_list: list[str]) -> dict[str, dict[str, Any]]:
-    """Return {field: {old, new}} for watched fields that changed.
-
-    Uses doc.get_doc_before_save() which is populated by Frappe on on_update.
-    Returns empty dict on insert (no prior version).
-    """
-    if not watch_list:
-        return {}
-
-    before = None
-    if hasattr(doc, "get_doc_before_save"):
-        before = doc.get_doc_before_save()
-
-    if before is None:
-        # No prior version — treat all watched fields as unchanged
-        return {}
-
-    changed: dict[str, dict[str, Any]] = {}
-    for field in watch_list:
-        field = field.strip()
-        if not field:
-            continue
-        old_value = before.get(field) if isinstance(before, dict) else getattr(before, field, None)
-        new_value = doc.get(field) if hasattr(doc, "get") else getattr(doc, field, None)
-        if old_value != new_value:
-            changed[field] = {"old": old_value, "new": new_value}
-    return changed
-
-
-def parse_changed_fields_config(raw: str | None) -> list[str]:
-    """Parse the Small Text field 'changed_fields' into a list of fieldnames."""
-    if not raw:
-        return []
-    return [f.strip() for f in raw.split(",") if f.strip()]
 
 
 def build_payload(

@@ -88,7 +88,6 @@ from .billing import (
     reauthorize_mandate,
     remove_user_seat,
     save_billing_details,
-    scheduled_sync_subscription,
     sync_subscription_status,
     update_payment_method,
     verify_payment,

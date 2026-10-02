@@ -105,6 +105,5 @@ from pibiassistant.pibiassistant_chat.api.billing.subscription import (
     update_payment_method,
 )
 from pibiassistant.pibiassistant_chat.api.billing.sync import (
-    scheduled_sync_subscription,
     sync_subscription_status,
 )

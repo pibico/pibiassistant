@@ -17,7 +17,6 @@ from ._helpers import (
 )
 from ._untrusted import wrap_untrusted
 from .auth import _ar_user_id
-from .chat.helpers import _update_subscription_cache
 
 
 def _assert_mobile_oauth_request() -> None:
@@ -291,180 +290,15 @@ def stream_chat(
 def _stream_generator(
     session_id, message, user_msg_name, model_id=None, attachments=None, system_prompt_addendum=None
 ):
+    """SSE generator for the mobile stream.
+
+    PA Cloud no longer exists and AIDA turns are relayed over Socket.IO, so this
+    endpoint can only report that the cloud is not available.
     """
-    Generator function that yields SSE events from AR stream.
-
-    This function connects to AR's streaming endpoint and relays
-    events directly to the mobile client.
-    """
-    from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
-
-    client = get_pa_cloud_client()
-    if not client:
-        yield _format_sse_event(
-            "stream_error",
-            {"error": _not_registered_error(), "action_required": "register"},
-        )
-        return
-
-    # AR is addressed by the email identity (not the raw docname).
-    ar_user = _ar_user_id(frappe.session.user)
-    full_response = ""
-    tokens_used = 0
-    model_used = ""
-
-    # Emit start event
-    yield _format_sse_event("stream_start", {"session_id": session_id})
-
-    try:
-        # Stream from AR
-        for event in client.stream_chat(
-            session_id,
-            message,
-            ar_user,
-            None,
-            model_id,
-            attachments,
-            system_prompt_addendum,
-            client_type="mobile",
-        ):
-            event_type = event.get("event")
-            data = event.get("data", {})
-
-            if event_type == "heartbeat":
-                yield _format_sse_event("heartbeat", {"session_id": session_id})
-
-            elif event_type == "stream_start":
-                pass  # Already sent above
-
-            elif event_type == "sources":
-                # RAG citation sources — forward to native client for inline [N] rendering.
-                yield _format_sse_event(
-                    "sources",
-                    {
-                        "session_id": session_id,
-                        "message_id": data.get("message_id"),
-                        "sources": data.get("sources", []) or [],
-                    },
-                )
-
-            elif event_type == "stream_chunk":
-                chunk = data.get("content", "")
-                full_response += chunk
-                yield _format_sse_event(
-                    "stream_chunk", {"session_id": session_id, "chunk": chunk, "accumulated": full_response}
-                )
-
-            # Reasoning Events (Thinking)
-            elif event_type == "thinking":
-                yield _format_sse_event(
-                    "thinking", {"session_id": session_id, "content": data.get("content", "")}
-                )
-
-            elif event_type == "thinking_complete":
-                yield _format_sse_event("thinking_complete", {"session_id": session_id})
-
-            # Tool Execution Events
-            elif event_type == "tool_call_start":
-                yield _format_sse_event(
-                    "tool_call_start",
-                    {
-                        "session_id": session_id,
-                        "tool_name": data.get("tool_name"),
-                        "tool_id": data.get("tool_id"),
-                        "input": data.get("input", {}),
-                    },
-                )
-
-            elif event_type in ("tool_result", "tool_call_result"):
-                yield _format_sse_event(
-                    "tool_call_result",
-                    {
-                        "session_id": session_id,
-                        "tool_id": data.get("tool_id"),
-                        "tool_name": data.get("tool_name"),
-                        "result": data.get("result"),
-                        "status": data.get("status", "success"),
-                        "duration_ms": data.get("duration_ms"),
-                    },
-                )
-
-            elif event_type == "tool_cancelled":
-                yield _format_sse_event(
-                    "tool_cancelled",
-                    {
-                        "session_id": session_id,
-                        "tool_id": data.get("tool_id"),
-                        "tool_name": data.get("tool_name"),
-                        "message": data.get("message", "Cancelled"),
-                    },
-                )
-
-            elif event_type == "stream_complete":
-                tokens_used = data.get("tokens_used", 0)
-                credits_used = data.get("credits_used", 0)
-                model_used = data.get("model", "")
-                routing = data.get("routing")
-                full_response = data.get("full_response", full_response)
-
-                # Log the conversation
-                _log_conversation(
-                    session_id, message, full_response, model_used, credits=credits_used, routing=routing
-                )
-
-                # Fold this turn's credits into the quota cache (credit units)
-                _update_subscription_cache(credits_used)
-
-                # Get quota info from cache
-                from pibiassistant.pibiassistant_chat.quota_cache import get_quota_snapshot
-
-                snap = get_quota_snapshot()
-                quota_total = snap.get("quota_total", 0)
-                is_unlimited = quota_total == -1
-                quota_remaining = -1 if is_unlimited else max(0, quota_total - snap.get("quota_used", 0))
-
-                yield _format_sse_event(
-                    "stream_complete",
-                    {
-                        "session_id": session_id,
-                        "full_response": full_response,
-                        "quota_remaining": quota_remaining,
-                        # This turn's own cost — parity with the web relay, and
-                        # the only figure that moves an individually capped member.
-                        "credits_used": credits_used,
-                        "model_id": model_used,
-                        "routing": routing,
-                    },
-                )
-
-            elif event_type == "stream_error":
-                # Strip + log the raw technical _detail server-side; the friendly
-                # `error` field is what the app shows. Mirrors the web relay so
-                # support gets diagnostics for mobile sessions too.
-                from .chat.helpers import _log_stream_error_detail
-
-                _log_stream_error_detail(data)
-                yield _format_sse_event(
-                    "stream_error",
-                    {
-                        "session_id": session_id,
-                        "error": data.get("error", "Unknown error"),
-                        "error_code": data.get("error_code", "UNKNOWN"),
-                        "action_required": data.get("action_required"),
-                    },
-                )
-
-    except Exception as e:
-        import traceback
-
-        error_msg = f"Error in mobile stream: {e!s}"
-        frappe.log_error(title="AIDA Mobile Stream Error", message=f"{error_msg}\n{traceback.format_exc()}")
-        yield _format_sse_event(
-            "stream_error", {"session_id": session_id, "error": _safe_error(e, "AIDA Mobile Stream Error")}
-        )
-
-    finally:
-        frappe.db.commit()  # nosemgrep: frappe-manual-commit — background thread / streaming context (not a request handler), explicit commit required to flush progress to DB.
+    yield _format_sse_event(
+        "stream_error",
+        {"error": _not_registered_error(), "action_required": "register"},
+    )
 
 
 def _format_sse_event(event_type, data):
@@ -537,30 +371,6 @@ def _extract_file_attachments(message_name: str) -> str:
             title="AIDA File Extraction Error", message=f"Error in _extract_file_attachments: {e!s}"
         )
         return ""
-
-
-def _log_conversation(session_id, message, response, model, credits=None, routing=None):
-    """Log assistant response as a PA Message. Credits-only — PA never
-    surfaces token counts (AR records those on AR Message)."""
-    try:
-        from pibiassistant.pibiassistant_chat.doctype.pa_chat_message.pa_chat_message import (
-            PAChatMessage,
-        )
-
-        llm_metadata = {
-            # Real model only; empty when unknown. Never the "ar-agent" placeholder.
-            "model": model or None,
-            "credits_used": credits,
-            "routing": routing,
-        }
-
-        PAChatMessage.create_message(
-            session_id=session_id, role="assistant", content=response, context=None, llm_metadata=llm_metadata
-        )
-        frappe.db.commit()  # nosemgrep: frappe-manual-commit — background thread / streaming context (not a request handler), explicit commit required to flush progress to DB.
-
-    except Exception as e:
-        frappe.log_error(title="AIDA Mobile Log Error", message=f"Error logging conversation: {e!s}")
 
 
 # ============================================================================

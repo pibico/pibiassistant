@@ -27,7 +27,7 @@ def is_chat_enabled() -> bool:
     when upgrading from a PA build that predates `enable_pa_chat` — treat
     chat as OFF rather than raising. The transient result is NOT cached, so the
     real value is read once the schema is in place. This gate is a hot-path
-    predicate (runs on every doc save via the wildcard dispatcher) and must
+    predicate (runs on every request) and must
     never block a save or a migration.
     """
     cached = getattr(frappe.local, "_pa_chat_enabled", None)

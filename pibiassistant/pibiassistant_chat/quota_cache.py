@@ -48,19 +48,6 @@ def get_quota_snapshot() -> dict:
     return seed_from_ar()
 
 
-def increment_used(credits: float) -> None:
-    """Increment quota_used by the given credit count.
-
-    quota_used and quota_total are both credit-denominated (quota_total is AR's
-    credit_quota), so this must be fed the turn's credits_used — never a raw
-    token count, which would dwarf the credit quota and peg the meter at 100%.
-    Reads current snapshot, adds credits, writes back.
-    """
-    snap = get_quota_snapshot()
-    snap["quota_used"] = (snap.get("quota_used") or 0) + (credits or 0)
-    _write(snap)
-
-
 def update_from_ar(subscription: dict) -> None:
     """Update cache from an AR subscription response.
 

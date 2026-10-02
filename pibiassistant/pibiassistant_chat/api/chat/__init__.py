@@ -39,10 +39,6 @@ from pibiassistant.pibiassistant_chat.api.chat.helpers import (
     _extract_file_attachments,
     _find_assistant_msg_by_message_id,
     _is_processing_restricted,
-    _log_conversation,
-    _log_stream_error_detail,
-    _prepare_prompt,
-    _update_subscription_cache,
 )
 from pibiassistant.pibiassistant_chat.api.chat.hitl import (
     get_pending_interrupt,

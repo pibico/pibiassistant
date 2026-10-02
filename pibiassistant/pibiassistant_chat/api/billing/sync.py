@@ -2,7 +2,7 @@
 # Copyright (C) 2025 Paul Clinton
 # AGPL-3.0 License
 
-"""Subscription sync, scheduled-sync, AR heartbeat, notification cache."""
+"""Subscription sync."""
 
 from __future__ import annotations
 
@@ -83,77 +83,3 @@ def sync_subscription_status():
     except Exception as e:
         _log(title="AIDA Sync Error", message=f"Error syncing subscription: {e!s}")
         return {"error": _safe_error(e, "AIDA Sync Error")}
-
-
-def scheduled_sync_subscription():
-    """Scheduled task to sync subscription status from AR."""
-    # Master gate: nothing to sync if PA Chat is disabled.
-    from pibiassistant.pibiassistant_chat.gate import is_chat_enabled
-
-    if not is_chat_enabled():
-        return
-    try:
-        settings = frappe.get_single("PA Chat Settings")
-        if settings.registration_status != "Registered":
-            return
-        sync_subscription_status()
-        _send_heartbeat()
-    except Exception as e:
-        _log(title="AIDA Scheduled Sync", message=f"Scheduled sync failed: {e!s}")
-
-
-def _send_heartbeat():
-    """Send version/health info to AR and process any notifications received."""
-    try:
-        import sys
-
-        from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
-
-        client = get_pa_cloud_client()
-        if not client:
-            return
-
-        # Gather version info
-        versions = {}
-        try:
-            from frappe.utils.change_log import get_versions
-
-            versions = get_versions() or {}
-        except Exception:
-            # Best-effort — heartbeat still proceeds without version metadata.
-            frappe.logger("aida.billing").exception("AIDA heartbeat: get_versions failed")
-
-        result = client.heartbeat(
-            app_version=versions.get("pibiassistant", {}).get("version"),
-            pa_version=versions.get("pibiassistant", {}).get("version"),
-            frappe_version=versions.get("frappe", {}).get("version"),
-            erpnext_version=versions.get("erpnext", {}).get("version"),
-            python_version=sys.version.split()[0],
-            timeout=10,
-        )
-
-        # Store any notifications received
-        if result and result.get("notifications"):
-            _store_notifications(result["notifications"])
-
-    except Exception as e:
-        # Heartbeat failure should never break the sync
-        _log(title="AIDA Heartbeat", message=f"Heartbeat failed: {e!s}")
-
-
-def _store_notifications(notifications):
-    """Cache notifications from AR in PA Chat Settings for the frontend to read."""
-    import json as _json
-
-    try:
-        frappe.db.set_single_value(
-            "PA Chat Settings",
-            "cached_notifications",
-            _json.dumps(notifications),
-        )
-    except Exception:
-        # Field may not exist yet on older sites — non-fatal, but trace it
-        # so we know the heartbeat notifications channel is silently dropping.
-        frappe.logger("pao.billing").exception(
-            "AIDA heartbeat: failed to cache notifications " "(cached_notifications field may be missing)"
-        )

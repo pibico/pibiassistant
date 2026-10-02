@@ -7,19 +7,6 @@ from pibiassistant.pibiassistant_chat.api import mobile_stream
 
 
 class TestMobileRoutingWiring(unittest.TestCase):
-    def test_stream_complete_sends_the_receipt_and_the_model(self):
-        src = inspect.getsource(mobile_stream)
-        at = src.index('_format_sse_event(\n                    "stream_complete"')
-        window = src[at : at + 900]
-        self.assertIn('"routing"', window)
-        self.assertIn('"model_id"', window)
-
-    def test_the_conversation_log_persists_the_receipt(self):
-        sig = inspect.signature(mobile_stream._log_conversation)
-        self.assertIn("routing", sig.parameters)
-        src = inspect.getsource(mobile_stream._log_conversation)
-        self.assertIn('"routing": routing', src)
-
     def test_history_selects_the_routing_column(self):
         src = inspect.getsource(mobile_stream)
         self.assertIn('"credits_used", "routing"', src.replace("'", '"'))

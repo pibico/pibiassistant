@@ -146,31 +146,6 @@ class TestFlagsSurviveResumeAndContinue(unittest.TestCase):
         self.assertIsNone(bound.arguments.get("web_search"))
         self.assertIsNone(bound.arguments.get("thinking_enabled"))
 
-    def test_the_resume_relay_hands_both_flags_to_the_sdk(self):
-        """The kwargs have to survive the last hop too, not just reach the thread."""
-        client = MagicMock()
-        client.stream_chat.return_value = iter(())
-        with patch(
-            "pibiassistant.pibiassistant_chat.pa_cloud_client.get_pa_cloud_client",
-            return_value=client,
-        ), patch("frappe.init"), patch("frappe.connect"), patch("frappe.set_user"), patch(
-            "frappe.destroy"
-        ), patch("frappe.db"), patch("pibiassistant.pibiassistant_chat.api.chat.relay.clear_cancel"), patch(
-            "pibiassistant.pibiassistant_chat.api.chat.relay._emit_socket_event"
-        ):
-            _relay_ar_interrupt_resume(
-                "s1",
-                [{"interruptId": "i1", "response": "approve"}],
-                "u@x.com",
-                "site",
-                web_search=False,
-                thinking_enabled=True,
-            )
-
-        kwargs = client.stream_chat.call_args.kwargs
-        self.assertIs(kwargs["web_search"], False)
-        self.assertIs(kwargs["thinking_enabled"], True)
-
 
 if __name__ == "__main__":
     unittest.main()

@@ -304,58 +304,6 @@ class TestAnalyticsEndpointsLocal(BaseAssistantTest):
             analytics.get_message_credits(conversation_id="no-such-session-xyz")
 
 
-class TestLogConversationCredits(BaseAssistantTest):
-    """The web streaming path must persist the credits_used value AR sends in
-    stream_complete onto the local PA Chat Message — previously dropped."""
-
-    def setUp(self):
-        super().setUp()
-        frappe.set_user("Administrator")
-        self.sid = "test-logconv-credits-1"
-        frappe.db.delete("PA Chat Message", {"session_id": self.sid})
-
-    def test_log_conversation_persists_credits(self):
-        from pibiassistant.pibiassistant_chat.api.chat.helpers import _log_conversation
-
-        _log_conversation(
-            session_id=self.sid,
-            message="hi",
-            response="hello there",
-            model="claude-x",
-            context=None,
-            credits=9,
-        )
-        row = frappe.db.get_value(
-            "PA Chat Message",
-            {"session_id": self.sid, "role": "assistant"},
-            ["credits_used", "model"],
-            as_dict=True,
-        )
-        self.assertIsNotNone(row)
-        self.assertEqual(row["credits_used"], 9)
-
-    def test_fractional_credits_survive_persistence(self):
-        from pibiassistant.pibiassistant_chat.api.chat.helpers import _log_conversation
-
-        _log_conversation(
-            session_id=self.sid,
-            message="hi",
-            response="fractional turn",
-            model="claude-x",
-            context=None,
-            credits=0.4,
-        )
-        row = frappe.db.get_value(
-            "PA Chat Message",
-            {"session_id": self.sid, "role": "assistant"},
-            ["credits_used"],
-            as_dict=True,
-        )
-        self.assertIsNotNone(row)
-        # Fractional credits must not truncate to 0 (the reported usage bug).
-        self.assertAlmostEqual(float(row["credits_used"]), 0.4, places=2)
-
-
 class TestFractionalCreditAggregation(unittest.TestCase):
     """The usage page must not truncate sub-1.0 credits (reported bug)."""
 

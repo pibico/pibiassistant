@@ -67,6 +67,11 @@ pibiassistant.pibiassistant_chat._check_and_show_banner = function () {
 	if (frappe.session.user === "Guest") {
 		return;
 	}
+	// AIDA mode (native AIDA API configured): the "enable PA Chat" banner is moot,
+	// so skip the should_show_banner request. Flag set by pibiassistant.boot.boot_session.
+	if (frappe.boot && frappe.boot.pa_aida_mode) {
+		return;
+	}
 	frappe.call({
 		method: "pibiassistant.pibiassistant_chat.api.should_show_banner",
 		type: "GET",
