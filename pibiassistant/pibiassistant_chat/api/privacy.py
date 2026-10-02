@@ -4,18 +4,17 @@
 # Proprietary License
 
 """
-Privacy and GDPR Data Subject Rights proxy APIs.
+Privacy and GDPR Data Subject Rights APIs.
 
-These endpoints are called by the AIDA frontend and proxy to the
-AR core GDPR API via the SDK. They bridge Frappe session auth
-to HMAC-signed AR API calls.
+Export (Art. 20), erasure (Art. 17) and restriction (Art. 18) work on the data held on
+this site. The consent/config/rectification endpoints only existed for PA Cloud and are
+retired (HTTP 410).
 """
 
 import frappe
 from frappe import _
 
-from ._helpers import _aida_guard, _aida_mode, cloud_client_or_throw
-from .auth import _ar_user_id
+from pibiassistant.utils.retired import retired
 
 
 @frappe.whitelist(methods=["GET"])
@@ -27,11 +26,8 @@ def export_my_data() -> dict:
     plus local PA Chat data.
     """
     user = frappe.session.user
-    aida = _aida_mode()
-    # AR keys users by email; resolve the docname before every AR call.
-    ar_data = None if aida else cloud_client_or_throw().export_user_data(user_id=_ar_user_id(user))
 
-    # Append local PA Chat data
+    # PA Chat data held on this site
     pao_data = {
         "pao_preferences": None,
         "pao_messages_count": 0,
@@ -55,19 +51,15 @@ def export_my_data() -> dict:
     # Message count (content already exported from AR side)
     pao_data["pao_messages_count"] = frappe.db.count("PA Chat Message", {"user": user})
 
-    if aida:
-        pao_data["pao_messages"] = frappe.get_all(
-            "PA Chat Message",
-            filters={"user": user},
-            fields=["name", "session_id", "role", "content", "creation"],
-            order_by="creation asc",
-            limit_page_length=0,
-        )
+    pao_data["pao_messages"] = frappe.get_all(
+        "PA Chat Message",
+        filters={"user": user},
+        fields=["name", "session_id", "role", "content", "creation"],
+        order_by="creation asc",
+        limit_page_length=0,
+    )
 
-    if ar_data and ar_data.get("data"):
-        ar_data["data"]["pao"] = pao_data
-
-    return ar_data or {"status": "success", "data": {"pao": pao_data}}
+    return {"status": "success", "data": {"pao": pao_data}}
 
 
 @frappe.whitelist(methods=["POST"])
@@ -93,10 +85,7 @@ def erase_my_data(password: str | None = None) -> dict:
     except frappe.AuthenticationError:
         frappe.throw(_("Incorrect password"))
 
-    # 1. Delete AR-side data (AR keys users by email); AIDA mode has none
-    ar_result = None if _aida_mode() else cloud_client_or_throw().erase_user_data(user_id=_ar_user_id(user))
-
-    # 2. Collect PA Chat Message names BEFORE deleting so we can cascade
+    # 1. Collect PA Chat Message names BEFORE deleting so we can cascade
     #    into attached File docs (security note — incomplete GDPR erasure).
     message_names = frappe.get_all(
         "PA Chat Message",
@@ -116,7 +105,7 @@ def erase_my_data(password: str | None = None) -> dict:
             limit_page_length=0,
         )
 
-    # 3. Delete user-keyed rows. Use ``frappe.db.delete`` for bulk
+    # 2. Delete user-keyed rows. Use ``frappe.db.delete`` for bulk
     #    integrity — these DocTypes have no on_trash side effects we
     #    need to fire, and this avoids N document loads.
     local_deleted = len(message_names)
@@ -148,7 +137,7 @@ def erase_my_data(password: str | None = None) -> dict:
             title="AIDA GDPR Erasure", message=f"OAuth Bearer Token cleanup failed for {user}: {e}"
         )
 
-    # 4. Delete File docs through the ORM so the on_trash hook wipes
+    # 3. Delete File docs through the ORM so the on_trash hook wipes
     #    the backing bytes from disk. Bulk db.delete would leave files
     #    orphaned on the filesystem.
     files_deleted = 0
@@ -161,7 +150,7 @@ def erase_my_data(password: str | None = None) -> dict:
                 title="AIDA GDPR Erasure", message=f"Failed to delete File {fname} during erasure: {e}"
             )
 
-    # 5. Audit trail — one summary entry the DPO can grep for.
+    # 4. Audit trail — one summary entry the DPO can grep for.
     frappe.log_error(
         title="AIDA GDPR Erasure",
         message=(
@@ -172,9 +161,7 @@ def erase_my_data(password: str | None = None) -> dict:
         ),
     )
 
-    result = ar_result or {}
-    if "deleted" not in result:
-        result["deleted"] = {}
+    result = {"deleted": {}}
     result["deleted"]["pao_messages"] = local_deleted
     result["deleted"]["pao_preferences"] = 1 if prefs_name else 0
     result["deleted"]["pao_usage_log"] = usage_log_deleted
@@ -183,27 +170,6 @@ def erase_my_data(password: str | None = None) -> dict:
     result["status"] = "success"
 
     return result
-
-
-@frappe.whitelist(methods=["POST"])
-def update_my_data(updates: str | None = None) -> dict:
-    """
-    Update personal data for the current user (GDPR Article 16 — Rectification).
-
-    Updatable fields: display_name, email, timezone, locale, custom_instructions.
-    """
-    import json
-
-    user = frappe.session.user
-    if _aida_mode():
-        return {"success": False, "unavailable": True, "error": _("This feature is not available in AIDA mode.")}
-    client = cloud_client_or_throw()
-
-    updates_dict = json.loads(updates) if isinstance(updates, str) else updates
-    if not updates_dict:
-        frappe.throw(_("No updates provided"))
-
-    return client.rectify_user_data(user_id=_ar_user_id(user), updates=updates_dict)
 
 
 @frappe.whitelist(methods=["POST"])
@@ -220,24 +186,8 @@ def restrict_my_processing(restrict: bool = True) -> dict:
     if isinstance(restrict, str):
         restrict = restrict.lower() in ("true", "1", "yes")
 
-    if _aida_mode():
-        _set_processing_restricted_flag(user, bool(restrict))
-        return {"status": "success", "processing_restricted": bool(restrict)}
-
-    result = cloud_client_or_throw().restrict_user_processing(user_id=_ar_user_id(user), restrict=restrict)
-
-    # mirror: mirror the flag onto PA Chat User Preferences so
-    # ``_log_conversation`` can skip persistence without an AR round-trip on
-    # every message. We only flip local state after AR acknowledges.
-    # The local mirror is keyed by the Frappe docname (session user).
-    try:
-        _set_processing_restricted_flag(user, bool(restrict))
-    except Exception:
-        # AR is source-of-truth; local mirror drift is a P2 concern. Don't
-        # fail the user's privacy request if the local write errors.
-        frappe.log_error(title="AIDA processing_restricted mirror failed", message=frappe.get_traceback())
-
-    return result
+    _set_processing_restricted_flag(user, bool(restrict))
+    return {"status": "success", "processing_restricted": bool(restrict)}
 
 
 def _set_processing_restricted_flag(user: str, restricted: bool) -> None:
@@ -261,143 +211,25 @@ def _set_processing_restricted_flag(user: str, restricted: bool) -> None:
 
 
 @frappe.whitelist(methods=["POST"])
-@_aida_guard()
-def update_my_consent(consent_type: str | None = None, granted: bool = True) -> dict:
-    """
-    Update consent for a specific processing activity.
-
-    Args:
-            consent_type: Type of consent (e.g., "memory")
-            granted: True to grant, False to withdraw
-    """
-    user = frappe.session.user
-    client = cloud_client_or_throw()
-
-    if not consent_type:
-        frappe.throw(_("Consent type is required"))
-
-    # Convert string "true"/"false" from form data
-    if isinstance(granted, str):
-        granted = granted.lower() in ("true", "1", "yes")
-
-    return client.update_user_consent(user_id=_ar_user_id(user), consent_type=consent_type, granted=granted)
+def update_my_data(*args, **kwargs):
+    retired()
 
 
-def _local_privacy_config() -> dict:
-    from .chat.helpers import _is_processing_restricted
-
-    return {
-        "is_admin": "System Manager" in frappe.get_roles(frappe.session.user),
-        "tenant": None,
-        "user_privacy": {
-            "memory_consent": False,
-            "processing_restricted": _is_processing_restricted(frappe.session.user),
-        },
-    }
+@frappe.whitelist(methods=["POST"])
+def update_my_consent(*args, **kwargs):
+    retired()
 
 
 @frappe.whitelist(methods=["GET"])
-@_aida_guard(_local_privacy_config)
-def get_privacy_config() -> dict:
-    """
-    Get privacy configuration for the current tenant.
-
-    Returns tenant-level config (for admins) and user-level privacy state.
-    """
-    user = frappe.session.user
-    is_admin = "System Manager" in frappe.get_roles(user)
-    client = cloud_client_or_throw()
-
-    result = {"is_admin": is_admin}
-
-    # Tenant-level config (admin only)
-    if is_admin:
-        try:
-            result["tenant"] = client.get_tenant_privacy_config()
-        except Exception:
-            result["tenant"] = None
-
-    # User-level privacy state (always included)
-    try:
-        user_data = client.get_user(user_id=_ar_user_id(user))
-        if user_data:
-            result["user_privacy"] = {
-                "memory_consent": user_data.get("memory_consent", False),
-                "processing_restricted": user_data.get("processing_restricted", False),
-            }
-    except Exception:
-        result["user_privacy"] = None
-
-    return result
+def get_privacy_config(*args, **kwargs):
+    retired()
 
 
 @frappe.whitelist(methods=["POST"])
-@_aida_guard()
-def update_privacy_config(config: str | None = None) -> dict:
-    """
-    Update tenant-level privacy configuration. Admin only.
-
-    Updatable: default_memory_consent, conversation_retention_days, privacy_contact_email.
-    """
-    import json
-
-    if "System Manager" not in frappe.get_roles(frappe.session.user):
-        frappe.throw(_("Only administrators can update privacy configuration"))
-
-    if not config:
-        frappe.throw(_("No configuration provided"))
-
-    client = cloud_client_or_throw()
-    config_dict = json.loads(config) if isinstance(config, str) else config
-    return client.update_tenant_privacy_config(config_dict)
+def update_privacy_config(*args, **kwargs):
+    retired()
 
 
 @frappe.whitelist(methods=["POST"])
-@_aida_guard()
-def save_initial_consent(memory_consent: bool = False) -> dict:
-    """
-    Save initial privacy consent from the onboarding consent screen.
-
-    Records the user's memory consent, marks AR-side onboarding complete, and
-    flips the local PA Chat User Preferences `privacy_consent_complete` flag so
-    the feature tour doesn't reappear.
-    """
-    user = frappe.session.user
-    ar_user = _ar_user_id(user)
-    client = cloud_client_or_throw()
-
-    # Convert string "true"/"false" from form data
-    if isinstance(memory_consent, str):
-        memory_consent = memory_consent.lower() in ("true", "1", "yes")
-
-    # Save consent choice via AR. This write is AUTHORITATIVE — do NOT swallow a
-    # failure. Swallowing it and then marking the tour complete (below) is what
-    # silently locked users into memory_consent=0 while the UI showed consent
-    # ON: the flag never landed and the tour never reappeared to retry. Let the
-    # exception propagate so the SPA surfaces it and the tour retries next load.
-    client.update_user_consent(user_id=ar_user, consent_type="memory", granted=memory_consent)
-
-    # Mark onboarding complete on AR side (replaces the old OnboardingChat flow).
-    # Non-critical: a failure here must not undo the consent write above, so it
-    # stays best-effort/logged.
-    try:
-        client.complete_onboarding(user_id=ar_user)
-    except Exception as e:
-        frappe.log_error(title="Privacy Initial Consent", message=f"Failed to mark onboarding complete: {e}")
-
-    # Mark privacy consent complete locally — only reached when the AR consent
-    # write above succeeded. Keyed by the Frappe docname (local mirror).
-    prefs_name = frappe.db.get_value("PA Chat User Preferences", {"user": user}, "name")
-    if prefs_name:
-        frappe.db.set_value("PA Chat User Preferences", prefs_name, "privacy_consent_complete", 1)
-    else:
-        # Create preferences if they don't exist
-        doc = frappe.new_doc("PA Chat User Preferences")
-        doc.user = user
-        doc.privacy_consent_complete = 1
-        doc.insert(ignore_permissions=True)
-
-    return {
-        "success": True,
-        "memory_consent": memory_consent,
-    }
+def save_initial_consent(*args, **kwargs):
+    retired()

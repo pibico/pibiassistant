@@ -1,134 +1,43 @@
-# pibiAssistant - AI Assistant integration for Frappe Framework
-# Copyright (C) 2025 Paul Clinton
+# pibiAssistant - Retired endpoints (Memories)
 # AGPL-3.0 License
 
-"""User memory management — view and delete AI-extracted memories."""
+"""Memories: RETIRED.
+
+PA Cloud was retired and AIDA runs natively, so nothing here does anything.
+The dotted paths stay whitelisted for one release so external mobile / MCP
+clients get HTTP 410 with a clear message instead of a 404.
+"""
 
 import frappe
-from pibiassistant.pibiassistant_chat.api._helpers import _aida_unavailable
-from frappe import _
 
-from .auth import _ar_user_id
+from pibiassistant.utils.retired import retired
 
 
 @frappe.whitelist(methods=["GET"])
-def list_memories(memory_type: str | None = None, limit: int = 50, offset: int = 0):
-    """
-    List memories for the current user.
-
-    Returns memories with pagination.
-    """
-    try:
-        from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
-
-        client = get_pa_cloud_client()
-        if not client:
-            return {
-                "memories": [],
-                "pagination": {"total": 0, "limit": int(limit), "offset": int(offset), "has_more": False},
-            }
-
-        return client.list_memories(
-            user_id=_ar_user_id(frappe.session.user),
-            memory_type=memory_type,
-            limit=int(limit),
-            offset=int(offset),
-        )
-
-    except Exception as e:
-        frappe.log_error(title="AIDA Memories", message=f"Error listing memories: {e!s}")
-        return {"memories": [], "pagination": {"total": 0}}
+def list_memories(*args, **kwargs):
+    retired()
 
 
 @frappe.whitelist(methods=["POST"])
-def delete_memory(memory_id: str | None = None):
-    """Delete a single memory for the current user."""
-    if not memory_id:
-        frappe.throw(_("memory_id is required"), frappe.ValidationError)
-
-    try:
-        from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
-
-        client = get_pa_cloud_client()
-        if not client:
-            return _aida_unavailable()
-        return client.delete_memory(user_id=_ar_user_id(frappe.session.user), memory_id=memory_id)
-
-    except frappe.ValidationError:
-        raise
-    except Exception as e:
-        frappe.log_error(title="AIDA Memories", message=f"Error deleting memory: {e!s}")
-        frappe.throw(_("Error: {0}").format(str(e)))
+def delete_memory(*args, **kwargs):
+    retired()
 
 
 @frappe.whitelist(methods=["POST"])
-def update_memory(memory_id: str | None = None, content: str | None = None):
-    """Update a memory's content for the current user."""
-    if not memory_id:
-        frappe.throw(_("memory_id is required"), frappe.ValidationError)
-    if not content or not content.strip():
-        frappe.throw(_("content is required"), frappe.ValidationError)
-
-    try:
-        from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
-
-        client = get_pa_cloud_client()
-        if not client:
-            return _aida_unavailable()
-        return client.update_memory(
-            user_id=_ar_user_id(frappe.session.user),
-            memory_id=memory_id,
-            content=content.strip(),
-        )
-
-    except frappe.ValidationError:
-        raise
-    except Exception as e:
-        frappe.log_error(title="AIDA Memories", message=f"Error updating memory: {e!s}")
-        frappe.throw(_("Error: {0}").format(str(e)))
+def update_memory(*args, **kwargs):
+    retired()
 
 
 @frappe.whitelist(methods=["POST"])
-def delete_all_memories():
-    """Delete all memories for the current user."""
-    try:
-        from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
-
-        client = get_pa_cloud_client()
-        if not client:
-            return _aida_unavailable()
-        return client.delete_all_memories(user_id=_ar_user_id(frappe.session.user))
-
-    except Exception as e:
-        frappe.log_error(title="AIDA Memories", message=f"Error deleting all memories: {e!s}")
-        frappe.throw(_("Error: {0}").format(str(e)))
+def delete_all_memories(*args, **kwargs):
+    retired()
 
 
 @frappe.whitelist(methods=["GET"])
-def get_memory_stats():
-    """Get memory statistics for the current user."""
-    try:
-        from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
-
-        client = get_pa_cloud_client()
-        if not client:
-            return {"total": 0, "by_type": {"preference": 0, "summary": 0, "fact": 0}, "total_accesses": 0}
-
-        return client.get_memory_stats(user_id=_ar_user_id(frappe.session.user))
-
-    except Exception as e:
-        frappe.log_error(title="AIDA Memories", message=f"Error getting memory stats: {e!s}")
-        return {"total": 0, "by_type": {"preference": 0, "summary": 0, "fact": 0}, "total_accesses": 0}
+def get_memory_stats(*args, **kwargs):
+    retired()
 
 
 @frappe.whitelist(methods=["GET"])
-def get_memory_summary(force: bool = False):
-    """Get AI-generated narrative summary of user's memories."""
-    from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
-
-    client = get_pa_cloud_client()
-    if not client:
-        return None
-
-    force_bool = force in (True, "true", "1", 1)
-    return client.get_memory_summary(user_id=_ar_user_id(frappe.session.user), force=force_bool)
+def get_memory_summary(*args, **kwargs):
+    retired()

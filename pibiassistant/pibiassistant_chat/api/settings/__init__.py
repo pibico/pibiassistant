@@ -39,7 +39,6 @@ from pibiassistant.pibiassistant_chat.api.settings.mobile_usage import (
     get_usage_stats,
 )
 from pibiassistant.pibiassistant_chat.api.settings.registration import (
-    _translate_registration_error,
     accept_updated_terms,
     complete_email_verification,
     get_plan_comparison,

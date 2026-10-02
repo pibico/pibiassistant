@@ -34,11 +34,6 @@ class TestIsAidaMode(BaseAssistantTest):
     def test_exception_means_not_aida(self):
         with patch("frappe.utils.password.get_decrypted_password", side_effect=RuntimeError("boom")):
             self.assertFalse(is_aida_mode())
-            from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
-
-            with patch.object(frappe, "get_single", side_effect=frappe.DoesNotExistError):
-                with self.assertRaises(frappe.DoesNotExistError):
-                    get_pa_cloud_client()
 
     def test_key_set_means_aida_and_no_cloud_client(self):
         from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client

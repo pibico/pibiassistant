@@ -5,21 +5,15 @@
 """
 SPA initialization endpoint.
 
-Combines multiple sequential API calls into a single request with
-internal parallelization of external AR calls via ThreadPoolExecutor.
-Follows the same pattern as get_billing_page_data in billing.py.
+Combines the access, quota, capabilities, user-auth and conversation-list lookups
+into a single request. Everything is answered from this site (AIDA runs natively).
 """
 
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING
 
 import frappe
-from frappe import _
-
-from pibiassistant.pibiassistant_chat.cloud_url import PRODUCTION_AIDA_CLOUD_URL, get_pa_cloud_url
-from pibiassistant.utils.cache import get_cached_server_settings
 
 from ._helpers import _aida_mode
 
@@ -30,21 +24,21 @@ if TYPE_CHECKING:
 @frappe.whitelist(methods=["POST"])
 def initialize_spa() -> dict:
     """
-    Combined SPA initialization — replaces 6 sequential frontend calls.
+    Combined SPA initialization: access, quota, capabilities, user auth and sessions in one call.
 
-    Aggregates: can_use_pao + get_quota_status + get_capabilities +
-    get_user_auth_status + get_user_sessions
-    into a single request with parallel AR calls.
+    AIDA runs natively, so every part is answered from this site. When the access gate says
+    the user cannot use AIDA only the access block and the fail-safe defaults are returned.
 
     Returns:
             dict: {
-                    "access": { can_use, status, is_admin, user, pa_cloud_url, mcp_endpoint_url, preferences },
+                    "access": { can_use, status, is_admin, user, preferences, ... },
                     "quota": { plan, quota_total, quota_used, quota_remaining, ... },
-                    "outstanding": { amount, currency, invoice } | null (admins only),
                     "capabilities": { features: { billing, memory, workflows, ... } },
-                    "user_auth": { ready, site_registered, user_registered, ... },
-                    "onboarding": { onboarding_complete, has_conversations } | null,
-                    "sessions": [ { session_id, preview, started, last_activity }, ... ]
+                    "user_auth": { ready, site_registered, user_registered, ... } | null,
+                    "terms": { acceptance_required, can_accept },
+                    "onboarding": null,
+                    "sessions": [ { session_id, preview, started, last_activity }, ... ],
+                    "outstanding": null
             }
     """
     settings = frappe.get_single("PA Chat Settings")
@@ -52,117 +46,48 @@ def initialize_spa() -> dict:
     user_roles = frappe.get_roles(user)
     is_admin = "System Manager" in user_roles
 
-    # === AIDA mode: bypass cloud registration entirely ===
-    if _aida_mode():
-        access = _build_access(settings, user, user_roles, is_admin)
-        access["mcp_endpoint_url"] = ""
-        return {
-            "access": access,
-            "quota": {"success": True, "plan": "AIDA", "quota_total": -1, "quota_used": 0,
-                      "quota_remaining": -1, "percentage_used": 0, "is_unlimited": True,
-                      "is_admin": is_admin, "registration_status": "Registered"},
-            "capabilities": _aida_capabilities(),
-            "user_auth": {"success": True, "ready": True, "site_registered": True,
-                          "user_registered": True, "has_mcp_servers": False,
-                          "active_server_count": 0, "needs_reconnect": False},
-            "terms": {"acceptance_required": False, "can_accept": is_admin},
-            "onboarding": None,
-            "sessions": _fetch_sessions(),
-            "outstanding": None,
-        }
-
-    # === Phase 1: Local-only (main thread) ===
     access = _build_access(settings, user, user_roles, is_admin)
-    access["mcp_endpoint_url"] = get_cached_server_settings().get("mcp_endpoint_url")
-    quota = _build_quota(settings, is_admin)
+    access["mcp_endpoint_url"] = ""
 
-    # Early exit for non-ready states
-    if not access.get("can_use"):
+    if not _aida_mode() and not access.get("can_use"):
         return {
             "access": access,
-            "quota": quota,
+            "quota": _build_quota(settings, is_admin),
             "capabilities": _default_capabilities(),
             "user_auth": None,
+            "terms": {"acceptance_required": False, "can_accept": is_admin},
             "onboarding": None,
             "sessions": [],
-            # Key present on every path so the SPA never has to distinguish
-            # "nothing owed" from "this payload predates the field".
             "outstanding": None,
         }
-
-    # Fetch sessions (local DB, main thread)
-    sessions = _fetch_sessions()
-
-    # === Phase 2: Parallel AR calls (worker threads) ===
-    # Pattern from get_billing_page_data (billing.py:1206-1241):
-    # Create the SDK client in the MAIN thread (frappe.db calls happen here),
-    # then pass bound methods to workers (HTTP-only, thread-safe).
-    from concurrent.futures import ThreadPoolExecutor, as_completed
-
-    from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
-
-    client = get_pa_cloud_client()  # Main thread — safe for frappe.db
-
-    def _safe_call(name, fn, *args):
-        try:
-            return name, fn(*args)
-        except Exception:
-            return name, None
-
-    # Extract settings values in main thread (Frappe docs aren't thread-safe)
-    caps_cache = {
-        "cached_capabilities": settings.cached_capabilities,
-        "capabilities_cached_at": settings.capabilities_cached_at,
-        "pa_cloud_url": get_pa_cloud_url(),
-    }
-    tasks = [("capabilities", _get_cached_or_fetch_capabilities, caps_cache)]
-    if client:
-        # AR keys AR Tenant Users by email — query with the normalized identity,
-        # not the raw Frappe docname. Missing this (the standalone
-        # get_user_auth_status normalizes, but this combined boot path did not)
-        # made AR find no seat for the Administrator owner → ready=False → the
-        # SPA rendered "Connect Your Account" on every load.
-        from pibiassistant.pibiassistant_chat.api.auth import _ar_user_id
-
-        tasks.append(("user_auth", client.get_user_auth_status, _ar_user_id(user)))
-        # AR's terms gate blocks stream_chat AND list_available_models. Without
-        # asking at boot the SPA only discovers it by watching those features
-        # fail, so ask up front and let it render the acceptance surface.
-        tasks.append(("terms", client.get_terms_status))
-        # Admin-only: every billing endpoint behind this is System Manager
-        # gated, a member cannot settle it, and it would cost every other
-        # user an AR round-trip on every boot to tell them so.
-        if is_admin:
-            from pibiassistant.pibiassistant_chat.api.billing._outstanding import (
-                resolve_outstanding,
-            )
-
-            tasks.append(("outstanding", resolve_outstanding, client))
-
-    ar_results = {}
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        futures = [executor.submit(_safe_call, *t) for t in tasks]
-        for future in as_completed(futures):
-            name, result = future.result()
-            ar_results[name] = result
-
-    capabilities = ar_results.get("capabilities")
-    user_auth = ar_results.get("user_auth")
-
-    # Cache capabilities if freshly fetched (main thread — safe for frappe.db)
-    if capabilities and settings.cached_capabilities != json.dumps(capabilities):
-        _update_capabilities_cache(settings, capabilities)
 
     return {
         "access": access,
-        "quota": quota,
-        "capabilities": capabilities or _default_capabilities(),
-        "user_auth": _format_user_auth(user_auth, settings),
-        "terms": _format_terms(ar_results.get("terms"), is_admin),
-        "onboarding": None,  # Retained for backward compat (mobile). Onboarding chat removed.
-        "sessions": sessions,
-        # None when nothing is owed, and for non-admins who could not act on it.
-        "outstanding": ar_results.get("outstanding"),
+        "quota": {
+            "success": True,
+            "plan": "AIDA",
+            "quota_total": -1,
+            "quota_used": 0,
+            "quota_remaining": -1,
+            "percentage_used": 0,
+            "is_unlimited": True,
+            "is_admin": is_admin,
+            "registration_status": "Registered",
+        },
+        "capabilities": _aida_capabilities(),
+        "user_auth": {
+            "success": True,
+            "ready": True,
+            "site_registered": True,
+            "user_registered": True,
+            "has_mcp_servers": False,
+            "active_server_count": 0,
+            "needs_reconnect": False,
+        },
+        "terms": {"acceptance_required": False, "can_accept": is_admin},
+        "onboarding": None,
+        "sessions": _fetch_sessions(),
+        "outstanding": None,
     }
 
 
@@ -252,178 +177,9 @@ def _fetch_sessions(limit: int = 20) -> list[dict]:
 # ============================================================================
 
 
-def _get_cached_or_fetch_capabilities(caps_cache: dict) -> dict | None:
-    """Return cached capabilities if fresh (< 5 min), otherwise fetch from AR.
-
-    Args:
-            caps_cache: Plain dict with cached_capabilities, capabilities_cached_at,
-                        pa_cloud_url — extracted from AIDA Settings in the main thread.
-
-    Note: Does NOT update the cache here — this may run in a worker thread.
-    The caller (main thread) is responsible for calling _update_capabilities_cache.
-    """
-    # Check cache
-    cached_json = caps_cache.get("cached_capabilities")
-    cached_at = caps_cache.get("capabilities_cached_at")
-
-    if cached_json and cached_at:
-        from datetime import datetime
-
-        # Pure Python — no frappe.local needed (thread-safe)
-        if isinstance(cached_at, str):
-            cached_dt = datetime.fromisoformat(cached_at)
-        else:
-            cached_dt = cached_at
-        age_seconds = (datetime.now() - cached_dt).total_seconds()
-        if age_seconds < 300:  # 5 minutes
-            try:
-                return json.loads(cached_json)
-            except (json.JSONDecodeError, TypeError):
-                pass  # Corrupted cache, fetch fresh
-
-    # Fetch fresh from AR (HTTP call only — thread-safe)
-    from pibiassistant.pibiassistant_chat.pa_cloud_client import (
-        get_capabilities as fetch_capabilities,
-    )
-
-    # NOT get_pa_cloud_url() — frappe.conf is a thread-local proxy and raises
-    # "object is not bound" in this worker. The caller resolves it on the main
-    # thread and hands it over in caps_cache.
-    pa_cloud_url = caps_cache.get("pa_cloud_url") or PRODUCTION_AIDA_CLOUD_URL
-
-    try:
-        return fetch_capabilities(pa_cloud_url)
-    except Exception:
-        return None
-
-
-def _update_capabilities_cache(settings: Document, caps: dict) -> None:
-    """Cache capabilities in PA Chat Settings.
-
-    Runs in the main request thread — Frappe auto-commits at end of request,
-    so no explicit frappe.db.commit() is needed.
-    """
-    from frappe.utils import now
-
-    try:
-        settings.db_set("cached_capabilities", json.dumps(caps), update_modified=False)
-        settings.db_set("capabilities_cached_at", now(), update_modified=False)
-
-        # Also maintain billing_enabled in quota cache
-        from pibiassistant.pibiassistant_chat.quota_cache import set_field
-
-        billing_enabled = caps.get("features", {}).get("billing", True)
-        set_field("billing_enabled", billing_enabled)
-    except Exception:
-        pass  # Non-critical — cache update failure shouldn't break init
-
-
 # ============================================================================
 # Helper: Format user auth status
 # ============================================================================
-
-
-def _format_terms(terms: dict | None, is_admin: bool) -> dict:
-    """Format AR's terms status for the SPA's blocking gate.
-
-    Fails SOFT on a missing/unreachable answer: a terms lookup that did not
-    come back must never wall off a working site. AR still enforces the real
-    gate on every request, so the cost of guessing "fine" here is a clear
-    error later, whereas guessing "blocked" locks users out over a blip.
-
-    ``can_accept`` is the admin split — acceptance binds the whole tenant, so
-    only a System Manager gets the accept action; everyone else is told to ask
-    one.
-    """
-    if not terms or terms.get("_ar_unreachable"):
-        return {"acceptance_required": False, "can_accept": is_admin}
-
-    return {
-        "acceptance_required": bool(terms.get("acceptance_required")),
-        "can_accept": is_admin,
-        "error_code": terms.get("error_code"),
-        "required_version": terms.get("required_version"),
-        "accepted_version": terms.get("accepted_version"),
-        "days_remaining": terms.get("days_remaining"),
-    }
-
-
-def _format_user_auth(user_auth: dict | None, settings: Document) -> dict:
-    """Format SDK auth response into the frontend-expected shape.
-
-    Distinguishes three states:
-
-    - Site not registered → ``user_registered=False``, expected to show the
-      admin "register your site" flow.
-    - AR unreachable (network/timeout/5xx, signalled by ``_ar_unreachable``
-      on the SDK response) → fail soft. Assume the user is fine and let
-      them keep using the app; a transient AR hiccup must NOT bounce a
-      logged-in user to the connect-account screen. The SPA can show a
-      small "billing service is having trouble" hint elsewhere.
-    - AR responded → trust its ``user_exists`` / ``ready_for_streaming``.
-    """
-    if settings.registration_status != "Registered":
-        return {
-            "success": True,
-            "ready": False,
-            "site_registered": False,
-            "user_registered": False,
-            "has_mcp_servers": False,
-        }
-
-    # AR was unreachable. Trust the user's prior session — don't kick them
-    # to connect-account on a transient failure. Caller (SPA) can render a
-    # subtle "AR temporarily unreachable" indicator from `ar_unreachable`.
-    if user_auth and user_auth.get("_ar_unreachable"):
-        return {
-            "success": True,
-            "ready": True,
-            "site_registered": True,
-            "user_registered": True,
-            "has_mcp_servers": False,
-            "ar_unreachable": True,
-            "ar_error": user_auth.get("error"),
-        }
-
-    if not user_auth:
-        return {
-            "success": True,
-            "ready": False,
-            "site_registered": True,
-            "user_registered": False,
-            "has_mcp_servers": False,
-            "message": _("Please connect your account to use AIDA"),
-        }
-
-    user_exists = user_auth.get("user_exists", False)
-    has_mcp_servers = user_auth.get("has_mcp_servers", False)
-    active_server_count = user_auth.get("active_server_count", 0)
-    expired_servers = user_auth.get("servers_with_expired_tokens", [])
-    expired_count = len(expired_servers) if isinstance(expired_servers, list) else 0
-    ar_ready = user_auth.get("ready_for_streaming", False)
-
-    # Soft-degrade for stale-token-only failures: AR refreshes near-expiry
-    # tokens proactively inside get_user_auth_status; if expired_count is
-    # still >0 here it means refresh failed (e.g. revoked OAuth client).
-    # Keep the user in the chat UI with a `needs_reconnect` banner rather
-    # than yanking them to UserSetup — they can still browse history, and
-    # the next streaming call will surface a clearer error if they try to
-    # chat.
-    if not ar_ready and user_exists and has_mcp_servers and active_server_count > 0:
-        ar_ready = True
-
-    return {
-        "success": True,
-        "ready": ar_ready,
-        "site_registered": True,
-        "user_registered": user_exists,
-        "user_status": user_auth.get("user_status", "unknown"),
-        "has_mcp_servers": has_mcp_servers,
-        "active_server_count": active_server_count,
-        "servers_with_expired_tokens": expired_count,
-        "expired_server_names": expired_servers,
-        "needs_reconnect": expired_count > 0,
-    }
 
 
 # ============================================================================

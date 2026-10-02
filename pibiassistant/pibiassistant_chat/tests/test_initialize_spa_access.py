@@ -7,7 +7,7 @@
 The production lockout: ``initialize_spa`` (the SPA boot endpoint) built its
 access block via ``init._build_access``, a stale COPY of ``can_use_pao`` that
 still did the OLD Frappe-role check after ``can_use_pao`` had moved to
-authoritative AR membership (``_is_pao_member``). A real Pending member with no
+the authoritative gate. A real Pending member with no
 assistant Frappe role got ``can_use=False`` → lock screen, even though calling
 ``can_use_pao`` directly returned ``can_use=True``.
 
@@ -19,7 +19,7 @@ authoritative gate so the boot path and the standalone endpoint can never
 diverge again.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import frappe
 
@@ -104,91 +104,33 @@ class TestInitializeSpaAccess(BaseAssistantTest):
         finally:
             frappe.set_user("Administrator")
 
-    def test_initialize_spa_queries_ar_auth_by_email_not_docname(self):
-        """The SPA boot path must ask AR for auth status by the normalized AR
-        identity (email), exactly like the standalone get_user_auth_status.
-
-        Regression: initialize_spa passed the raw Frappe docname
-        (frappe.session.user = "Administrator") to client.get_user_auth_status.
-        AR keys AR Tenant Users by email, so the lookup found no seat →
-        ready=False → the SPA rendered "Connect Your Account" on every load,
-        even though the owner had an Active seat and get_user_auth_status
-        (which normalizes to email) returned ready=True.
-        """
+    def test_initialize_spa_is_answered_locally_in_aida_mode(self):
+        """initialize_spa answers from this site: no cloud client, unlimited quota, local sessions."""
         from pibiassistant.pibiassistant_chat.api import init as init_mod
-        from pibiassistant.pibiassistant_chat.api.auth import _ar_user_id
 
-        captured = {}
-
-        def _fake_auth(user_id=None):
-            captured["user_id"] = user_id
-            return {
-                "user_exists": True,
-                "user_status": "Active",
-                "has_mcp_servers": True,
-                "active_server_count": 1,
-                "servers_with_expired_tokens": [],
-                "ready_for_streaming": True,
-            }
-
-        fake_client = MagicMock()
-        fake_client.get_user_auth_status.side_effect = _fake_auth
-
-        gate = {
-            "can_use": True,
-            "status": "ready",
-            "show_widget": True,
-            "is_admin": True,
-            "user": "Administrator",
-            "pa_cloud_url": "https://assistantruntime.cloud",
-            "preferences": {},
-        }
-
-        # _build_user_auth returns ready=False before reading AR at all unless
-        # the site itself is registered, so the state is set here rather than
-        # inherited from whatever the running site happens to be.
-        frappe.db.set_single_value("PA Chat Settings", "registration_status", "Registered")
-
-        with patch(
-            "pibiassistant.pibiassistant_chat.api.settings.access.can_use_pao",
-            return_value=gate,
-        ), patch(
-            "pibiassistant.pibiassistant_chat.pa_cloud_client.get_pa_cloud_client",
-            return_value=fake_client,
-        ), patch("pibiassistant.pibiassistant_chat.api.init._aida_mode", return_value=False):
+        gate = {"can_use": True, "status": "ready", "show_widget": True, "is_admin": True,
+                "user": "Administrator", "preferences": {}}
+        with patch("pibiassistant.pibiassistant_chat.api.settings.access.can_use_pao", return_value=gate), patch(
+            "pibiassistant.pibiassistant_chat.api.init._aida_mode", return_value=True
+        ), patch("pibiassistant.pibiassistant_chat.api.init._fetch_sessions", return_value=[]):
             result = init_mod.initialize_spa()
 
-        expected = _ar_user_id("Administrator")
-        self.assertEqual(
-            captured.get("user_id"),
-            expected,
-            "initialize_spa must query AR auth by the email identity, not the docname",
-        )
-        self.assertNotEqual(
-            captured.get("user_id"),
-            "Administrator",
-            "raw docname leaked to AR — the email-normalization sweep missed this call site",
-        )
-        self.assertTrue(
-            result["user_auth"]["ready"],
-            "a seated owner must boot ready, not to the Connect screen",
-        )
+        self.assertEqual(result["access"]["mcp_endpoint_url"], "")
+        self.assertTrue(result["quota"]["is_unlimited"])
+        self.assertTrue(result["user_auth"]["ready"])
+        self.assertEqual(result["capabilities"]["version"], "aida")
+        self.assertEqual(result["sessions"], [])
+        self.assertIsNone(result["outstanding"])
 
-    def _make_non_admin_user(self, email: str) -> str:
-        """A user with NO System Manager / assistant roles, so the membership
-        signal is the only thing that can grant access."""
-        if not frappe.db.exists("User", email):
-            u = frappe.get_doc(
-                {
-                    "doctype": "User",
-                    "email": email,
-                    "first_name": "Voice",
-                    "enabled": 1,
-                    "send_welcome_email": 0,
-                }
-            )
-            u.insert(ignore_permissions=True)
-        u = frappe.get_doc("User", email)
-        u.set("roles", [])
-        u.save(ignore_permissions=True)
-        return email
+    def test_initialize_spa_without_access_returns_the_fail_safe_payload(self):
+        from pibiassistant.pibiassistant_chat.api import init as init_mod
+
+        gate = {"can_use": False, "status": "not_registered", "show_widget": True, "preferences": {}}
+        with patch("pibiassistant.pibiassistant_chat.api.settings.access.can_use_pao", return_value=gate), patch(
+            "pibiassistant.pibiassistant_chat.api.init._aida_mode", return_value=False
+        ):
+            result = init_mod.initialize_spa()
+
+        self.assertFalse(result["access"]["can_use"])
+        self.assertIsNone(result["user_auth"])
+        self.assertEqual(result["sessions"], [])

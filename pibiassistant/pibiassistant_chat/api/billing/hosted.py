@@ -1,83 +1,18 @@
-# pibiAssistant - Hosted Checkout API
-# Copyright (C) 2025 Paul Clinton
+# pibiAssistant - Retired endpoints (Hosted checkout)
 # AGPL-3.0 License
 
-"""Ask the cloud service for a link to the page where a purchase is paid for.
+"""Hosted checkout: RETIRED.
 
-Payments are not taken on this site. A payment gateway is onboarded against
-one declared website, and this app runs on a different domain for every
-customer — so the gateway widget belongs on the cloud service.s own public site, not
-here. This endpoint swaps a purchase intent for a one-shot link to it.
+PA Cloud was retired and AIDA runs natively, so nothing here does anything.
+The dotted paths stay whitelisted for one release so external mobile / MCP
+clients get HTTP 410 with a clear message instead of a 404.
 """
 
-from __future__ import annotations
-
 import frappe
-from pibiassistant.pibiassistant_chat.api._helpers import _aida_guard, _billing_unavailable_response
-from pibiassistant.pibiassistant_chat.api._helpers import _aida_unavailable
-from frappe import _
 
-from .._helpers import _require_system_manager, _safe_error
-
-PURPOSES = ("Subscription", "Payment Method", "Credits", "Pack", "Seat")
+from pibiassistant.utils.retired import retired
 
 
 @frappe.whitelist(methods=["POST"])
-@_aida_guard(_billing_unavailable_response)
-def create_hosted_checkout(
-    purpose: str,
-    params: dict | str | None = None,
-    return_url: str | None = None,
-):
-    """
-    Get the URL to send this user to in order to pay.
-
-    Args:
-            purpose: One of Subscription, Payment Method, Credits, Pack, Seat.
-            params: Purpose-specific arguments, e.g. ``{"plan": "Team"}``.
-            return_url: Where the cloud service should send the user back to. Defaults
-                    to this site; the cloud refuses anything that is not on it.
-
-    Returns:
-            dict: ``{"checkout_url": str, "expires_at": str, ...}``
-    """
-    _require_system_manager()
-
-    if purpose not in PURPOSES:
-        frappe.throw(_("Unknown checkout purpose: {0}").format(purpose))
-
-    if isinstance(params, str):
-        params = frappe.parse_json(params) or {}
-    if params is not None and not isinstance(params, dict):
-        frappe.throw(_("params must be an object"))
-
-    if purpose == "Seat":
-        # invited_by is an authority claim AR validates against the tenant
-        # owner and its Active Admins. Always stamp the acting session's
-        # identity here — a client-supplied value must never pass through,
-        # whether forged or simply omitted to dodge the check.
-        from pibiassistant.pibiassistant_chat.api.auth import _ar_user_id
-
-        params = {**(params or {}), "invited_by": _ar_user_id(frappe.session.user)}
-
-    from pibiassistant.pibiassistant_chat.pa_cloud_client import (
-        ARBillingUnavailableError,
-        ARError,
-        get_pa_cloud_client,
-    )
-
-    client = get_pa_cloud_client()
-    if not client:
-        return _aida_unavailable()
-    try:
-        return client.create_hosted_checkout(
-            purpose,
-            params=params or {},
-            return_url=return_url or frappe.utils.get_url(),
-        )
-    except ARBillingUnavailableError:
-        frappe.throw(_("Billing is not available on this server"))
-    except ARError as e:
-        frappe.throw(_safe_error(e, "PA Hosted Checkout Error"))
-    except Exception as e:
-        frappe.throw(_safe_error(e, "PA Hosted Checkout Error"))
+def create_hosted_checkout(*args, **kwargs):
+    retired()

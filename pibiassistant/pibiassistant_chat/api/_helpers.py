@@ -4,37 +4,12 @@
 
 """Shared utilities used across AIDA API modules."""
 
-import json
 import re
 
 import frappe
 from frappe import _
 
 from pibiassistant.pibiassistant_chat.aida_mode import is_aida_mode
-
-try:
-    from pibiassistant.pibiassistant_chat.pa_cloud_client import (
-        ARAPIError,
-        ARAuthenticationError,
-        ARBillingUnavailableError,
-        ARConnectionError,
-        ARError,
-        ARRateLimitError,
-        ARTimeoutError,
-    )
-except ImportError:
-    # pa_cloud_client will be available after Task 3.8 migration. Stubs prevent import
-    # failures during the transition period.
-    class _ARStubBase(Exception):
-        pass
-
-    ARError = _ARStubBase
-    ARAPIError = _ARStubBase
-    ARAuthenticationError = _ARStubBase
-    ARBillingUnavailableError = _ARStubBase
-    ARConnectionError = _ARStubBase
-    ARRateLimitError = _ARStubBase
-    ARTimeoutError = _ARStubBase
 
 
 _SESSION_ID_RE = re.compile(r"[A-Za-z0-9_.:-]{1,100}")
@@ -52,79 +27,12 @@ def _require_system_manager():
         frappe.throw(_("Only System Managers can access billing features"), frappe.PermissionError)
 
 
-def _billing_unavailable_response():
-    """Standard response when billing features are not available on the AR server."""
-    return {"billing_available": False, "error": _("Billing is not available on this server.")}
-
-
 _aida_mode = is_aida_mode
 
 
-def _aida_unavailable() -> dict:
-    """Neutral payload for cloud-only features in AIDA mode (never throws)."""
-    return {
-        "success": False,
-        "unavailable": True,
-        "error": _("This feature is not available in AIDA mode."),
-    }
-
-
-def cloud_client_or_throw():
-    """The PA Cloud client, or a ValidationError when the feature is unavailable (AIDA mode)."""
-    from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
-
-    client = get_pa_cloud_client()
-    if not client:
-        frappe.throw(_("This feature is not available in AIDA mode."), frappe.ValidationError)
-    return client
-
-
-def _aida_guard(default=None):
-    """Decorator: in AIDA mode skip a cloud-only endpoint and return ``default``.
-
-    ``default`` may be a value or a zero-arg callable; ``None`` yields the
-    standard unavailable payload.
-    """
-    import functools
-
-    def deco(fn):
-        @functools.wraps(fn)
-        def wrapper(*args, **kwargs):
-            if _aida_mode():
-                if default is None:
-                    return _aida_unavailable()
-                return default() if callable(default) else default
-            return fn(*args, **kwargs)
-
-        return wrapper
-
-    return deco
-
-
 def _not_registered_error() -> str:
-    """Friendly message when AIDA isn't registered with the cloud service."""
-    if _aida_mode():
-        return _("This feature is not available in AIDA mode.")
-    return _(
-        "This site isn't registered yet. Please register from PA Chat Settings and try again."
-    )
-
-
-def _marketplace_enabled() -> bool:
-    """Return True if the AR backend has the marketplace companion app installed.
-
-    Reads ``PA Chat Settings.cached_capabilities`` (populated by ``initialize_spa``
-    every 5 minutes). Defaults to False on missing/corrupted cache so callers
-    skip marketplace endpoints rather than emitting ``ModuleNotFoundError`` rows.
-    """
-    try:
-        cached = frappe.db.get_single_value("PA Chat Settings", "cached_capabilities")
-        if not cached:
-            return False
-        caps = json.loads(cached) if isinstance(cached, str) else cached
-        return bool(caps.get("marketplace", {}).get("marketplace_enabled", False))
-    except Exception:
-        return False
+    """Message for chat actions attempted while no AIDA API key is configured."""
+    return _("AIDA is not configured on this site.")
 
 
 # The Error Log `title` column is capped at 140 chars by Frappe. Keep a safe
@@ -208,63 +116,6 @@ def _log(title: str, detail: str | None = None, *, message: str | None = None) -
             pass
 
 
-def _user_message_for_ar_error(e: Exception) -> str:
-    """Translate an SDK exception into a user-friendly sentence.
-
-    Never includes technical detail (URLs, tenant ids, stack info, SQL). Those
-    go to the Error Log via `_log`; the sentence returned here is safe to show
-    in a toast on an admin UI.
-    """
-    if isinstance(e, ARBillingUnavailableError):
-        return _("Billing features aren't available on this server yet.")
-    if isinstance(e, ARAuthenticationError):
-        return _(
-            "This site isn't authenticated with the cloud service. "
-            "Please re-register from PA Chat Settings and try again."
-        )
-    if isinstance(e, ARRateLimitError):
-        return _("Too many requests right now. Please wait a few seconds and try again.")
-    if isinstance(e, ARTimeoutError | ARConnectionError):
-        return _(
-            "Couldn't reach the billing service. Please check your internet " "connection and try again."
-        )
-    if isinstance(e, ARAPIError):
-        status = getattr(e, "status_code", None)
-        if status and 400 <= status < 500:
-            # 4xx: usually a validation or permission problem. AR's error text
-            # is typically end-user-appropriate (e.g. "GSTIN is invalid").
-            return _strip_noise(str(e)) or _("The billing service rejected the request.")
-        if status and 500 <= status < 600:
-            return _("Billing service is having trouble. Please try again in a moment.")
-        return _("Couldn't complete the billing request. Please try again.")
-    # Generic / unknown SDK error
-    return _("Something went wrong with billing. Please try again or contact support.")
-
-
-def _handle_ar_error(context: str, e: Exception) -> str:
-    """Log the error server-side with full detail and return a friendly string.
-
-    Usage:
-            try:
-                    client.preview_plan_pricing(...)
-            except ARError as e:
-                    return {"success": False, "error": _handle_ar_error("preview pricing", e)}
-
-    `context` becomes the Error Log title (short, static, searchable).
-    `e` provides the server-side detail (stored in the message field, unbounded).
-    """
-    detail_parts = [
-        f"context: {context}",
-        f"type: {type(e).__name__}",
-        f"error: {e}",
-    ]
-    if isinstance(e, ARAPIError):
-        detail_parts.append(f"status_code: {getattr(e, 'status_code', None)}")
-    detail_parts.append(frappe.get_traceback())
-    _log(title=f"AIDA: {context}", detail="\n".join(detail_parts))
-    return _user_message_for_ar_error(e)
-
-
 def _handle_generic_error(context: str, e: Exception, *, user_message: str | None = None) -> str:
     """Log + translate for exceptions that aren't from the SDK.
 
@@ -284,11 +135,5 @@ def _handle_generic_error(context: str, e: Exception, *, user_message: str | Non
 
 
 def _safe_error(e: Exception, log_title: str, *, default: str | None = None) -> str:
-    """Backwards-compatible wrapper around the new helpers.
-
-    Preserved so existing callers keep working; new code should call
-    `_handle_ar_error` / `_handle_generic_error` directly.
-    """
-    if isinstance(e, ARError):
-        return _handle_ar_error(log_title, e)
+    """Log the error server-side and return a message that is safe to show the user."""
     return _handle_generic_error(log_title, e, user_message=default)

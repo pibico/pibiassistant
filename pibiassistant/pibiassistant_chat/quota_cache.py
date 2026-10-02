@@ -19,7 +19,6 @@ Why Redis instead of DocType fields:
 from __future__ import annotations
 
 import frappe
-from frappe.utils import now
 
 CACHE_KEY = "pao_quota_cache"
 CACHE_TTL = 86400  # 24 hours
@@ -28,8 +27,7 @@ CACHE_TTL = 86400  # 24 hours
 def get_quota_snapshot() -> dict:
     """Read the full quota state from cache.
 
-    On cache miss (cold start / Redis restart), seeds from AR automatically.
-    Returns safe defaults if AR is also unreachable.
+    On cache miss (cold start / Redis restart), seeds unlimited defaults.
 
     Returns:
             dict: {
@@ -48,31 +46,6 @@ def get_quota_snapshot() -> dict:
     return seed_from_ar()
 
 
-def update_from_ar(subscription: dict) -> None:
-    """Update cache from an AR subscription response.
-
-    Handles both credit-based and token-based field names.
-    Called by sync_subscription_status, _fetch_live_quota, etc.
-    """
-    snap = get_quota_snapshot()
-
-    snap["plan"] = subscription.get("plan", snap.get("plan", "Free"))
-    snap["quota_total"] = subscription.get("credit_quota") or subscription.get(
-        "quota", snap.get("quota_total", 0)
-    )
-    snap["quota_used"] = subscription.get("credits_used") or subscription.get(
-        "used", snap.get("quota_used", 0)
-    )
-    snap["last_sync"] = now()
-
-    # Pass through pricing info if present
-    for key in ("plan_price_usd", "price_per_user_usd", "credits_per_user", "min_users", "credit_balance"):
-        if key in subscription:
-            snap[key] = subscription[key]
-
-    _write(snap)
-
-
 def set_field(field: str, value) -> None:
     """Set a single field in the cache."""
     snap = get_quota_snapshot()
@@ -87,32 +60,10 @@ def get_field(field: str, default=None):
 
 
 def seed_from_ar() -> dict:
-    """Cold-start handler: fetch subscription data from AR and populate cache.
+    """Cold-start handler: write unlimited defaults so users are never blocked.
 
-    Returns safe defaults if AR is unreachable so users aren't blocked.
+    The name is kept for existing callers; there is no remote quota source any more.
     """
-    try:
-        from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
-
-        client = get_pa_cloud_client()
-        if client:
-            info = client.get_tenant_info()
-            if info and info.get("subscription"):
-                sub = info["subscription"]
-                snap = {
-                    "plan": sub.get("plan", "Free"),
-                    "quota_total": sub.get("credit_quota") or sub.get("quota", 0),
-                    "quota_used": sub.get("credits_used") or sub.get("used", 0),
-                    "last_sync": now(),
-                    "billing_enabled": True,
-                    "preferred_model": info.get("preferred_model", ""),
-                }
-                _write(snap)
-                return snap
-    except Exception:
-        pass
-
-    # AR unreachable — return safe defaults (unlimited so users aren't blocked)
     defaults = _safe_defaults()
     _write(defaults)
     return defaults

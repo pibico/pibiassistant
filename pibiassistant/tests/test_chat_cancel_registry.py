@@ -2,13 +2,9 @@
 frappe.cache (Redis), not process memory."""
 
 import unittest
-from unittest.mock import MagicMock, Mock, patch
-
-from assistant_runtime_sdk import ARTimeoutError
+from unittest.mock import MagicMock, patch
 
 from pibiassistant.pibiassistant_chat.api.chat import cancel as cancel_mod
-
-_GET_FAC_CLOUD_CLIENT = "pibiassistant.pibiassistant_chat.pa_cloud_client.get_pa_cloud_client"
 
 
 class TestCancelRegistryRedis(unittest.TestCase):
@@ -53,88 +49,3 @@ class TestCancelRegistryRedis(unittest.TestCase):
             cancel_mod.mark_cancelled("")
             cancel_mod.clear("")
             fm.cache.assert_not_called()
-
-
-class TestCancelStreamARPropagation(unittest.TestCase):
-    """cancel_stream must reach AR, but never let AR block or break the
-    local Stop the user is actually waiting on."""
-
-    def setUp(self):
-        # The cloud path always finalizes locally; AIDA mode is covered by test_chat_cancel_idle_session.
-        patcher = patch(
-            "pibiassistant.pibiassistant_chat.api.chat.aida_stream.is_aida_mode", return_value=False
-        )
-        patcher.start()
-        self.addCleanup(patcher.stop)
-
-    def _mock_frappe(self, fm):
-        # No owning message row found -> ownership check and
-        # _abort_pending_interactions's row lookup both no-op cleanly.
-        fm.db.get_value.return_value = None
-        fm.cache.return_value = MagicMock()
-
-    def test_calls_ar_cancel_session(self):
-        ar_client = MagicMock()
-        with patch.object(cancel_mod, "frappe") as fm, patch.object(cancel_mod, "_emit_socket_event"), patch(
-            _GET_FAC_CLOUD_CLIENT, return_value=ar_client
-        ):
-            self._mock_frappe(fm)
-            cancel_mod.cancel_stream("s1", "m1")
-
-        ar_client.cancel_session.assert_called_once_with("s1")
-
-    def test_no_ar_client_still_returns_normally(self):
-        with patch.object(cancel_mod, "frappe") as fm, patch.object(cancel_mod, "_emit_socket_event"), patch(
-            _GET_FAC_CLOUD_CLIENT, return_value=None
-        ):
-            self._mock_frappe(fm)
-            result = cancel_mod.cancel_stream("s1", "m1")
-
-        self.assertEqual(result, {"status": "cancel_requested", "session_id": "s1"})
-
-    def test_ar_client_raising_generic_exception_still_returns_normally(self):
-        ar_client = MagicMock()
-        ar_client.cancel_session.side_effect = Exception("boom")
-        with patch.object(cancel_mod, "frappe") as fm, patch.object(cancel_mod, "_emit_socket_event"), patch(
-            _GET_FAC_CLOUD_CLIENT, return_value=ar_client
-        ):
-            self._mock_frappe(fm)
-            result = cancel_mod.cancel_stream("s1", "m1")
-
-        self.assertEqual(result, {"status": "cancel_requested", "session_id": "s1"})
-
-    def test_ar_client_timing_out_still_returns_normally(self):
-        ar_client = MagicMock()
-        ar_client.cancel_session.side_effect = ARTimeoutError("timed out")
-        with patch.object(cancel_mod, "frappe") as fm, patch.object(cancel_mod, "_emit_socket_event"), patch(
-            _GET_FAC_CLOUD_CLIENT, return_value=ar_client
-        ):
-            self._mock_frappe(fm)
-            result = cancel_mod.cancel_stream("s1", "m1")
-
-        self.assertEqual(result, {"status": "cancel_requested", "session_id": "s1"})
-
-    def test_ar_call_happens_after_local_finalization(self):
-        # A shared parent lets us assert the two calls' relative order —
-        # not just that both happened. This is the assertion that would
-        # catch a future edit hoisting the AR call back above the local
-        # HITL-abort finalization.
-        ar_client = MagicMock()
-        parent = Mock()
-        parent.attach_mock(ar_client.cancel_session, "ar_cancel_session")
-
-        with patch.object(cancel_mod, "frappe") as fm, patch.object(
-            cancel_mod, "_abort_pending_interactions"
-        ) as abort_mock, patch.object(cancel_mod, "_emit_socket_event"), patch(
-            _GET_FAC_CLOUD_CLIENT, return_value=ar_client
-        ):
-            parent.attach_mock(abort_mock, "abort_pending_interactions")
-            self._mock_frappe(fm)
-            cancel_mod.cancel_stream("s1", "m1")
-
-        call_order = [call[0] for call in parent.mock_calls]
-        self.assertLess(
-            call_order.index("abort_pending_interactions"),
-            call_order.index("ar_cancel_session"),
-            f"AR cancel_session must be called after local HITL-abort finalization; got order {call_order}",
-        )

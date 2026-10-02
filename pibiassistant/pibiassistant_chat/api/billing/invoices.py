@@ -1,62 +1,18 @@
-# pibiAssistant - Invoice Streaming API
-# Copyright (C) 2025 Paul Clinton
+# pibiAssistant - Retired endpoints (Billing invoices)
 # AGPL-3.0 License
 
-"""GST invoice PDF download endpoint (proxies bytes from AR via SDK)."""
+"""Billing invoices: RETIRED.
 
-from __future__ import annotations
+PA Cloud was retired and AIDA runs natively, so nothing here does anything.
+The dotted paths stay whitelisted for one release so external mobile / MCP
+clients get HTTP 410 with a clear message instead of a 404.
+"""
 
 import frappe
-from pibiassistant.pibiassistant_chat.api._helpers import _aida_guard, _billing_unavailable_response
-from frappe import _
 
-from .._helpers import (
-    ARBillingUnavailableError,
-    _billing_unavailable_response,
-    _log,
-    _require_system_manager,
-    _safe_error,
-)
+from pibiassistant.utils.retired import retired
 
 
 @frappe.whitelist(methods=["GET"])
-@_aida_guard(_billing_unavailable_response)
-def download_invoice_pdf(ar_invoice_name: str):
-    """Stream the GST invoice PDF for an AR Invoice to the browser.
-
-    The SPA calls this via `window.open(...)` — the session cookie is
-    already attached (same-origin), so this endpoint just proxies the
-    SDK call and hands the bytes to Frappe's file-download response
-    shape. The AR backend enforces tenant ownership before returning.
-    """
-    _require_system_manager()
-
-    try:
-        from pibiassistant.pibiassistant_chat.pa_cloud_client import (
-            ARError,
-            get_pa_cloud_client,
-        )
-
-        client = get_pa_cloud_client()
-        if not client:
-            return {"success": False, "error": _("This site isn't registered with the cloud service.")}
-
-        content_bytes, content_type, filename = client.download_invoice_pdf(ar_invoice_name)
-
-        frappe.local.response.filename = filename or f"{ar_invoice_name}.pdf"
-        frappe.local.response.filecontent = content_bytes
-        frappe.local.response.type = "download"
-    except ARBillingUnavailableError:
-        return _billing_unavailable_response()
-    except ARError as e:
-        _log(
-            title="AIDA Billing Error",
-            message=f"AR error downloading invoice PDF {ar_invoice_name}: {e}",
-        )
-        return {"success": False, "error": _safe_error(e, "AIDA Billing Error")}
-    except Exception as e:
-        _log(
-            title="AIDA Billing Error",
-            message=f"Error downloading invoice PDF {ar_invoice_name}: {e!s}",
-        )
-        return {"success": False, "error": _safe_error(e, "AIDA Billing Error")}
+def download_invoice_pdf(*args, **kwargs):
+    retired()

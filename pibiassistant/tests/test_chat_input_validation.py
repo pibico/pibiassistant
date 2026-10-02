@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import frappe
 
-from pibiassistant.pibiassistant_chat.api import aida, analytics, privacy, support
+from pibiassistant.pibiassistant_chat.api import aida
 from pibiassistant.pibiassistant_chat.api.chat import messages, sessions
 from pibiassistant.pibiassistant_chat.api.settings import uploads
 from pibiassistant.tests.base_test import BaseAssistantTest
@@ -53,15 +53,6 @@ class TestChatInputValidation(BaseAssistantTest):
         self.assertNotIn("pypdf", str(ctx.exception).lower())
         log.assert_not_called()
         self.assertFalse(frappe.get_all("File", filters={"file_name": "bad.pdf", "pa_pending_chat_attachment": 1}))
-
-    def test_cloud_only_modules_use_the_shared_client_helper(self):
-        from pibiassistant.pibiassistant_chat.api._helpers import cloud_client_or_throw
-
-        with patch("pibiassistant.pibiassistant_chat.pa_cloud_client.get_pa_cloud_client", return_value=None):
-            with self.assertRaises(frappe.ValidationError):
-                cloud_client_or_throw()
-        for module in (support, privacy, analytics):
-            self.assertFalse(hasattr(module, "_get_client"))
 
     def test_bad_base64_upload_is_a_validation_error_without_log(self):
         fn = getattr(uploads.upload_message_file, "__wrapped__", uploads.upload_message_file)

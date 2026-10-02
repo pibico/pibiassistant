@@ -1501,3 +1501,5 @@ Failed to cleanup assistant logs,No se pudieron limpiar los registros del asiste
 "The file data is not valid base64.","Los datos del archivo no son base64 válido."
 "Error uploading file. Please try again.","Error al subir el archivo. Inténtalo de nuevo."
 "New: AIDA by pibiCo","Novedad: AIDA de pibiCo"
+"PA Cloud was retired. AIDA now runs natively, this endpoint no longer does anything.",PA Cloud se ha retirado. AIDA funciona ahora de forma nativa y este endpoint ya no hace nada.
+AIDA is not configured on this site.,AIDA no está configurado en este sitio.

@@ -8,7 +8,7 @@ import frappe.sessions  # noqa: F401
 
 from pibiassistant.pibiassistant_chat.api import _helpers
 from pibiassistant.pibiassistant_chat.api.chat import aida_stream
-from pibiassistant.pibiassistant_chat.api.settings import access, capabilities
+from pibiassistant.pibiassistant_chat.api.settings import access
 
 PW = "frappe.utils.password.get_decrypted_password"
 
@@ -34,8 +34,6 @@ class TestAidaModeHelper(unittest.TestCase):
     @patch("frappe.sessions.get_csrf_token", return_value="t")
     def test_callers_follow_the_key(self, _csrf):
         with patch(PW, return_value="secret"):
-            self.assertEqual(capabilities.get_capabilities()["version"], "aida")
-            self.assertFalse(capabilities.get_capabilities()["features"]["billing"])
             from pibiassistant.pibiassistant_chat.api import auth
 
             self.assertTrue(auth.get_user_auth_status()["ready"])

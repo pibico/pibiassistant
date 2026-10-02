@@ -1,111 +1,23 @@
-# pibiAssistant - Capabilities & Terms API
-# Copyright (C) 2025 Paul Clinton
+# pibiAssistant - Retired endpoints (Capabilities and terms)
 # AGPL-3.0 License
 
-"""Read-only proxies that return AR's capability flags + terms."""
+"""Capabilities and terms: RETIRED.
 
-from __future__ import annotations
+PA Cloud was retired and AIDA runs natively, so nothing here does anything.
+The dotted paths stay whitelisted for one release so external mobile / MCP
+clients get HTTP 410 with a clear message instead of a 404.
+"""
 
 import frappe
-from frappe import _
 
-from ...cloud_url import get_pa_cloud_url
-from .._helpers import _safe_error
+from pibiassistant.utils.retired import retired
 
 
 @frappe.whitelist(methods=["GET"])
-def get_capabilities() -> dict:
-    """
-    Get backend capabilities including billing availability.
-
-    Returns server capabilities from Assistant Runtime.
-    Caches billing_enabled in AIDA Settings for quick access.
-
-    Returns:
-            dict: {
-                    "billing_enabled": bool,
-                    "available_gateways": list,
-                    "version": str,
-                    "features": {
-                            "streaming": bool,
-                            "mcp_servers": bool,
-                            "rag": bool,
-                            "memory": bool,
-                            "billing": bool,
-                            "web_search": bool
-                    }
-            }
-    """
-    from pibiassistant.pibiassistant_chat.api._helpers import _aida_mode
-
-    if _aida_mode():
-        from ..init import _aida_capabilities
-
-        return _aida_capabilities()
-
-    from pibiassistant.pibiassistant_chat.pa_cloud_client import (
-        get_capabilities as fetch_capabilities,
-    )
-
-    result = fetch_capabilities(get_pa_cloud_url())
-    if result:
-        # Cache billing_enabled in quota cache
-        from pibiassistant.pibiassistant_chat.quota_cache import set_field
-
-        billing_enabled = result.get("features", {}).get("billing", True)
-        set_field("billing_enabled", billing_enabled)
-        return result
-
-    # Default: companion-app features off so UI hides them when AR is unreachable
-    return {
-        "billing_enabled": True,
-        "available_gateways": [],
-        "version": "unknown",
-        "features": {
-            "streaming": True,
-            "mcp_servers": True,
-            "rag": False,
-            "memory": False,
-            "billing": True,
-            "workflows": False,
-            "web_search": False,
-        },
-    }
+def get_capabilities(*args, **kwargs):
+    retired()
 
 
 @frappe.whitelist(methods=["GET"])
-def get_ar_terms() -> dict:
-    """
-    Fetch Terms and Conditions from AR for display before registration.
-
-    No authentication required - allows display before tenant is registered.
-
-    Returns:
-            dict: {
-                    "version": "1.0",
-                    "effective_date": "2025-01-01",
-                    "terms_of_service": "<p>Terms of Service content...</p>",
-                    "privacy_policy": "<p>Privacy Policy content...</p>",
-                    "data_processing_agreement": "<p>DPA content...</p>",
-                    "summary": "By using Assistant Runtime, you agree to our terms...",
-                    "grace_period_days": 30
-            }
-    """
-    from pibiassistant.pibiassistant_chat.api._helpers import _aida_mode
-
-    if _aida_mode():
-        return {"accepted": True, "version": "", "summary": ""}
-
-    try:
-        from pibiassistant.pibiassistant_chat.pa_cloud_client import get_terms
-
-        result = get_terms(get_pa_cloud_url())
-
-        if result:
-            return result
-
-        return {"error": _("Failed to fetch Terms and Conditions from the cloud service")}
-
-    except Exception as e:
-        frappe.log_error(title="AIDA Terms Error", message=f"Error fetching AR terms: {e!s}")
-        return {"error": _safe_error(e, "AIDA Terms Error")}
+def get_ar_terms(*args, **kwargs):
+    retired()

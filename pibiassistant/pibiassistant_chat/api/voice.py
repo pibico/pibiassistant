@@ -60,18 +60,4 @@ def transcribe(duration_ms: int = 0, language: str | None = None) -> dict:
             frappe.throw(error)
         return {"text": text, "duration_seconds": duration_ms / 1000}
 
-    # Legacy cloud path
-    from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
-    from .auth import _ar_user_id
-
-    client = get_pa_cloud_client()
-    if not client:
-        frappe.throw(_("AIDA Voice API is not configured. Go to PA Core Settings > AIDA Chat."))
-
-    return client.transcribe_audio(
-        audio_bytes=audio_bytes,
-        mime_type=mime_type,
-        user_id=_ar_user_id(frappe.session.user),
-        duration_ms=duration_ms,
-        language=lang,
-    )
+    frappe.throw(_("AIDA Voice API is not configured. Go to PA Core Settings > AIDA Chat."))

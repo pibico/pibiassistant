@@ -4,19 +4,15 @@
 
 """Mobile API — session helper for Socket.IO auth."""
 
-import json
 
 import frappe
 from frappe import _
 from frappe.query_builder.functions import Count, Max, Min
 from werkzeug import Response
 
-from ._helpers import (
-    _not_registered_error,
-    _safe_error,
-)
-from ._untrusted import wrap_untrusted
-from .auth import _ar_user_id
+from pibiassistant.utils.retired import retired
+
+from ._helpers import _safe_error
 
 
 def _assert_mobile_oauth_request() -> None:
@@ -217,160 +213,12 @@ def get_socket_session() -> dict:
     }
 
 
-@frappe.whitelist(methods=["POST"])
-def stream_chat(
-    session_id: str, message: str, model_id: str | None = None, attachments: str | None = None
-) -> Response:
-    """
-    Send a message and stream AI response via Server-Sent Events (SSE).
-
-    This endpoint is designed for mobile clients that can't use Socket.IO.
-    It returns a streaming response with SSE events directly.
-
-    Args:
-            session_id (str): Conversation session ID
-            message (str): User's message
-            model_id (str): Optional model ID to use for this request
-            attachments (str): JSON array of attachments for Vision API
-                    Each: {type: "image", format: "png|jpeg|...", data: "<base64>", name: "..."}
-
-    Returns:
-            Generator: SSE event stream
-    """
-    # Parse attachments if provided as string
-    if isinstance(attachments, str):
-        attachments = json.loads(attachments) if attachments else []
-    if not attachments:
-        attachments = []
-
-    # Check if user can use AIDA
-    from .settings import can_use_pao
-
-    access_check = can_use_pao()
-    if not access_check.get("can_use"):
-        frappe.throw(_(access_check.get("reason", "Cannot use AIDA")))
-
-    # Save user message to database
-    from pibiassistant.pibiassistant_chat.doctype.pa_chat_message.pa_chat_message import (
-        PAChatMessage,
-    )
-
-    user_msg = PAChatMessage.create_message(
-        session_id=session_id, role="user", content=message, context=None
-    )
-
-    # Extract file attachments if any — wrap in untrusted envelope
-    # (AIDA-H15 prompt injection defense).
-    file_content = _extract_file_attachments(user_msg.name)
-    system_prompt_addendum = None
-    if file_content:
-        system_prompt_addendum = wrap_untrusted(file_content, kind="user_attached_files")
-
-    # Return a werkzeug streaming Response directly (bypasses Frappe's response system)
-    generator = _stream_generator(
-        session_id=session_id,
-        message=message,
-        user_msg_name=user_msg.name,
-        model_id=model_id,
-        attachments=attachments,
-        system_prompt_addendum=system_prompt_addendum,
-    )
-
-    return Response(
-        generator,
-        content_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",
-        },
-    )
 
 
-def _stream_generator(
-    session_id, message, user_msg_name, model_id=None, attachments=None, system_prompt_addendum=None
-):
-    """SSE generator for the mobile stream.
-
-    PA Cloud no longer exists and AIDA turns are relayed over Socket.IO, so this
-    endpoint can only report that the cloud is not available.
-    """
-    yield _format_sse_event(
-        "stream_error",
-        {"error": _not_registered_error(), "action_required": "register"},
-    )
 
 
-def _format_sse_event(event_type, data):
-    """
-    Format data as an SSE event string.
-
-    Args:
-            event_type: The event type (e.g., 'stream_chunk', 'tool_call_start')
-            data: Dictionary of event data
-
-    Returns:
-            str: Formatted SSE event string
-    """
-    json_data = json.dumps({"event": event_type, "data": data}, ensure_ascii=False)
-    return f"event: {event_type}\ndata: {json_data}\n\n"
 
 
-def _extract_file_attachments(message_name: str) -> str:
-    """Extract content from files attached to a PA Message."""
-    try:
-        attached_files = frappe.get_all(
-            "File",
-            filters={"attached_to_doctype": "PA Chat Message", "attached_to_name": message_name},
-            fields=["name", "file_name", "file_url", "file_size"],
-        )
-
-        if not attached_files:
-            return ""
-
-        try:
-            from pibiassistant.plugins.data_science.tools.extract_file_content import (
-                ExtractFileContent,
-            )
-
-            extractor = ExtractFileContent()
-        except ImportError:
-            return ""
-
-        file_contents = ["[Attached Files]"]
-
-        for file_info in attached_files:
-            try:
-                result = extractor.execute({"file_url": file_info.file_url, "operation": "extract"})
-
-                if result.get("success") and result.get("content"):
-                    size_bytes = file_info.file_size or 0
-                    if size_bytes < 1024:
-                        size_str = f"{size_bytes} B"
-                    elif size_bytes < 1024 * 1024:
-                        size_str = f"{size_bytes / 1024:.1f} KB"
-                    else:
-                        size_str = f"{size_bytes / (1024 * 1024):.1f} MB"
-
-                    file_contents.append(f"\nFile: {file_info.file_name}")
-                    file_contents.append(f"Size: {size_str}")
-                    file_contents.append("Content:")
-                    file_contents.append(result["content"])
-                    file_contents.append("-" * 80)
-
-            except Exception as e:
-                frappe.log_error(
-                    title="AIDA File Extraction",
-                    message=f"Error extracting file {file_info.file_name}: {e!s}",
-                )
-
-        return "\n".join(file_contents) if len(file_contents) > 1 else ""
-
-    except Exception as e:
-        frappe.log_error(
-            title="AIDA File Extraction Error", message=f"Error in _extract_file_attachments: {e!s}"
-        )
-        return ""
 
 
 # ============================================================================
@@ -644,29 +492,11 @@ def search_sessions(query: str, limit: int = 20) -> list:
         return []
 
 
+@frappe.whitelist(methods=["POST"])
+def stream_chat(*args, **kwargs):
+    retired()
+
+
 @frappe.whitelist(methods=["GET"])
-def get_available_models() -> list:
-    """
-    Get list of available AI models for the user.
-
-    Returns:
-            list: Available models with id, name, description
-    """
-    try:
-        from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
-
-        client = get_pa_cloud_client()
-        if not client:
-            return []
-
-        # Get models from AR
-        result = client.get_available_models(user_id=_ar_user_id(frappe.session.user))
-
-        if result and result.get("models"):
-            return result["models"]
-
-        return []
-
-    except Exception as e:
-        frappe.log_error(title="AIDA Mobile Models Error", message=f"Error getting models: {e!s}")
-        return []
+def get_available_models(*args, **kwargs):
+    retired()

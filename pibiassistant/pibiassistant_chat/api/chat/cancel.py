@@ -168,20 +168,6 @@ def cancel_stream(session_id: str, message_id: str | None = None) -> dict:
         },
     )
 
-    # Local finalization (registry, HITL abort, socket ping) is already
-    # complete at this point — the AR round-trip below only stops the
-    # agent server-side and must never delay the response the user sees.
-    try:
-        from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
-
-        ar_client = get_pa_cloud_client()
-        if ar_client:
-            ar_client.cancel_session(session_id)
-    except Exception as e:
-        frappe.logger("pao.chat.cancel").warning(
-            f"AR cancel_session failed for {session_id}: {e}; relying on local abort", exc_info=True
-        )
-
     return {"status": "cancel_requested", "session_id": session_id}
 
 
