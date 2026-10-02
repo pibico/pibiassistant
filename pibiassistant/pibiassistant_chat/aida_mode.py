@@ -1,7 +1,7 @@
 # pibiAssistant - AIDA mode check
 # AGPL-3.0 License
 
-"""Import-light AIDA-mode check shared by the API helpers and the PA Cloud client."""
+"""Import-light AIDA-mode check shared by the API helpers."""
 
 
 def is_aida_mode() -> bool:

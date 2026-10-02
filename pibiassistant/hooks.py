@@ -427,13 +427,6 @@ add_to_apps_screen = [
     }
 ]
 
-# Seed PA Chat Settings defaults on fresh install.
-after_install.append("pibiassistant.pibiassistant_chat.hooks.install.after_install")
-
-# Refresh the read-only cloud URL mirror from site_config, and log loudly
-# if a registered site is being repointed (see chat/cloud_url.py).
-after_migrate.append("pibiassistant.pibiassistant_chat.cloud_url.sync_cloud_url_mirror")
-
 # Permission filters for chat DocTypes — registered unconditionally; only
 # fires when someone queries these tables, which is itself a chat-on activity.
 permission_query_conditions.update(
@@ -474,7 +467,6 @@ scheduler_events["daily"].extend(
     [
         "pibiassistant.pibiassistant_chat.scheduler.retention.cleanup_old_messages",
         "pibiassistant.pibiassistant_chat.scheduler.attachment_sweep.sweep_orphan_chat_attachments",
-        "pibiassistant.pibiassistant_chat.workflows.triggers.cleanup.prune_trigger_logs",
     ]
 )
 

@@ -68,15 +68,8 @@ def token_usage_summary() -> dict[str, Any]:
 
 
 @frappe.whitelist(methods=["POST"])
-def reset_registration() -> dict[str, Any]:
-    """Clear this site's tenant credentials.
+def reset_registration(*args, **kwargs):
+    """Retired with PA Cloud: answers HTTP 410 (alias of settings.registration.reset_registration)."""
+    from pibiassistant.utils.retired import retired
 
-    Kept as a stable alias — both dotted paths are whitelisted and may already
-    be scripted against. It delegates rather than reimplements: the two copies
-    drifted once before, leaving the exported one unable to complete.
-    """
-    from pibiassistant.pibiassistant_chat.api.settings.registration import (
-        reset_registration as _reset_registration,
-    )
-
-    return _reset_registration()
+    retired()

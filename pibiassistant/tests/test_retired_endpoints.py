@@ -18,6 +18,9 @@ from pibiassistant.utils.retired import RetiredEndpointError, retired
 API = "pibiassistant.pibiassistant_chat.api."
 
 RETIRED = {
+    "admin_stats": [
+        "reset_registration",
+    ],
     "analytics": [
         "get_analytics_data",
         "get_conversation_analytics",
@@ -197,7 +200,11 @@ RETIRED = {
         "get_subscription_info",
         "get_model_usage",
     ],
+    "security": [
+        "verify_origin_challenge",
+    ],
     "settings.registration": [
+        "reset_registration",
         "validate_partner_code",
         "register_with_ar",
         "get_registration_state",
@@ -276,7 +283,7 @@ RETIRED = {
 }
 
 # Retired endpoints that were open to guests keep that flag (the 410 must reach external clients).
-RETIRED_GUEST = {("settings.registration", "validate_partner_code")}
+RETIRED_GUEST = {("settings.registration", "validate_partner_code"), ("security", "verify_origin_challenge")}
 
 # Endpoints something live still calls: AIDA SPA (public/aida/js), chat widget, Desk form JS,
 # PA Admin sidebar, hooks.py, patches. They must stay real functions.
@@ -293,7 +300,6 @@ LIVE = {
     "privacy": ["export_my_data", "erase_my_data", "restrict_my_processing"],
     "prompts": ["get_prompt_templates", "get_rendered_prompt"],
     "settings.access": ["can_use_pao"],
-    "settings.registration": ["reset_registration"],
     "settings.uploads": ["upload_message_file"],
     "settings.widget": ["get_widget_settings"],
     "tools": ["get_skipped_tools"],

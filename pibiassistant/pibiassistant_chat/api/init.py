@@ -149,7 +149,7 @@ def _build_quota(settings: Document, is_admin: bool) -> dict:
         "percentage_used": round(percentage_used, 1),
         "is_unlimited": is_unlimited,
         "is_admin": is_admin,
-        "registration_status": settings.registration_status,
+        "registration_status": "Not Registered",
     }
 
 

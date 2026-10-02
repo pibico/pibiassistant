@@ -15,18 +15,10 @@ pibiassistant.patches.v2_0_0.remove_deprecated_doctypes
 pibiassistant.patches.v2_1.update_assistant_enabled_default
 pibiassistant.patches.v2_1.remove_old_assistant_admin_page
 
-# Version 2.2.0 - Plugin Configuration Migration
-pibiassistant.patches.v2_2.migrate_plugin_settings_to_doctype
-
 # Version 2.3.0 - MCP 2025-06-18 Spec Support
 pibiassistant.patches.v2_3.update_mcp_protocol_version
 
-# Version 2.3.2 - Settings defaults fix
-pibiassistant.patches.v2_3.set_settings_defaults
-
 # Version 2.4.0 - Skills feature
-pibiassistant.patches.v2_4.install_system_skills
-pibiassistant.patches.v2_4.bump_code_execution_max_recursion
 pibiassistant.patches.v2_4.repair_hrms_skill_link_corruption
 pibiassistant.patches.v2_4.resync_tool_categories
 
@@ -36,16 +28,8 @@ pibiassistant.patches.v2_5.report_non_admin_published_skills
 # Version 3.0.0 - Recategorize generate_document (read_only -> write)
 pibiassistant.patches.v3_0.recategorize_generate_document
 
-# Version 3.0.0 - Widen PA Chat Message.credits_used Int -> Float (fractional credits)
-pibiassistant.patches.v3_0.widen_credits_used_to_float
-
 [post_model_sync]
 
-# Version 3.0.0 - Backfill enable_browser_diagnostics default on the pre-existing
-# PA Chat Settings Single (Frappe only applies a field's default on document
-# creation; this Single already existed when the field was added)
-pibiassistant.patches.v3_0.backfill_browser_diagnostics_default
-
-# Version 3.0.0 - Bind PA Workflow Triggers to the AR workflow docname instead
-# of the mutable display name (a rename used to orphan every trigger silently)
-pibiassistant.patches.v3_0.backfill_workflow_trigger_docname
+# Version 3.1.0 - Remove the schema PA Cloud left behind (workflow trigger DocTypes,
+# PA Chat Settings registration values). Logs row counts, dumps data before dropping.
+pibiassistant.patches.v3_1.remove_pa_cloud_leftovers

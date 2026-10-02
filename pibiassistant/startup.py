@@ -27,12 +27,12 @@ from pibiassistant.utils.logger import api_logger
 def startup():
     """App startup initialization"""
     try:
-        # Persist encryption_key before any Password-field write (tenant_secret).
-        # A missing/racy key corrupts PA Chat Settings.tenant_secret on first
-        # registration and surfaces as "Encryption key is invalid" on connect.
-        from pibiassistant.pibiassistant_chat.tenant_credentials import ensure_encryption_key
+        # Persist encryption_key before any Password-field write (e.g. the AIDA API keys in
+        # PA Core Settings). A missing/racy key corrupts the first stored secret and surfaces
+        # as "Encryption key is invalid" on connect.
+        from frappe.utils.password import get_encryption_key
 
-        ensure_encryption_key()
+        get_encryption_key()
 
         # Initialize plugin manager - this automatically loads enabled plugins from settings
         initialize_plugin_system()

@@ -4,14 +4,6 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "section_break_ar",
-  "tenant_id",
-  "pa_cloud_url",
-  "registration_status",
-  "column_break_ar",
-  "tenant_secret",
-  "pending_verification_token",
-  "pending_rebind_token",
   "ui_settings_tab",
   "max_context_tokens",
   "enable_dom_extraction",
@@ -19,66 +11,9 @@
   "retention_tab",
   "enable_retention_cleanup",
   "message_retention_days",
-  "retention_deletes_attachments",
-  "section_break_cache",
-  "cached_capabilities",
-  "capabilities_cached_at",
-  "cached_notifications"
+  "retention_deletes_attachments"
  ],
  "fields": [
-  {
-   "fieldname": "section_break_ar",
-   "fieldtype": "Section Break",
-   "label": "Cloud Connection"
-  },
-  {
-   "description": "Unique tenant identifier from the cloud service",
-   "fieldname": "tenant_id",
-   "fieldtype": "Data",
-   "label": "Tenant ID",
-   "read_only": 1
-  },
-  {
-   "description": "Which AR server this site talks to. Read-only: set it per site with `bench --site <site> set-config pa_cloud_url <url>`. Refreshed on migrate.",
-   "fieldname": "pa_cloud_url",
-   "fieldtype": "Data",
-   "label": "Cloud URL",
-   "read_only": 1
-  },
-  {
-   "default": "Not Registered",
-   "fieldname": "registration_status",
-   "fieldtype": "Select",
-   "label": "Registration Status",
-   "options": "Not Registered\nPending Email Verification\nWaitlisted\nRegistered\nError",
-   "read_only": 1
-  },
-  {
-   "fieldname": "column_break_ar",
-   "fieldtype": "Column Break"
-  },
-  {
-   "description": "HMAC secret for cloud authentication (keep secure)",
-   "fieldname": "tenant_secret",
-   "fieldtype": "Password",
-   "label": "Tenant Secret"
-  },
-  {
-   "description": "Transient — set during email-verified registration; cleared on completion.",
-   "fieldname": "pending_verification_token",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "no_copy": 1,
-   "read_only": 1
-  },
-  {
-   "description": "Transient — set during rebind flow; cleared on completion.",
-   "fieldname": "pending_rebind_token",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "no_copy": 1,
-   "read_only": 1
-  },
   {
    "fieldname": "ui_settings_tab",
    "fieldtype": "Tab Break",
@@ -131,38 +66,11 @@
    "fieldname": "retention_deletes_attachments",
    "fieldtype": "Check",
    "label": "Delete Attachments on Purge"
-  },
-  {
-   "fieldname": "section_break_cache",
-   "fieldtype": "Section Break",
-   "hidden": 1,
-   "label": "Internal Cache"
-  },
-  {
-   "description": "Cached capabilities JSON from the cloud (auto-managed, 1-hour TTL)",
-   "fieldname": "cached_capabilities",
-   "fieldtype": "Long Text",
-   "hidden": 1,
-   "read_only": 1
-  },
-  {
-   "description": "When capabilities were last cached",
-   "fieldname": "capabilities_cached_at",
-   "fieldtype": "Datetime",
-   "hidden": 1,
-   "read_only": 1
-  },
-  {
-   "description": "Cached notifications JSON from cloud heartbeat (auto-managed)",
-   "fieldname": "cached_notifications",
-   "fieldtype": "Long Text",
-   "hidden": 1,
-   "read_only": 1
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-05-09 19:00:00.000000",
+ "modified": "2026-10-02 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "pibiAssistant Chat",
  "name": "PA Chat Settings",

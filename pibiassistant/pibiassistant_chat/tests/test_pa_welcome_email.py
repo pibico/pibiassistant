@@ -18,7 +18,7 @@
 
 Also guards the defect this file was rewritten for: PA runs on the
 customer's own site, `assistant_runtime` (the SaaS server) runs on a separate
-deployment, and PA only ever depends on `assistant_runtime_sdk`. Nothing
+deployment, and PA never depends on `assistant_runtime`. Nothing
 under the `pibiassistant` package may import `assistant_runtime` at
 module scope, or a real customer install ImportErrors — and since this exact
 email used to be sent from an install hook, it would fail the install itself.

@@ -9,8 +9,8 @@ Submodule layout (kept as a package so each topical surface has its own
 file, since the original flat module exceeded 1,200 lines):
 
 - ``access``         — pre-auth gate + widget-show decision (``can_use_pao``)
-- ``capabilities``   — AR capability + terms proxy
-- ``registration``   — site → AR tenant registration + partner-code validation
+- ``capabilities``   — capability + terms endpoints (retired stubs)
+- ``registration``   — registration + partner-code endpoints (retired stubs)
 - ``widget``         — widget settings, copilot status, user preferences,
                        deprecated screen-extract fallback
 - ``uploads``        — message-file upload + AIDA-H11 validators

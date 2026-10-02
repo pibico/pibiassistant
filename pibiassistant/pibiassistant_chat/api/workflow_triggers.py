@@ -57,10 +57,3 @@ def get_trigger_log(*args, **kwargs):
 def test_trigger(*args, **kwargs):
     retired()
 
-
-def _resolve_workflow_docname(workflow_name: str | None) -> str:
-    """Kept only so ``patches.v3_0.backfill_workflow_trigger_docname`` still imports.
-
-    The docname lived in PA Cloud, which no longer exists, so there is nothing to resolve.
-    """
-    return ""

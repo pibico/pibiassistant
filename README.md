@@ -35,6 +35,16 @@ en `api.espib.co`.
 
 No requiere `bench restart` — el toggle se aplica inmediatamente.
 
+### Actualizar desde versiones con PA Cloud
+
+PA Cloud (registro, créditos, facturación, triggers de workflows) se ha
+retirado. AIDA funciona de forma nativa con las APIs de pibiCo, sin registro
+del sitio. Sus endpoints siguen presentes durante una versión y responden
+HTTP 410. `bench migrate` ejecuta el patch `remove_pa_cloud_leftovers`, que
+elimina los DocTypes `PA Workflow Trigger*` y las credenciales de tenant de
+`PA Chat Settings`; registra cuántas filas había y, si había datos, los
+guarda antes en `private/backups/pa_cloud_leftovers_*.json`.
+
 ---
 
 ## Servidor MCP (BYO-LLM)
@@ -51,8 +61,9 @@ bench get-app https://github.com/pibico/pibiassistant
 bench --site <tu-sitio> install-app pibiassistant
 ```
 
-Requiere Frappe v15 o v16 y Python 3.10+. Node 22+ necesario para
-compilar la interfaz de chat.
+Requiere Frappe v15 o v16 y Python 3.10+. La interfaz de chat es JS vanilla
+sin paso de compilación; Node solo hace falta para los tests de la SPA
+(`node --test pibiassistant/public/aida/tests`).
 
 ### Conectar tu LLM
 

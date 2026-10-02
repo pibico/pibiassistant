@@ -53,118 +53,28 @@ window.pibiassistant_panel = window.pibiassistant_panel || async function () {
 
 frappe.ui.form.on("PA Chat Settings", {
 	refresh(frm) {
+		// AIDA runs natively on its own API services: there is no registration to manage here,
+		// only the status of the connection and the UI / retention settings below.
 		frappe.call({
 			method: "pibiassistant.pibiassistant_chat.api.aida.get_overview",
 			callback: (r) => {
 				const chat = r.message && r.message.services && r.message.services.Chat;
-				if (chat && chat.configured) {
-					frm.trigger("render_aida_mode");
-				} else {
-					frm.trigger("render_cloud_mode");
-				}
+				frm.trigger(chat && chat.configured ? "render_connected" : "render_not_configured");
 			},
-			error: () => frm.trigger("render_cloud_mode"),
+			error: () => frm.trigger("render_not_configured"),
 		});
 	},
 
-	render_aida_mode(frm) {
-		["section_break_ar", "tenant_id", "pa_cloud_url", "registration_status", "tenant_secret"].forEach(
-			(f) => frm.toggle_display(f, false)
-		);
+	render_connected(frm) {
 		frm.dashboard.add_indicator(__("AIDA mode: connected to api.espib.co"), "green");
 		frm.set_intro(__("AIDA is connected to its own API services. No registration is required."), "blue");
-		// Every field of the first tab is hidden above; do not leave the user on an empty tab.
-		const tabs = (frm.layout && frm.layout.tabs) || [];
-		if (tabs.length > 1 && tabs[0].hide) {
-			tabs[0].hide();
-			tabs[1].set_active();
-		}
 	},
 
-	render_cloud_mode(frm) {
-		if (frm.doc.registration_status !== "Registered") {
-			frm.add_custom_button(
-				__("Register in PA Chat"),
-				() => frm.trigger("start_registration"),
-				__("Actions")
-			);
-		}
-
-		// Nothing to clear on a site that was never registered.
-		if (frm.doc.registration_status !== "Not Registered") {
-			frm.add_custom_button(
-				__("Reset Registration"),
-				() => frm.trigger("reset_registration"),
-				__("Actions")
-			);
-		}
-
-		const indicators = {
-			Registered: [__("Connected to cloud service"), "green"],
-			"Pending Email Verification": [__("Awaiting Email Verification"), "orange"],
-			Waitlisted: [__("Waitlisted"), "blue"],
-			Error: [__("Registration Error"), "red"],
-		};
-		const [label, colour] = indicators[frm.doc.registration_status] || [
-			__("Not Registered"),
-			"orange",
-		];
-		frm.dashboard.add_indicator(label, colour);
-	},
-
-	start_registration(frm) {
-		/**
-		 * Registration happens in the PA Chat onboarding screen, not here.
-		 *
-		 * Registering means accepting a specific Terms and Conditions version,
-		 * and AR rejects any registration whose terms_version it did not just
-		 * publish. Terms can only be accepted where they are shown, so Desk
-		 * hands off rather than posting a version it never displayed.
-		 *
-		 * `/aida` is a website route, not a Desk page — set_route() would
-		 * resolve it under /app and 404.
-		 */
-		window.open("/aida", "_blank");
-	},
-
-	reset_registration(frm) {
-		// Mirror of the resolved site_config value, refreshed on migrate. Shown
-		// because re-registering against a different cloud service mints a NEW
-		// tenant — the old subscription, credits and history stay behind.
-		const pa_cloud_url = frm.doc.pa_cloud_url || __("(not configured)");
-
-		const fail = (message) =>
-			window.pibiassistant_panel().then((panels) =>
-				panels.msgprint({ title: __("Reset Failed"), message })
-			);
-		const run = () => {
-			frappe.call({
-				method: "pibiassistant.pibiassistant_chat.api.reset_registration",
-				freeze: true,
-				freeze_message: __("Clearing registration..."),
-				callback: (r) => {
-					if (r.message && r.message.success) {
-						frappe.show_alert({ message: r.message.message, indicator: "green" }, 7);
-						frm.reload_doc();
-					} else {
-						fail(frappe.utils.escape_html(r.message?.error || __("Unknown error occurred")));
-					}
-				},
-				error: () => fail(__("Could not reach the reset endpoint.")),
-			});
-		};
-
-		window.pibiassistant_panel().then((panels) => {
-			const body = document.createElement("p");
-			body.className = "pa-panel-text";
-			body.innerHTML = __(
-				"This clears the tenant credentials this site signs its requests with. PA Chat stops working until the site is registered again.<br><br>Re-registration goes to <b>{0}</b> and creates a <b>new tenant</b> there. Any subscription, credits and history belonging to the current tenant stay where they are and are not carried over.",
-				[frappe.utils.escape_html(pa_cloud_url)]
-			);
-			panels.confirm(body, run, null, {
-				title: __("Reset cloud registration?"),
-				confirmLabel: __("Reset Registration"),
-			});
-		});
+	render_not_configured(frm) {
+		frm.dashboard.add_indicator(__("API not configured"), "orange");
+		frm.set_intro(
+			__("AIDA is not configured. Ask your administrator to set it up in PA Core Settings."),
+			"orange"
+		);
 	},
 });

@@ -2,21 +2,13 @@
 """First, solve the problem. Then, write the code."" — John Johnson","""Primero, resuelve el problema. Después, escribe el código."" — John Johnson"
 """Simplicity is the ultimate sophistication."" — Leonardo da Vinci","""La simplicidad es la máxima sofisticación."" — Leonardo da Vinci"
 """The best way to predict the future is to create it."" — Alan Kay","""La mejor forma de predecir el futuro es crearlo."" — Alan Kay"
-"""{0}"" is reserved for your managed Frappe site connection. Choose a different name.","""{0}"" está reservado para la conexión de tu sitio Frappe gestionado. Elige otro nombre."
-"""{0}"" is your managed Frappe site connection and reconnects itself.","""{0}"" es la conexión de tu sitio Frappe gestionado y se reconecta sola."
 (no extension),(sin extensión)
-(not configured),(no configurado)
 (unknown),(desconocido)
 1 tool matches,1 herramienta coincide
 <b>⚠️ EXPERIMENTAL - Use site_config.json instead (recommended)</b><br><br><b>For MCP Inspector testing only.</b> Claude and Chatgpt do NOT need this.<br><br>Use this field (one origin per line). Leave blank for production.,<b>⚠️ EXPERIMENTAL - Usa site_config.json en su lugar (recomendado)</b><br><br><b>Solo para pruebas con MCP Inspector.</b> Claude y ChatGPT NO lo necesitan.<br><br>Usa este campo (un origen por línea). Déjalo vacío en producción.
-A description is required,Se requiere una descripción
 A doctype is required,Se requiere un doctype
-A message is required,Se requiere un mensaje
-A rule needs something to match on.,Una regla necesita algo con lo que coincidir.
 A search query is required,Se requiere una consulta de búsqueda
 A search query or filters are required,Se requiere una consulta de búsqueda o filtros
-A subject is required,Se requiere un asunto
-A valid owner email is required.,Se requiere un correo electrónico de propietario válido.
 AIDA API Test Results,Resultados de la prueba de la API de AIDA
 AIDA API error {0}: {1},Error de la API de AIDA {0}: {1}
 AIDA API request timed out,La solicitud a la API de AIDA ha agotado el tiempo de espera
@@ -41,8 +33,6 @@ AIDA is not enabled on this site,AIDA no está activada en este sitio
 AIDA is receiving too many requests. Please wait a moment and try again.,AIDA está recibiendo demasiadas solicitudes. Espera un momento e inténtalo de nuevo.
 AIDA is still answering the previous message. Wait for it to finish.,AIDA sigue respondiendo al mensaje anterior. Espera a que termine.
 AIDA mode: connected to api.espib.co,Modo AIDA: conectado a api.espib.co
-AIDA needs to be connected to the cloud service,AIDA necesita estar conectada al servicio en la nube
-AIDA registration is incomplete. Please re-register.,El registro de AIDA está incompleto. Vuelve a registrarte.
 AIDA rejected the API key. Ask your administrator to check the AIDA settings.,AIDA ha rechazado la clave de API. Pide a tu administrador que revise la configuración de AIDA.
 AIDA services,Servicios de AIDA
 AIDA services operational,Servicios de AIDA operativos
@@ -51,8 +41,6 @@ API key for the chat service (X-API-Key header),Clave de API del servicio de cha
 API key for the conversion service (X-API-Key header),Clave de API del servicio de conversión (cabecera X-API-Key)
 API key for the voice transcription service (X-API-Key header),Clave de API del servicio de transcripción de voz (cabecera X-API-Key)
 API not configured,API no configurada
-AR client unavailable.,Cliente AR no disponible.
-AR returned a malformed registration response,AR ha devuelto una respuesta de registro mal formada
 Aborted,Abortado
 Access denied,Acceso denegado
 Access denied - administrator permissions required,Acceso denegado: se requieren permisos de administrador
@@ -62,14 +50,12 @@ Active users,Usuarios activos
 Add,Añadir
 Add Role,Añadir rol
 Add role,Añadir rol
-Admin role required,Se requiere el rol de administrador
 Advanced Discovery Settings,Configuración avanzada de descubrimiento
 All Categories,Todas las categorías
 All Plugins,Todos los plugins
 All Statuses,Todos los estados
 All Types,Todos los tipos
 All available roles have been added,Se han añadido todos los roles disponibles
-All filters must match for the trigger to fire (AND),Deben cumplirse todos los filtros para que se dispare el trigger (AND)
 All templates,Todas las plantillas
 All time,Todo el tiempo
 Allow Access,Permitir acceso
@@ -105,7 +91,6 @@ Argument {0} must be a number,El argumento {0} debe ser un número
 Argument {0} must be one of: {1},El argumento {0} debe ser uno de: {1}
 Arguments,Argumentos
 Ask AIDA...,Pregunta a AIDA...
-Ask me anything you need...,Pregúntame lo que necesites...
 Attach file,Adjuntar archivo
 Audio file is empty.,El archivo de audio está vacío.
 "Audio file too large ({0} bytes, max {1}).","El archivo de audio es demasiado grande ({0} bytes, máximo {1})."
@@ -113,27 +98,16 @@ Audit Log Retention,Retención del registro de auditoría
 Audit log,Registro de auditoría
 Authentication required,Autenticación requerida
 Auto-Detected Category,Categoría detectada automáticamente
-Auto-populated from PA Chat Settings,Rellenado automáticamente desde PA Chat Settings
-Awaiting Email Verification,Pendiente de verificación de correo electrónico
 Base URL of the chat API (e.g. https://api.espib.co/chat),"URL base de la API de chat (p. ej., https://api.espib.co/chat)"
 Base URL of the document conversion API,URL base de la API de conversión de documentos
 Base URL of the voice transcription API (Whisper),URL base de la API de transcripción de voz (Whisper)
 Basic Information,Información básica
-Billing features aren't available on this server yet.,Las funciones de facturación aún no están disponibles en este servidor.
-Billing is not available on this server,La facturación no está disponible en este servidor
-Billing is not available on this server.,La facturación no está disponible en este servidor.
-Billing service is having trouble. Please try again in a moment.,El servicio de facturación tiene problemas. Inténtalo de nuevo en un momento.
 Blocks,Bloques
 Brief description of this category,Breve descripción de esta categoría
-"Cached capabilities JSON from the cloud (auto-managed, 1-hour TTL)","JSON de capacidades en caché desde la nube (gestionado automáticamente, TTL de 1 hora)"
-Cached human label from the cloud for UI,Etiqueta legible en caché desde la nube para la interfaz
-Cached notifications JSON from cloud heartbeat (auto-managed),JSON de notificaciones en caché desde el latido de la nube (gestionado automáticamente)
 Cancel,Cancelar
 Cannot connect to AIDA API,No se puede conectar con la API de AIDA
 Cannot connect to AIDA right now. Please try again in a moment.,No se puede conectar con AIDA en este momento. Inténtalo de nuevo en un momento.
-Cannot connect to the cloud service,No se puede conectar con el servicio en la nube
 Cannot delete category with {0} linked prompt template(s). Move or delete the prompts first.,No se puede eliminar una categoría con {0} plantilla(s) de prompt vinculada(s). Mueve o elimina primero los prompts.
-Cannot delete your own user account,No puedes eliminar tu propia cuenta de usuario
 Cannot use AIDA,No se puede usar AIDA
 Capture screenshot,Capturar pantalla
 Capturing screenshot...,Capturando pantalla...
@@ -145,41 +119,26 @@ Category Manually Overridden,Categoría anulada manualmente
 Category automatically detected from tool code analysis,Categoría detectada automáticamente a partir del análisis del código de la herramienta
 Category color for UI display,Color de la categoría para mostrar en la interfaz
 Category indicating what type of operations this tool performs,Categoría que indica qué tipo de operaciones realiza esta herramienta
-Changed Fields,Campos modificados
 Changed fields:,Campos modificados:
 Changing visibility will clear the shared roles. Continue?,Cambiar la visibilidad borrará los roles compartidos. ¿Continuar?
 Chart,Gráfico
 Chat API,API de chat
 Chat API Key,Clave de API de chat
 Chat API URL,URL de la API de chat
-Chat is not enabled,El chat no está activado
 Chat usage,Uso del chat
-ChatGPT Fetch Error,Error de ChatGPT Fetch
-ChatGPT Fetch Permission Error,Error de permisos de ChatGPT Fetch
 ChatGPT Search Error,Error de búsqueda de ChatGPT
 Check if this category can have child categories,Marca si esta categoría puede tener categorías secundarias
 Check if you have manually set the category,Marca si has establecido la categoría manualmente
-Choose a rule type and a grade first.,Elige primero un tipo de regla y un nivel.
-Choose what the rule matches on.,Elige con qué debe coincidir la regla.
-Choose which grade the rule should use.,Elige qué nivel debe usar la regla.
 Clear filters,Borrar filtros
-Clearing registration...,Borrando el registro...
 Click me to start chatting!,¡Haz clic en mí para empezar a chatear!
 Click to publish,Clic para publicar
 Click to unpublish,Clic para despublicar
 Close,Cerrar
-Cloud Connection,Conexión en la nube
 Cloud Message ID,ID de mensaje en la nube
 Cloud Message ID for linking with streaming events,ID de mensaje en la nube para enlazar con eventos de streaming
-Cloud Run ID,ID de ejecución en la nube
 Cloud URL,URL de la nube
-Cloud URL must use HTTPS (got {0}),La URL de la nube debe usar HTTPS (recibido: {0})
-Cloud URL not configured in PA Chat Settings,URL de la nube no configurada en PA Chat Settings
-Cloud Workflow document name (WF-#####). Authoritative binding — survives a rename.,Nombre del documento Workflow en la nube (WF-#####). Vínculo de referencia: sobrevive a un cambio de nombre.
-Cloud service is not configured,El servicio en la nube no está configurado
 Code Execution Limits,Límites de ejecución de código
 Collect page diagnostics,Recopilar diagnósticos de la página
-Comma-separated fieldnames. For on_update only — fires only when at least one listed field changed.,Nombres de campo separados por comas. Solo para on_update: se dispara únicamente cuando cambia al menos uno de los campos indicados.
 Comma-separated list of allowed values for 'select' and 'multiselect' types,Lista separada por comas de valores permitidos para los tipos 'select' y 'multiselect'
 Completed {0} of 1 step,Completado {0} de 1 paso
 Completed {0} of {1} steps,Completados {0} de {1} pasos
@@ -191,11 +150,9 @@ Configure how long audit logs are retained. A daily scheduled job automatically 
 "Configure resource limits for the run_python_code tool to prevent runaway code from crashing the system. These limits protect against infinite loops, memory exhaustion, and excessive recursion.","Configura los límites de recursos de la herramienta run_python_code para evitar que un código descontrolado bloquee el sistema. Estos límites protegen frente a bucles infinitos, agotamiento de memoria y recursión excesiva."
 Configure role access,Configurar acceso por rol
 Configure which roles can access this tool. Leave empty to allow all roles.,Configura qué roles pueden acceder a esta herramienta. Déjalo vacío para permitir todos los roles.
-Connected to cloud service,Conectado al servicio en la nube
 Connection appears to have stalled. Please try again.,La conexión parece haberse detenido. Inténtalo de nuevo.
 Connection lost — reconnecting...,Conexión perdida: reconectando...
 Connection to the LLM service for AIDA chat,Conexión con el servicio LLM para el chat de AIDA
-Consent type is required,Se requiere el tipo de consentimiento
 Consider linking a tool name for Tool Usage skills,Considera vincular un nombre de herramienta para las skills de uso de herramientas
 Console + network from the last {0}s,Consola + red de los últimos {0} s
 "Console + network from the last {0}s, plus a screenshot","Consola + red de los últimos {0} s, más una captura de pantalla"
@@ -209,34 +166,15 @@ Continuing previous response...,Continuando la respuesta anterior...
 Continuing truncated response.,Continuando la respuesta truncada.
 Controls which OAuth discovery endpoints are exposed. Most users should leave these enabled.,Controla qué endpoints de descubrimiento OAuth se exponen. La mayoría de los usuarios deberían dejarlos activados.
 Conversation,Conversación
-Conversation not found,Conversación no encontrada
 Convert API Key,Clave de API de conversión
 Convert API URL,URL de la API de conversión
-Convert API error {0}: {1},Error de la API de conversión {0}: {1}
-Convert API unreachable: {0},API de conversión inaccesible: {0}
 Convert API: {0},API de conversión: {0}
 Copy MCP endpoint URL,Copiar URL del endpoint MCP
 Copy endpoint URL,Copiar URL del endpoint
 Could not load models: {0},No se han podido cargar los modelos: {0}
-Could not reach the reset endpoint.,No se ha podido acceder al endpoint de restablecimiento.
-Could not read your MCP tools.,No se han podido leer tus herramientas MCP.
-Could not record your acceptance.,No se ha podido registrar tu aceptación.
 Could not transcribe,No se ha podido transcribir
-Couldn't complete the billing request. Please try again.,No se ha podido completar la solicitud de facturación. Inténtalo de nuevo.
-Couldn't compute pricing. Please try again.,No se ha podido calcular el precio. Inténtalo de nuevo.
-Couldn't load that attachment.,No se ha podido cargar ese adjunto.
-Couldn't load that ticket. Please try again.,No se ha podido cargar ese ticket. Inténtalo de nuevo.
-Couldn't load your feedback. Please try again.,No se han podido cargar tus comentarios. Inténtalo de nuevo.
-Couldn't load your tickets. Please try again.,No se han podido cargar tus tickets. Inténtalo de nuevo.
-Couldn't reach the billing service. Please check your internet connection and try again.,No se ha podido acceder a la facturación. Comprueba tu conexión a internet e inténtalo de nuevo.
-Couldn't reach the cloud server. Check your internet connection and try again in a moment.,No se ha podido acceder al servidor en la nube. Comprueba tu conexión a internet e inténtalo de nuevo en un momento.
-Couldn't reach the cloud service to verify your account. Please try again in a moment.,No se ha podido acceder al servicio en la nube para verificar tu cuenta. Inténtalo de nuevo en un momento.
-Couldn't send your reply. Please try again.,No se ha podido enviar tu respuesta. Inténtalo de nuevo.
 Couldn't start recording — try again.,No se ha podido iniciar la grabación. Inténtalo de nuevo.
-Couldn't submit your feedback. Please try again.,No se han podido enviar tus comentarios. Inténtalo de nuevo.
-Couldn't submit your ticket. Please try again.,No se ha podido enviar tu ticket. Inténtalo de nuevo.
 Couldn't transcribe — try again or type instead.,No se ha podido transcribir. Inténtalo de nuevo o escribe el mensaje.
-Couldn't upload your attachment. Please try again.,No se ha podido subir tu adjunto. Inténtalo de nuevo.
 Create,Crear
 Create New Version,Crear nueva versión
 Create a prompt template to expose it to MCP clients.,Crea una plantilla de prompt para exponerla a los clientes MCP.
@@ -263,7 +201,6 @@ Default Provider,Proveedor predeterminado
 Default value if not provided by user,Valor predeterminado si el usuario no lo proporciona
 Define the arguments/placeholders for this template,Define los argumentos/marcadores de esta plantilla
 Delete Attachments on Purge,Eliminar adjuntos al purgar
-Delivery retries the sweeper has scheduled for this fire.,Reintentos de entrega que el barredor ha programado para esta ejecución.
 Deprecated,Obsoleto
 Derived From,Derivada de
 Describe what changed in this version,Describe qué ha cambiado en esta versión
@@ -278,22 +215,15 @@ Disable the AIDA server? All MCP clients will lose access until it is re-enabled
 Disable {0} tools? Users will no longer be able to invoke them via MCP.,¿Desactivar {0} herramientas? Los usuarios ya no podrán invocarlas mediante MCP.
 Disabled,Desactivado
 Disabling...,Desactivando...
-Disconnected from {0},Desconectado de {0}
 Discovered At,Descubierto el
 Dismiss,Descartar
 Dismissed On,Descartado el
 Display Label,Etiqueta visible
 Display Name,Nombre visible
 Display name for your resource server,Nombre visible de tu servidor de recursos
-DocType '{0}' is a Single DocType and cannot be targeted.,El DocType '{0}' es un DocType individual y no se puede usar como destino.
-DocType '{0}' is a child table and cannot be targeted directly. Trigger on its parent DocType instead.,El DocType '{0}' es una tabla secundaria y no se puede usar directamente como destino. Usa su DocType principal como disparador.
-DocType '{0}' is a high-frequency system DocType and cannot be used as a trigger target.,El DocType '{0}' es un DocType de sistema de alta frecuencia y no se puede usar como destino del disparador.
-DocType '{0}' is used by the trigger pipeline itself. Targeting it would create an infinite loop.,El DocType '{0}' lo usa el propio flujo de disparadores. Usarlo como destino crearía un bucle infinito.
-DocType '{0}' no longer exists on this site.,El DocType '{0}' ya no existe en este sitio.
 DocType '{0}' not found,DocType '{0}' no encontrado
 DocType Search Error,Error de búsqueda de DocType
 Docling service to convert PDF/images to text (markdown),Servicio Docling para convertir PDF/imágenes a texto (markdown)
-Doctype and data must be provided for validation.,Se deben indicar el doctype y los datos para la validación.
 Document Conversion API,API de conversión de documentos
 Document Creation Error,Error al crear el documento
 Document Delete Error,Error al eliminar el documento
@@ -305,7 +235,6 @@ Documentation URL,URL de la documentación
 Documentation URL for developers,URL de la documentación para desarrolladores
 Draft,Borrador
 Duplicate as Private,Duplicar como privado
-Either name or workflow_name is required,Se requiere name o workflow_name
 Email queued to {0} recipient(s),Correo en cola para {0} destinatario(s)
 Enable,Activar
 Enable AIDA Chat,Activar chat de AIDA
@@ -332,20 +261,16 @@ Environment validation failed: {0},Error al validar el entorno: {0}
 Error,Error
 Error Type,Tipo de error
 Error checking AIDA availability,Error al comprobar la disponibilidad de AIDA
-Error continuing response: {0},Error al continuar la respuesta: {0}
 Error loading content,Error al cargar el contenido
 Error loading endpoint,Error al cargar el endpoint
 Error loading preview,Error al cargar la vista previa
 Error loading prompt templates,Error al cargar las plantillas de prompt
 Error loading skills,Error al cargar las skills
-Error resuming interrupt: {0},Error al reanudar la interrupción: {0}
 Error saving configuration,Error al guardar la configuración
-Error saving preference: {0},Error al guardar la preferencia: {0}
 Error toggling plugin,Error al alternar el plugin
 Error toggling skill status,Error al cambiar el estado de la skill
 Error toggling template status,Error al cambiar el estado de la plantilla
 Error toggling tool,Error al alternar la herramienta
-Error uploading file: {0},Error al subir el archivo: {0}
 Error: Failed to disable tools,Error: no se han podido desactivar las herramientas
 Error: Failed to enable tools,Error: no se han podido activar las herramientas
 Error: {0},Error: {0}
@@ -356,24 +281,15 @@ Execution Details,Detalles de ejecución
 Execution Time (seconds),Tiempo de ejecución (segundos)
 Execution Timeout (seconds),Tiempo de ejecución máximo (segundos)
 Expand,Expandir
-Expected a list of template names,Se esperaba una lista de nombres de plantilla
 Exposes OAuth server capabilities at <code>/.well-known/oauth-authorization-server</code>. Required for auto-discovery.,Expone las capacidades del servidor OAuth en <code>/.well-known/oauth-authorization-server</code>. Necesario para el autodescubrimiento.
 Exposes resource server info at <code>/.well-known/oauth-protected-resource</code>,Expone la información del servidor de recursos en <code>/.well-known/oauth-protected-resource</code>
 Failed,Fallido
-Failed to connect MCP server for {0}: {1},No se ha podido conectar el servidor MCP de {0}: {1}
 Failed to disable MCP API: {0},No se ha podido desactivar la API MCP: {0}
 Failed to disable tools,No se han podido desactivar las herramientas
-Failed to disconnect server,No se ha podido desconectar el servidor
 Failed to enable MCP API: {0},No se ha podido activar la API MCP: {0}
 Failed to enable tools,No se han podido activar las herramientas
-Failed to fetch Terms and Conditions from the cloud service,No se han podido obtener los Términos y Condiciones del servicio en la nube
-Failed to fetch events,No se han podido obtener los eventos
-Failed to fetch models,No se han podido obtener los modelos
-Failed to fetch tenant info,No se ha podido obtener la información del tenant
-Failed to fetch tool stats,No se han podido obtener las estadísticas de herramientas
 Failed to get plugin info: {0},No se ha podido obtener la información del plugin: {0}
 Failed to get plugins: {0},No se han podido obtener los plugins: {0}
-Failed to get prompt from AR,No se ha podido obtener el prompt desde AR
 Failed to get tools: {0},No se han podido obtener las herramientas: {0}
 Failed to load activity,No se ha podido cargar la actividad
 Failed to load plugins,No se han podido cargar los plugins
@@ -384,14 +300,8 @@ Failed to load tools,No se han podido cargar las herramientas
 Failed to refresh plugin system: {0},No se ha podido refrescar el sistema de plugins: {0}
 Failed to refresh plugins: {0},No se han podido refrescar los plugins: {0}
 Failed to refresh tool registry: {0},No se ha podido refrescar el registro de herramientas: {0}
-Failed to register user with cloud service,No se ha podido registrar al usuario en el servicio en la nube
-Failed to register user {0} with the cloud service,No se ha podido registrar al usuario {0} en el servicio en la nube
-Failed to request rebind.,No se ha podido solicitar la revinculación.
-Failed to restart assistant MCP API: {0},No se ha podido reiniciar la API MCP del asistente: {0}
 Failed to save configuration,No se ha podido guardar la configuración
-"Failed to store tenant credentials securely. Please try again, or contact support if this persists.",No se han podido almacenar las credenciales del tenant de forma segura. Inténtalo de nuevo o contacta con soporte si persiste.
 Failed to update category,No se ha podido actualizar la categoría
-Failed to update tokens,No se han podido actualizar los tokens
 Failed to upload file: {0},No se ha podido subir el archivo: {0}
 Failed to {0} plugin '{1}',No se ha podido {0} el plugin '{1}'
 Failed to {0} plugin '{1}': {2},No se ha podido {0} el plugin '{1}': {2}
@@ -402,20 +312,12 @@ File size exceeds 10MB limit,El tamaño del archivo supera el límite de 10 MB
 File size exceeds 50MB limit,El tamaño del archivo supera el límite de 50 MB
 File type not allowed: {0},Tipo de archivo no permitido: {0}
 File uploaded successfully,Archivo subido correctamente
-Fill in the details,Completa los detalles
 Filter by category,Filtrar por categoría
 Filter by plugin,Filtrar por plugin
 Filter by status,Filtrar por estado
 Filter by type,Filtrar por tipo
-Filter did not match: {0} {1} {2},El filtro no ha coincidido: {0} {1} {2}
-Filter field '{0}' is not a field of '{1}'.,El campo de filtro '{0}' no es un campo de '{1}'.
-Filter rows must have a fieldname.,Las filas de filtro deben tener un nombre de campo.
-Filter rows must have an operator.,Las filas de filtro deben tener un operador.
 Filters require a doctype. Omit filters for a global search.,Los filtros requieren un doctype. Omite los filtros para una búsqueda global.
-Fire Count,Número de disparos
-Fired At,Disparado el
 "FontAwesome icon class (e.g., fa-chart-line)","Clase de icono de FontAwesome (p. ej., fa-chart-line)"
-"For 'in' / 'not in' use JSON array, e.g. [""Paid"",""Overdue""]","Para 'in' / 'not in' usa un array JSON, p. ej. [""Paid"",""Overdue""]"
 Format String,Cadena de formato
 Format Version,Versión de formato
 Found new placeholders: {0},Se han encontrado nuevos marcadores: {0}
@@ -429,13 +331,10 @@ Get DocType Info Error,Error al obtener la información del DocType
 Get Plugin Configurations Error,Error al obtener la configuración de los plugins
 Global Search Error,Error de búsqueda global
 Go to Settings,Ir a Ajustes
-Got it,Entendido
-HMAC secret for cloud authentication (keep secure),Secreto HMAC para la autenticación en la nube (mantenlo seguro)
 Has Pending Interrupt,Tiene interrupción pendiente
 Help text shown to users when filling this argument,Texto de ayuda mostrado a los usuarios al rellenar este argumento
 Hi! I am AIDA,¡Hola! Soy AIDA
 Hide Widget,Ocultar widget
-Hide assistant (you can re-enable in My Preferences),Ocultar el asistente (puedes volver a activarlo en Mis preferencias)
 Hide the floating widget launcher on Desk pages. The full SPA at /aida remains accessible.,Oculta el lanzador flotante del widget en las páginas del escritorio. La SPA completa en /aida sigue accesible.
 How placeholders are substituted. Jinja2 is recommended for complex templates.,Cómo se sustituyen los marcadores. Se recomienda Jinja2 para plantillas complejas.
 Human-readable description of what this tool does,Descripción legible de lo que hace esta herramienta
@@ -447,47 +346,30 @@ Human-readable title shown in MCP clients and tool listings,Título legible most
 "I did not understand, please try again.","No te he entendido, inténtalo de nuevo."
 Incorrect password,Contraseña incorrecta
 Individual Tools,Herramientas individuales
-Industry packs are not available on this server.,Los paquetes sectoriales no están disponibles en este servidor.
 Input Data,Datos de entrada
 Input Tokens,Tokens de entrada
 Input tokens,Tokens de entrada
 Install plugins to start registering tools with the MCP server.,Instala plugins para empezar a registrar herramientas en el servidor MCP.
 Insufficient permissions,Permisos insuficientes
 Insufficient permissions to execute {0},Permisos insuficientes para ejecutar {0}
-Internal Cache,Caché interna
 Internal list of enabled plugin IDs,Lista interna de IDs de plugins activados
 Invalid API Key,Clave de API no válida
-Invalid API Secret,Secreto de API no válido
-Invalid JSON format,Formato JSON no válido
-Invalid JSON format for arguments,Formato JSON no válido para los argumentos
 Invalid Jinja2 syntax: {0},Sintaxis Jinja2 no válida: {0}
 Invalid action: {0},Acción no válida: {0}
 Invalid bearer token,Token bearer no válido
-Invalid billing cycle. Use 'monthly' or 'annual',Ciclo de facturación no válido. Usa 'monthly' o 'annual'
 Invalid call_id format,Formato de call_id no válido
-Invalid doctype_event: {0},doctype_event no válido: {0}
-Invalid file data,Datos de archivo no válidos
 Invalid filename: must be 1-255 characters,Nombre de archivo no válido: debe tener entre 1 y 255 caracteres
 Invalid format string: {0},Cadena de formato no válida: {0}
-Invalid gateway. Use 'stripe' or 'razorpay',Pasarela no válida. Usa 'stripe' o 'razorpay'
-Invalid payment method. Choose UPI Autopay or Card.,Método de pago no válido. Elige UPI Autopay o Tarjeta.
-Invalid payment_method. Use 'upi' or 'card',payment_method no válido. Usa 'upi' o 'card'
-Invalid referral code format,Formato de código de referido no válido
 Invalid type for field {0}: expected {1},Tipo no válido para el campo {0}: se esperaba {1}
-"Invalid window — use this_week, last_7_days, or last_30_days","Ventana no válida: usa this_week, last_7_days o last_30_days"
 Is Archived,Está archivada
 JSON array of pinned prompt template names (max 5),Array JSON de nombres de plantillas de prompt fijadas (máx. 5)
 Keyboard Shortcut,Atajo de teclado
 "Keyboard shortcut should include a modifier key (Ctrl, Alt, Shift, etc.)","El atajo de teclado debe incluir una tecla modificadora (Ctrl, Alt, Mayús, etc.)"
 LLM Metadata,Metadatos del LLM
 LLM Mode,Modo LLM
-Last Error,Último error
-Last Error At,Fecha del último error
-Last Fired At,Último disparo
 Last Toggled At,Última alternancia
 Last Used,Último uso
 Last-writer-wins guard. Monotonically increasing per completed turn.,Protección de último escritor gana. Aumenta de forma monótona con cada turno completado.
-Legacy human-name binding. Used only when Workflow Docname is empty.,Vínculo heredado por nombre legible. Solo se usa cuando Workflow Docname está vacío.
 Limits Info,Información de límites
 Link Filter Resolution Error,Error al resolver el filtro de enlace
 Link Search Error,Error de búsqueda de enlaces
@@ -498,8 +380,6 @@ Loading...,Cargando...
 "Local mirror of the cloud-side processing_restricted flag. Gates message persistence: when set, PA Chat Message rows are skipped.","Copia local del indicador processing_restricted de la nube. Controla la persistencia de mensajes: si está activo, se omiten las filas de PA Chat Message."
 Login required,Se requiere iniciar sesión
 Looking for something specific?,¿Buscas algo en concreto?
-Loop guard: more than {0} fires for {1} {2} within {3}s. Further fires are refused until the window clears. Check whether this workflow writes back to the document that triggers it.,Protección anti-bucle: más de {0} ejecuciones para {1} {2} en {3} s. Se rechazarán más ejecuciones hasta que pase la ventana. Comprueba si este workflow escribe de vuelta en el documento que lo dispara.
-Low Quota Warning,Aviso de cuota baja
 MCP API endpoints disabled,API MCP desactivada
 MCP API is disabled in settings,La API MCP está desactivada en la configuración
 MCP API is not enabled,La API MCP no está activada
@@ -525,7 +405,6 @@ Maximum memory allowed for code execution. Prevents memory exhaustion attacks. R
 "Maximum recursion depth allowed. Prevents stack overflow from deeply recursive code. Range: 50-1000. Frappe internals (frappe.get_doc, frappe.get_all) recurse well past 100, so keep this at the default unless you have a reason to lower it.","Profundidad máxima de recursión permitida. Evita el desbordamiento de pila en código muy recursivo. Rango: 50-1000. Las funciones internas de Frappe (frappe.get_doc, frappe.get_all) recursan bastante por encima de 100, así que mantén el valor predeterminado salvo que tengas un motivo para reducirlo."
 Maximum tokens to use for page context,Máximo de tokens a usar para el contexto de la página
 Maximum wall-clock time allowed for code execution. Code that exceeds this limit will be terminated. Range: 1-300 seconds.,Tiempo real máximo permitido para la ejecución de código. El código que lo supere se terminará. Rango: 1-300 segundos.
-Maybe Later,Quizá más tarde
 Mermaid Diagram,Diagrama Mermaid
 Message Order,Orden del mensaje
 Message Retention (days),Retención de mensajes (días)
@@ -538,11 +417,8 @@ Min Length,Longitud mínima
 Missing argument for format string: {0},Falta un argumento para la cadena de formato: {0}
 Missing bearer token,Falta el token bearer
 Missing dependencies: {0},Faltan dependencias: {0}
-Missing permissions for: {0},Faltan permisos para: {0}
 Missing required argument: {0},Falta el argumento obligatorio: {0}
 Missing required field: {0},Falta el campo obligatorio: {0}
-Missing terms version,Falta la versión de los términos
-Missing verification_token,Falta verification_token
 Model,Modelo
 Model Breakdown,Desglose por modelo
 Model: {0},Modelo: {0}
@@ -555,24 +431,18 @@ Need help with anything?,¿Necesitas ayuda con algo?
 Never,Nunca
 New conversation,Nueva conversación
 New version created,Nueva versión creada
-New: AIDA Chat,Novedad: chat de AIDA
 No,No
 No URL provided,No se ha indicado ninguna URL
 No activity yet,Aún no hay actividad
 No arguments,Sin argumentos
 No audio file provided.,No se ha proporcionado ningún archivo de audio.
-No configuration provided,No se ha proporcionado ninguna configuración
 No content available,No hay contenido disponible
 No default model,Sin modelo predeterminado
 No description available,No hay descripción disponible
-No documents of type {0} found.,No se han encontrado documentos de tipo {0}.
 No field changes recorded,No se han registrado cambios en los campos
-No fields to update,No hay campos que actualizar
-No file provided,No se ha proporcionado ningún archivo
 No file uploaded,No se ha subido ningún archivo
 "No match, but the full-text index held nothing for this query, so only document IDs were searched across common DocTypes. This is not proof the record does not exist — retry with a doctype to search that DocType's fields.","Sin coincidencias, pero el índice de texto completo no tenía nada para esta consulta, así que solo se han buscado IDs de documento en los DocTypes habituales. Esto no demuestra que el registro no exista: reintenta con un doctype para buscar en los campos de ese DocType."
 No microphone found.,No se ha encontrado ningún micrófono.
-No pending rebind.,No hay ninguna revinculación pendiente.
 No plugins installed,No hay plugins instalados
 No prompt templates yet,Aún no hay plantillas de prompt
 No read permission for DocType '{0}',Sin permiso de lectura para el DocType '{0}'
@@ -586,16 +456,13 @@ No templates match {0},No hay plantillas que coincidan con {0}
 No tools match,Ninguna herramienta coincide
 No tools match the current filters,Ninguna herramienta coincide con los filtros actuales
 No tools registered,No hay herramientas registradas
-No updates provided,No se han proporcionado actualizaciones
 No valid recipients after filtering,No hay destinatarios válidos tras el filtrado
 No version history available,No hay historial de versiones disponible
 Not Found,No encontrado
 Not Registered,No registrado
 Not authenticated,No autenticado
 Not configured,No configurado
-Not connected to the cloud service,No conectado al servicio en la nube
 Not permitted,No permitido
-Now using prepaid credits,Ahora se usan créditos prepago
 Number of days to retain audit logs. Logs older than this are automatically cleaned up daily. Set to 0 to disable automatic cleanup.,Número de días que se conservan los registros de auditoría. Los registros anteriores se eliminan automáticamente cada día. Pon 0 para desactivar la limpieza automática.
 OAuth,OAuth
 OAuth Configuration,Configuración de OAuth
@@ -605,13 +472,7 @@ OAuth/OIDC discovery endpoint for auto-configuration. MCP clients use this to di
 One-line description shown in MCP resource listings and skill discovery,Descripción de una línea mostrada en los listados de recursos MCP y en el descubrimiento de skills
 Only System Manager can export debug bundles,Solo un System Manager puede exportar paquetes de depuración
 Only System Managers can access billing features,Solo los System Manager pueden acceder a las funciones de facturación
-Only System Managers can manage workflow triggers.,Solo los System Manager pueden gestionar los disparadores de workflow.
-Only System Managers can manage workflows.,Solo los System Manager pueden gestionar los workflows.
 Only System Managers can view AIDA admin data.,Solo los System Manager pueden ver los datos de administración de AIDA.
-Only administrators can edit team notes,Solo los administradores pueden editar las notas del equipo
-Only administrators can publish workflows,Solo los administradores pueden publicar workflows
-Only administrators can update privacy configuration,Solo los administradores pueden actualizar la configuración de privacidad
-Only administrators can view usage analytics.,Solo los administradores pueden ver las analíticas de uso.
 Only an PA Admin or System Manager can create a skill that is not Draft/Private,Solo un PA Admin o un System Manager puede crear una skill que no sea Borrador/Privada
 Only an PA Admin or System Manager can mark a skill as a system skill,Solo un PA Admin o un System Manager puede marcar una skill como skill del sistema
 Only an PA Admin or System Manager can publish or share this skill,Solo un PA Admin o un System Manager puede publicar o compartir esta skill
@@ -640,10 +501,8 @@ PA Chat Session State,Estado de sesión de PA Chat
 PA Chat Settings,Ajustes de PA Chat
 PA Chat Usage Log,Registro de uso de PA Chat
 PA Chat User Preferences,Preferencias de usuario de PA Chat
-PA Chat is disabled.,PA Chat está desactivado.
 PA Core Settings,Ajustes de PA Core
 PA Core Settings updated successfully.,Ajustes de PA Core actualizados correctamente.
-PA MCP API restarted successfully,API MCP de PA reiniciada correctamente
 PA Plugin Configuration,Configuración de plugin de PA
 PA Skill,Skill de PA
 PA Skill '{0}' not found,Skill de PA '{0}' no encontrada
@@ -659,19 +518,15 @@ Parent Category,Categoría padre
 Parent category for hierarchical organization,Categoría padre para la organización jerárquica
 Password confirmation is required to delete all data,Se requiere confirmar la contraseña para eliminar todos los datos
 Pending Approvals Query Error,Error al consultar las aprobaciones pendientes
-Pending Email Verification,Pendiente de verificación de correo electrónico
 Per-conversation correlation id. Rows sharing this id belong to the same MCP session.,Identificador de correlación por conversación. Las filas con este mismo ID pertenecen a la misma sesión MCP.
 "Per-model usage for delegating (multi-model) turns: [{model_id, role, credits, input_tokens, output_tokens}]. Null for single-model turns.","Uso por modelo en turnos con delegación (multimodelo): [{model_id, role, credits, input_tokens, output_tokens}]. Nulo en turnos de un solo modelo."
 Permission Denied,Permiso denegado
 Permission Error,Error de permisos
-Personal rules aren't available yet.,Las reglas personales aún no están disponibles.
 Ping failed: {0},Error en el ping: {0}
 Pinned,Fijados
 Pinned Prompt Templates,Plantillas de prompt fijadas
 Please add at least one role when using 'Restrict to Listed Roles' mode,Añade al menos un rol al usar el modo 'Restringir a roles listados'
 Please ask your administrator to enable AIDA for this site.,Pide a tu administrador que active AIDA en este sitio.
-Please connect your account to use AIDA,Conecta tu cuenta para usar AIDA
-Please enter a promo code,Introduce un código promocional
 Please review the attached files.,Revisa los archivos adjuntos.
 Please select a Tool Category when override is enabled,Selecciona una categoría de herramienta cuando la anulación está activada
 Please specify roles to share with when visibility is 'Shared',Indica los roles con los que compartir cuando la visibilidad es 'Compartida'
@@ -711,7 +566,6 @@ Prompt ID,ID de prompt
 Prompt ID '{0}' already exists,El ID de prompt '{0}' ya existe
 Prompt ID converted to lowercase format,ID de prompt convertido a minúsculas
 Prompt ID is required,Se requiere el ID de prompt
-"Prompt ID must contain only lowercase letters, numbers, underscores, and hyphens","El ID de prompt solo puede contener letras minúsculas, números, guiones bajos y guiones"
 Prompt Template,Plantilla de prompt
 Prompt Template '{0}' not found,Plantilla de prompt '{0}' no encontrada
 Prompt Template '{0}' set to {1},Plantilla de prompt '{0}' establecida como {1}
@@ -724,8 +578,6 @@ Python traceback captured for unhandled exceptions,Traceback de Python capturado
 Query and Analyse Error,Error al consultar y analizar
 Quick actions,Acciones rápidas
 Quota Exceeded,Cuota superada
-Quota Notice,Aviso de cuota
-Rate limit exceeded. Maximum allowed: {rate_limit},Límite de solicitudes superado. Máximo permitido: {rate_limit}
 Rate limit exceeded. Please try again in {0} seconds.,Límite de solicitudes superado. Inténtalo de nuevo en {0} segundos.
 Raw,Sin procesar
 Re-authorization Required,Se requiere reautorización
@@ -734,26 +586,14 @@ Read Only,Solo lectura
 Read form data,Leer datos del formulario
 Recent activity,Actividad reciente
 Record browser console errors and failed requests so the assistant can diagnose on-screen problems. Nothing is sent until the user approves a capture.,Registra los errores de consola del navegador y las solicitudes fallidas para que el asistente pueda diagnosticar problemas en pantalla. No se envía nada hasta que el usuario aprueba una captura.
-Reference DocType is required.,Se requiere el DocType de referencia.
-Referral code is required,Se requiere el código de referido
 Refresh Models,Refrescar modelos
 Refresh Plugin System,Refrescar sistema de plugins
 Refresh dashboard,Refrescar panel
-Register in PA Chat,Registrar en PA Chat
 Registered,Registrado
 Registration Error,Error de registro
-Registration Status,Estado del registro
-Registration cleared. Open PA Chat to register this site again — you will be asked to accept the Terms and Conditions.,Registro borrado. Abre PA Chat para registrar de nuevo este sitio: se te pedirá aceptar los Términos y Condiciones.
-Registration failed. Please try again or contact support if the problem persists.,El registro ha fallado. Inténtalo de nuevo o contacta con soporte si el problema persiste.
-Registration failed. Please try again.,El registro ha fallado. Inténtalo de nuevo.
-Registration is currently at capacity. You've been added to our waitlist — we'll email you as soon as a slot opens.,El registro está actualmente al máximo de capacidad. Te hemos añadido a la lista de espera y te avisaremos por correo en cuanto haya plaza.
-Registration was rejected by the server. Please contact support.,El servidor ha rechazado el registro. Contacta con soporte.
 Regular expression pattern for validation (optional),Patrón de expresión regular para la validación (opcional)
 Reject,Rechazar
 Rejected,Rechazado
-Remaining credits: {0},Créditos restantes: {0}
-Reminder: you've been invited to the assistant team,Recordatorio: has sido invitado al equipo del asistente
-Remote Cloud Workflow Run identifier,Identificador de la ejecución remota del workflow en la nube
 Remove,Quitar
 Remove role,Quitar rol
 Rendering Engine,Motor de renderizado
@@ -762,11 +602,7 @@ Report List Error,Error al listar informes
 Report Requirements Error,Error en los requisitos del informe
 Report: {0},Informe: {0}
 Request exceeded maximum time (5 minutes),La solicitud ha superado el tiempo máximo (5 minutos)
-Requests now draw on your prepaid credits — {0} remaining.,Las solicitudes ahora usan tus créditos prepago: te quedan {0}.
 Required,Obligatorio
-Reset Failed,Error al restablecer
-Reset Registration,Restablecer registro
-Reset cloud registration?,¿Restablecer el registro en la nube?
 Resolved in another tab,Resuelto en otra pestaña
 Resource Metadata (Optional),Metadatos del recurso (opcional)
 Resource Name,Nombre del recurso
@@ -774,11 +610,6 @@ Response stopped.,Respuesta detenida.
 Restrict to Listed Roles,Restringir a roles listados
 Resuming agent with approval response.,Reanudando el agente con la respuesta de aprobación.
 Retention Period (Days),Periodo de retención (días)
-Retry Attempts,Reintentos
-Retry abandoned: DocType {0} no longer exists.,Reintento abandonado: el DocType {0} ya no existe.
-Retry abandoned: the document no longer exists.,Reintento abandonado: el documento ya no existe.
-Retry abandoned: the trigger is disabled.,Reintento abandonado: el disparador está desactivado.
-Retry abandoned: the trigger no longer exists.,Reintento abandonado: el disparador ya no existe.
 Role,Rol
 Role Access,Acceso por rol
 Role Access Mode,Modo de acceso por rol
@@ -798,7 +629,6 @@ Search templates,Buscar plantillas
 Search templates...,Buscar plantillas...
 Search tools,Buscar herramientas
 Search tools...,Buscar herramientas...
-Secret not yet available,Secreto aún no disponible
 Security,Seguridad
 Select an option…,Selecciona una opción…
 Send,Enviar
@@ -819,9 +649,6 @@ Show less,Mostrar menos
 Show more,Mostrar más
 Show source,Mostrar código fuente
 Significant changes detected. Version incremented to {0},Se han detectado cambios significativos. Versión incrementada a {0}
-Site is not registered.,El sitio no está registrado.
-Site not registered with the cloud service,Sitio no registrado en el servicio en la nube
-Site registration successful. Users can now connect their accounts.,Sitio registrado correctamente. Los usuarios ya pueden conectar sus cuentas.
 Skill Content,Contenido de la skill
 Skill ID,ID de skill
 Skill ID '{0}' already exists,El ID de skill '{0}' ya existe
@@ -832,7 +659,6 @@ Skill Type,Tipo de skill
 Skills,Skills
 Skills Configuration,Configuración de skills
 Skills are reusable workflows or tool-usage patterns exposed to MCP clients.,Las skills son flujos de trabajo reutilizables o patrones de uso de herramientas expuestos a los clientes MCP.
-Something went wrong with billing. Please try again or contact support.,Algo ha ido mal con la facturación. Inténtalo de nuevo o contacta con soporte.
 Something went wrong. Please try again or contact support.,Algo ha ido mal. Inténtalo de nuevo o contacta con soporte.
 "Sorry, I could not send your message. Please try again.","Lo siento, no he podido enviar tu mensaje. Inténtalo de nuevo."
 Source App,App de origen
@@ -848,10 +674,7 @@ Subject cannot be empty,El asunto no puede estar vacío
 Submit,Enviar
 Submitting…,Enviando…
 Success,Correcto
-Successfully connected your account to AIDA,Tu cuenta se ha conectado correctamente a AIDA
-Successfully reconnected to {0},Reconectado correctamente a {0}
 "Supplementary: tools keep full descriptions, skills provide additional guidance. Replace: tool descriptions are minimized when a skill exists, saving tokens.","Complementario: las herramientas conservan sus descripciones completas y las skills aportan orientación adicional. Reemplazar: las descripciones de las herramientas se minimizan cuando existe una skill, ahorrando tokens."
-Support is not available right now.,El soporte no está disponible en este momento.
 "Supported OAuth scopes (one per line). Leave blank to use default scopes (all, openid).","Ámbitos OAuth admitidos (uno por línea). Déjalo vacío para usar los ámbitos predeterminados (all, openid)."
 Supported Scopes,Ámbitos admitidos
 System,Sistema
@@ -872,12 +695,8 @@ Template restored successfully,Plantilla restaurada correctamente
 Template syntax error: {0},Error de sintaxis en la plantilla: {0}
 Template with placeholders. Use Jinja2 syntax: {{ variable_name }} or {{ variable | filter }},Plantilla con marcadores. Usa la sintaxis Jinja2: {{ variable_name }} o {{ variable | filter }}
 Tenant,Tenant
-Tenant ID,ID de tenant
-Tenant Secret,Secreto del tenant
-Tenant secret must be a string between {0} and {1} characters,El secreto del tenant debe ser una cadena de entre {0} y {1} caracteres
 Terms of Service URI,URI de los términos de servicio
 Terms of service URL,URL de los términos de servicio
-Terms version is required. Please accept the Terms and Conditions.,Se requiere la versión de los términos. Acepta los Términos y Condiciones.
 Test AIDA APIs,Probar las APIs de AIDA
 Test connections,Probar conexiones
 Testing AIDA API connections...,Probando las conexiones a las APIs de AIDA...
@@ -890,29 +709,20 @@ The Frappe app that provides this tool,La app de Frappe que proporciona esta her
 "The PA widget did not respond. It may be closed, on a page where it is not mounted, or the user navigated away. Continue without browser data.","El widget de PA no ha respondido. Puede estar cerrado, estar en una página donde no está montado o el usuario ha navegado a otra página. Continúa sin datos del navegador."
 The assistant needs your approval,El asistente necesita tu aprobación
 The audio file is too large.,El archivo de audio es demasiado grande.
-The billing service rejected the request.,El servicio de facturación ha rechazado la solicitud.
 "The browser started the operation but did not finish in time. If capturing a screenshot, retry with full_page=false or a narrower selector.","El navegador ha iniciado la operación pero no ha terminado a tiempo. Si estás capturando una pantalla, reintenta con full_page=false o con un selector más acotado."
-The cloud server is temporarily unavailable. Please try again in a few minutes.,El servidor en la nube no está disponible temporalmente. Inténtalo de nuevo en unos minutos.
 The message is too long (maximum {0} characters).,El mensaje es demasiado largo (máximo {0} caracteres).
 The plugin that provides this tool,El plugin que proporciona esta herramienta
 The response ended unexpectedly. Please try again.,La respuesta ha terminado de forma inesperada. Inténtalo de nuevo.
 The response is taking longer than expected. It may still appear when ready — try sending a new message to check.,La respuesta está tardando más de lo esperado. Puede que aparezca cuando esté lista: prueba a enviar un mensaje nuevo para comprobarlo.
 The template this version was derived from,La plantilla de la que deriva esta versión
 The user did not respond to the approval prompt in time. Ask them whether to try again rather than retrying automatically.,El usuario no ha respondido a tiempo a la solicitud de aprobación. Pregúntale si quiere reintentar en lugar de reintentar automáticamente.
-"The {0} account has no email address of its own ({1} is Frappe's default), so it cannot own this workspace. Set a real email on that user, or sign in as a named user, then register.","La cuenta {0} no tiene un correo electrónico propio ({1} es el valor predeterminado de Frappe), así que no puede ser propietaria de este espacio de trabajo. Asigna un correo real a ese usuario o inicia sesión con un usuario con nombre y luego regístrate."
-"The {0} account has no real email address ({1} is Frappe's default), so a cloud seat cannot be created for it. Set a real email on that user, or sign in as a named user, then try again.","La cuenta {0} no tiene un correo electrónico real ({1} es el valor predeterminado de Frappe), así que no se puede crear una plaza en la nube para ella. Asigna un correo real a ese usuario o inicia sesión con un usuario con nombre e inténtalo de nuevo."
 There is nothing pending to approve in this conversation.,No hay nada pendiente de aprobar en esta conversación.
 Thinking...,Pensando...
 This OAuth client is not allowed to use create_web_session,Este cliente OAuth no tiene permiso para usar create_web_session
-"This clears the tenant credentials this site signs its requests with. PA Chat stops working until the site is registered again.<br><br>Re-registration goes to <b>{0}</b> and creates a <b>new tenant</b> there. Any subscription, credits and history belonging to the current tenant stay where they are and are not carried over.","Esto borra las credenciales del tenant con las que este sitio firma sus solicitudes. PA Chat deja de funcionar hasta que el sitio se registre de nuevo.<br><br>El nuevo registro se envía a <b>{0}</b> y crea un <b>nuevo tenant</b> allí. Cualquier suscripción, crédito e historial del tenant actual permanece donde está y no se traslada."
 This feature is not available in AIDA mode.,Esta función no está disponible en el modo AIDA.
 "This is a system template and cannot be modified. Use ""Duplicate as Private"" to create your own version.","Esta es una plantilla del sistema y no se puede modificar. Usa ""Duplicar como privado"" para crear tu propia versión."
 This method is only meant for developer mode,Este método solo está pensado para el modo desarrollador
 This month,Este mes
-This site is not connected to the cloud service.,Este sitio no está conectado al servicio en la nube.
-This site isn't authenticated with the cloud service. Please re-register from PA Chat Settings and try again.,Este sitio no está autenticado en el servicio en la nube. Vuelve a registrarte desde PA Chat Settings e inténtalo de nuevo.
-This site isn't registered with the cloud service.,Este sitio no está registrado en el servicio en la nube.
-This site isn't registered yet. Please register from PA Chat Settings and try again.,Este sitio aún no está registrado. Regístralo desde PA Chat Settings e inténtalo de nuevo.
 "This skill is published to other users, so only an PA Admin or System Manager can change {0}. Set the status back to Draft (or the visibility to Private) first, or ask an admin to make the change.","Esta skill está publicada para otros usuarios, así que solo un PA Admin o un System Manager puede cambiar {0}. Vuelve a poner el estado en Borrador (o la visibilidad en Privada) primero, o pide a un administrador que haga el cambio."
 This template has no parameters.,Esta plantilla no tiene parámetros.
 Time,Hora
@@ -922,8 +732,6 @@ Tip: You can attach files for context-aware assistance,Consejo: puedes adjuntar 
 Tokens (Completion),Tokens (completado)
 Tokens (Prompt),Tokens (prompt)
 Tokens (Total),Tokens (total)
-"Too many registration attempts from this network. For security, new sites can only be registered a few times per day — please wait 24 hours before trying again, or contact support if you need immediate help.","Demasiados intentos de registro desde esta red. Por seguridad, los sitios nuevos solo se pueden registrar unas pocas veces al día: espera 24 horas antes de volver a intentarlo o contacta con soporte si necesitas ayuda inmediata."
-Too many requests right now. Please wait a few seconds and try again.,Demasiadas solicitudes en este momento. Espera unos segundos e inténtalo de nuevo.
 Tool,Herramienta
 Tool '{0}' {1},Herramienta '{0}': {1}
 Tool Cache Refresh Error,Error al refrescar la caché de herramientas
@@ -943,8 +751,6 @@ Tool registry refreshed,Registro de herramientas refrescado
 Tool registry view mode,Modo de vista del registro de herramientas
 Tools,Herramientas
 Transcribing…,Transcribiendo…
-Transient — set during email-verified registration; cleared on completion.,Transitorio: se establece durante el registro verificado por correo y se borra al completarlo.
-Transient — set during rebind flow; cleared on completion.,Transitorio: se establece durante el proceso de revinculación y se borra al completarlo.
 Transport Type,Tipo de transporte
 Transport protocol used for MCP communication. StreamableHTTP enables OAuth-based authentication.,Protocolo de transporte usado para la comunicación MCP. StreamableHTTP habilita la autenticación basada en OAuth.
 Trigger,Trigger
@@ -953,7 +759,6 @@ Type your answer...,Escribe tu respuesta...
 UI Preferences,Preferencias de interfaz
 UI Settings,Ajustes de la interfaz
 "UI blocks snapshot for rendering tool calls, thinking, interactions, and text","Instantánea de bloques de interfaz para renderizar llamadas a herramientas, razonamiento, interacciones y texto"
-Unable to validate promo code,No se ha podido validar el código promocional
 Understanding forms and data,Entender formularios y datos
 "Unique identifier (lowercase, alphanumeric with hyphens)","Identificador único (minúsculas, alfanumérico con guiones)"
 "Unique identifier for the plugin (e.g., core, visualization, data_science)","Identificador único del plugin (p. ej., core, visualization, data_science)"
@@ -961,15 +766,10 @@ Understanding forms and data,Entender formularios y datos
 "Unique identifier for the tool (e.g., get_document, create_document)","Identificador único de la herramienta (p. ej., get_document, create_document)"
 Unique identifier for this MCP server instance. Used in MCP initialization handshake.,Identificador único de esta instancia del servidor MCP. Se usa en el handshake de inicialización de MCP.
 "Unique identifier used in MCP protocol (e.g., 'sales_analysis_report'). Must be lowercase with underscores or hyphens.","Identificador único usado en el protocolo MCP (p. ej., 'sales_analysis_report'). Debe estar en minúsculas con guiones bajos o guiones."
-Unique tenant identifier from the cloud service,Identificador único del tenant en el servicio en la nube
-Unknown DocType: '{0}'. Pick one from the dropdown.,DocType desconocido: '{0}'. Elige uno de la lista desplegable.
 Unknown browser tool state,Estado de la herramienta del navegador desconocido
-Unknown checkout purpose: {0},Propósito de checkout desconocido: {0}
 Unknown error,Error desconocido
 Unknown error occurred,Se ha producido un error desconocido
 Unknown or expired browser tool call_id,call_id de herramienta del navegador desconocido o caducado
-Unknown rule mode.,Modo de regla desconocido.
-Unknown status.,Estado desconocido.
 Unsupported audio file type.,Tipo de archivo de audio no admitido.
 Unused arguments: {0},Argumentos sin usar: {0}
 Updated At,Actualizado el
@@ -977,31 +777,24 @@ Updated just now,Actualizado ahora mismo
 Updated {0},{0} actualizado
 Updated {0}m ago,Actualizado hace {0} min
 Updated {0}s ago,Actualizado hace {0} s
-Upgrade Now,Mejorar ahora
-Upgrade your plan or purchase additional credits.,Mejora tu plan o compra créditos adicionales.
-Upgrade your plan or purchase credits to continue using AIDA.,Mejora tu plan o compra créditos para seguir usando AIDA.
 Uploading file...,Subiendo archivo...
 Use,Usar
 Use Count,Número de usos
 Used {0}x,Usada {0} veces
 User,Usuario
-User ID is required,Se requiere el ID de usuario
 User stopped this stream before it finished. Partial content is kept.,El usuario detuvo esta transmisión antes de que terminara. Se conserva el contenido parcial.
-User {0} added successfully,Usuario {0} añadido correctamente
 User {0} does not exist,El usuario {0} no existe
 Using {0}...,Usando {0}...
 Validation Error,Error de validación
 Validation Pattern,Patrón de validación
 Validation Rules,Reglas de validación
 "Variable name used in template (e.g., 'analysis_type'). Must be a valid Python identifier.","Nombre de variable usado en la plantilla (p. ej., 'analysis_type'). Debe ser un identificador de Python válido."
-Verification email sent to {0}. Click the link in your email to finish registration.,Correo de verificación enviado a {0}. Haz clic en el enlace del correo para terminar el registro.
 Verification failed,Verificación fallida
 Version History,Historial de versiones
 Version Information,Información de versión
 Version Notes,Notas de la versión
 Version does not belong to this prompt,La versión no pertenece a este prompt
 Version restored successfully,Versión restaurada correctamente
-View Billing,Ver facturación
 View Full Session,Ver sesión completa
 View Session Messages,Ver mensajes de la sesión
 View all,Ver todo
@@ -1014,31 +807,24 @@ Viewing {0}: {1},Viendo {0}: {1}
 Voice API,API de voz
 Voice API Key,Clave de API de voz
 Voice API URL,URL de la API de voz
-Voice API error {0}: {1},Error de la API de voz {0}: {1}
 Voice error — try again.,Error de voz: inténtalo de nuevo.
 Voice input,Entrada de voz
 Wait for the current answer to finish.,Espera a que termine la respuesta actual.
 Waiting for 1 more decision,Esperando 1 decisión más
 Waiting for {0} more decisions,Esperando {0} decisiones más
-Waitlisted,En lista de espera
 Warning: Defined arguments not used in template: {0},Aviso: hay argumentos definidos que no se usan en la plantilla: {0}
 Warning: Template uses undefined arguments: {0},Aviso: la plantilla usa argumentos no definidos: {0}
 Welcome to AIDA!,¡Te damos la bienvenida a AIDA!
 What this prompt template does - shown in MCP prompts/list,Qué hace esta plantilla de prompt; se muestra en prompts/list de MCP
-When capabilities were last cached,Cuándo se almacenaron en caché las capacidades por última vez
 "When disabled, all tools from this plugin will be hidden from MCP","Si está desactivado, todas las herramientas de este plugin se ocultarán de MCP"
 "When disabled, this tool will be hidden from MCP tools/list","Si está desactivada, esta herramienta se ocultará de tools/list de MCP"
 "When enabled, a daily scheduler purges old archived conversations according to the retention window below. Disable to retain messages indefinitely.","Si está activado, una tarea diaria purga las conversaciones archivadas antiguas según la ventana de retención indicada abajo. Desactívalo para conservar los mensajes indefinidamente."
 When this plugin was first discovered,Cuándo se descubrió este plugin por primera vez
 When this plugin was last enabled or disabled,Cuándo se activó o desactivó este plugin por última vez
-Which AR server this site talks to. Read-only: set it per site with `bench --site <site> set-config pa_cloud_url <url>`. Refreshed on migrate.,Con qué servidor AR habla este sitio. Solo lectura: configúralo por sitio con `bench --site <site> set-config pa_cloud_url <url>`. Se actualiza al migrar.
-Which rule?,¿Qué regla?
 Widget Position,Posición del widget
 Widget Theme,Tema del widget
 Widget on Desk,Widget en el escritorio
 Workflow,Workflow
-Workflow Display Name,Nombre visible del workflow
-Workflow Docname,Workflow Docname
 Workflow Execution Error,Error de ejecución del workflow
 Working through 1 step…,Trabajando en 1 paso…
 Working through {0} steps…,Trabajando en {0} pasos…
@@ -1046,7 +832,6 @@ Workspace: {0},Espacio de trabajo: {0}
 Write,Escritura
 Write a message before sending.,Escribe un mensaje antes de enviarlo.
 Yes,Sí
-You are not enabled for AIDA.,No tienes AIDA activado.
 You are not the owner of this browser tool call,No eres el propietario de esta llamada a la herramienta del navegador
 You can only cancel your own conversation,Solo puedes cancelar tu propia conversación
 You can only continue your own conversation,Solo puedes continuar tu propia conversación
@@ -1056,79 +841,36 @@ You do not have permission to use AIDA.,No tienes permiso para usar AIDA.
 You don't have permission to access this prompt,No tienes permiso para acceder a este prompt
 You don't have permission to access this skill,No tienes permiso para acceder a esta skill
 You're all set,Todo listo
-You've been invited to the assistant team,Has sido invitado al equipo del asistente
-You've reached your monthly quota limit,Has alcanzado el límite de tu cuota mensual
-You've used {0}% of your monthly quota,Has usado el {0}% de tu cuota mensual
 Your AIDA session has expired. Please contact your administrator to re-authorize the connection.,Tu sesión de AIDA ha caducado. Contacta con tu administrador para reautorizar la conexión.
 Your AIDA workspace is ready,Tu espacio de trabajo de AIDA está listo
-Your Frappe site connection is managed automatically and cannot be {0}.,La conexión de tu sitio Frappe se gestiona automáticamente y no se puede {0}.
-Your account has not been set up yet. Ask your admin to add you from Settings > Users.,Tu cuenta aún no está configurada. Pide a tu administrador que te añada desde Ajustes > Usuarios.
-Your account has not been set up yet. Please ask your administrator to add you from Settings > Users.,Tu cuenta aún no está configurada. Pide a tu administrador que te añada desde Ajustes > Usuarios.
-Your account has not been set up. Ask your admin to add you.,Tu cuenta no está configurada. Pide a tu administrador que te añada.
-Your administrator needs to add you to AIDA. Please ask them to add you from Settings > Users.,Tu administrador debe añadirte a AIDA. Pídele que te añada desde Ajustes > Usuarios.
 Your intelligent assistant from pibiCo,Tu asistente inteligente de pibiCo
 Your intelligent assistant from pibiCo. I can help you with:,Tu asistente inteligente de pibiCo. Puedo ayudarte con:
-Your monthly quota is used up,Tu cuota mensual se ha agotado
-Your quota resets at the start of next month.,Tu cuota se restablece a principios del próximo mes.
-Your quota will reset at the beginning of next month.,Tu cuota se restablecerá a principios del próximo mes.
-"Your subscription is scheduled to cancel at the end of the billing period. Keep your current plan first, then change plans.",Tu suscripción está programada para cancelarse al final del periodo de facturación. Mantén primero tu plan actual y después cambia de plan.
 an AI chat assistant inside Frappe.,un asistente de chat con IA dentro de Frappe.
 anthropic,anthropic
 assistant Server Settings,Ajustes del servidor del asistente
 call_id is required,Se requiere call_id
-changed_fields is only valid when doctype_event is 'on_update'.,changed_fields solo es válido cuando doctype_event es 'on_update'.
 content is required,Se requiere el contenido
-conversation_id is required,Se requiere conversation_id
 conversion failed,la conversión ha fallado
 create_web_session requires OAuth Bearer authentication,create_web_session requiere autenticación OAuth Bearer
-cron_expression is required,Se requiere cron_expression
 disabled,desactivado
-document_id is required,Se requiere document_id
 enabled,activado
 file_url is required,Se requiere file_url
-"filters must be a JSON array of {fieldname, operator, value} objects.","filters debe ser un array JSON de objetos {fieldname, operator, value}."
-filters must be a JSON array.,filters debe ser un array JSON.
-graph_json is required,Se requiere graph_json
 interrupt_response is required,Se requiere interrupt_response
-listing and reason are required,Se requieren listing y reason
-listing is required,Se requiere listing
-memory_id is required,Se requiere memory_id
 message_id is required,Se requiere message_id
 name is required,Se requiere name
-node_id is required,Se requiere node_id
-node_json is required,Se requiere node_json
-notification_id is required,Se requiere notification_id
 ollama,ollama
 openai,openai
-params must be an object,params debe ser un objeto
-"preference must be one of: ask, always_allow, block","preference debe ser uno de: ask, always_allow, block"
 prompt_name is required,Se requiere prompt_name
 purpose='link_value' needs a doctype — the Link field's target.,purpose='link_value' necesita un doctype: el destino del campo Link.
-rating must be between 1 and 5,rating debe estar entre 1 y 5
 redirect_uri must use paomobile:// or match the site origin,redirect_uri debe usar paomobile:// o coincidir con el origen del sitio
 replace,reemplazar
-run_name is required,Se requiere run_name
-session_id is required,Se requiere session_id
 supplementary,complementario
-ticket_id is required,Se requiere ticket_id
 tokens/s,tokens/s
-tool_name is required,Se requiere tool_name
-user_id is required,Se requiere user_id
-workflow_id is required,Se requiere workflow_id
-workflow_name is required,Se requiere workflow_name
 {0} AIDA service(s) with problems,{0} servicio(s) de AIDA con problemas
-{0} invited you to the assistant workspace as {1}. Open the assistant and start chatting to join.,{0} te ha invitado al espacio de trabajo del asistente como {1}. Abre el asistente y empieza a chatear para unirte.
-{0} is Frappe's default address and cannot receive the verification email. Enter a real owner email address.,{0} es la dirección predeterminada de Frappe y no puede recibir el correo de verificación. Introduce una dirección de correo real del propietario.
 {0} list,Lista de {0}
 {0} of {1} tools updated,{0} de {1} herramientas actualizadas
 "{0} providers, {1} models loaded","{0} proveedores, {1} modelos cargados"
 {0} tools match,{0} herramientas coinciden
-{fieldname} is required.,{fieldname} es obligatorio.
-{fieldname} must be a float.,{fieldname} debe ser un número decimal.
-{fieldname} must be a string.,{fieldname} debe ser una cadena de texto.
-{fieldname} must be an integer.,{fieldname} debe ser un número entero.
-{fieldname} must be one of: {options}.,{fieldname} debe ser uno de: {options}.
-● Approval needed,● Aprobación necesaria
 AIDA returned an empty answer. Please try again.,AIDA devolvió una respuesta vacía. Inténtalo de nuevo.
 The answer was cut off before it finished. Please try again.,La respuesta se cortó antes de terminar. Inténtalo de nuevo.
 The message is too long.,El mensaje es demasiado largo.
@@ -1154,7 +896,6 @@ Show Less,Mostrar menos
 No conversations yet,Aún no hay conversaciones
 Start a new chat to begin,Empieza un chat nuevo
 Archive conversation,Archivar conversación
-Archive?,¿Archivar?
 Confirm archive,Confirmar archivado
 Archiving...,Archivando...
 Couldn't archive the conversation.,No se pudo archivar la conversación.
@@ -1170,18 +911,6 @@ Good afternoon,Buenas tardes
 Good evening,Buenas noches
 What should we work through today?,¿En qué trabajamos hoy?
 Or try one of these,O prueba una de estas
-Summarise a document,Resumir un documento
-Paste text or attach a file,Pega texto o adjunta un archivo
-Draft a professional email,Redactar un correo profesional
-Tell me the context and tone,Dime el contexto y el tono
-Translate a text,Traducir un texto
-"Between Spanish, English and more","Entre español, inglés y más"
-Explain a concept simply,Explicar un concepto con sencillez
-"Step by step, with examples","Paso a paso, con ejemplos"
-Summarise the document I will share with you.,Resume el documento que voy a compartir contigo.
-Help me draft a professional email.,Ayúdame a redactar un correo profesional.
-Translate a text for me.,Tradúceme un texto.
-Explain a concept to me in simple terms.,Explícame un concepto en términos sencillos.
 You,Tú
 Copy message,Copiar mensaje
 Copied,Copiado
@@ -1190,7 +919,6 @@ Stopped.,Detenido.
 Latest,Último
 Latest · responding,Último · respondiendo
 Loading conversation...,Cargando conversación...
-This conversation is empty.,Esta conversación está vacía.
 We couldn't find this conversation.,No encontramos esta conversación.
 Couldn't load this conversation.,No se pudo cargar esta conversación.
 Try again,Reintentar
@@ -1210,7 +938,6 @@ Attach a file,Adjuntar un archivo
 Stop generating,Detener generación
 Stopping...,Deteniendo...
 Remove file,Quitar archivo
-Messages can be up to 20000 characters.,Los mensajes pueden tener hasta 20000 caracteres.
 Wait for the answer or press Stop,Espera la respuesta o pulsa Detener
 {0} send,{0} enviar
 {0} new line,{0} nueva línea
@@ -1230,7 +957,6 @@ Couldn't upload {0}. Try a smaller file or a different format.,No se pudo subir 
 You can attach up to {0} files.,Puedes adjuntar hasta {0} archivos.
 Couldn't transcribe. Try again or type instead.,No se pudo transcribir. Inténtalo de nuevo o escribe.
 Couldn't start recording. Try again.,No se pudo iniciar la grabación. Inténtalo de nuevo.
-Voice input isn't supported in this browser.,La entrada de voz no es compatible con este navegador.
 Connection lost. Replies may be delayed.,Conexión perdida. Las respuestas pueden retrasarse.
 Reconnecting...,Reconectando...
 Appearance,Apariencia
@@ -1323,7 +1049,6 @@ Error resuming the interrupted response. Please try again.,Error al reanudar la 
 Error continuing the response. Please try again.,Error al continuar la respuesta. Inténtalo de nuevo.
 I ran the lookups but could not compose an answer. These are the raw results:,He hecho las consultas pero no he podido redactar una respuesta. Estos son los resultados en bruto:
 AIDA is not configured.,AIDA no está configurado.
-{0} is too long (maximum {1} characters),{0} es demasiado largo (máximo {1} caracteres)
 The file is too large.,El archivo es demasiado grande.
 AIDA is now connected to your ERP. You can ask questions about your business data in plain language and act on the answers.,AIDA ya está conectada a tu ERP. Ahora puedes hacer preguntas sobre tus datos de negocio en lenguaje natural y actuar sobre las respuestas.
 Three things you can try,Tres cosas que puedes probar
@@ -1347,7 +1072,6 @@ Successfully {0} {1} {2} tools,{1} herramientas {2} {0} correctamente
 Tool '{0}' category updated to '{1}',Categoría de la herramienta '{0}' actualizada a '{1}'
 Invalid mode. Must be one of: {0},Modo no válido. Debe ser uno de: {0}
 Tool '{0}' role access updated,Acceso por roles de la herramienta '{0}' actualizado
-Plugin '{0}' {1} successfully,Plugin '{0}' {1} correctamente
 DocType {0} does not exist,El DocType {0} no existe
 Prompt arguments must be an object,Los argumentos del prompt deben ser un objeto
 Invalid value for field {0}: must be one of {1},Valor no válido para el campo {0}: debe ser uno de {1}
@@ -1356,15 +1080,6 @@ Invalid value for field {0}: must be at most {1},Valor no válido para el campo 
 Invalid value for field {0}: must be at least {1} characters,Valor no válido para el campo {0}: debe tener al menos {1} caracteres
 Invalid value for field {0}: must be at most {1} characters,Valor no válido para el campo {0}: debe tener como máximo {1} caracteres
 {0} {1} not found,{0} {1} no encontrado
-Could not load dashboard data,No se pudieron cargar los datos del panel
-DocType '{0}' does not exist,El DocType '{0}' no existe
-DocType '{0}' exists,El DocType '{0}' existe
-No tools are loaded; enable a plugin,No hay herramientas cargadas; activa un plugin
-{0} tools loaded,{0} herramientas cargadas
-No tool errors today,Sin errores de herramientas hoy
-High tool failure rate: {0}%,Tasa de fallos de herramientas alta: {0} %
-Tool execution health good: {0}% failure rate,Ejecución de herramientas correcta: {0} % de fallos
-Health check failed,La comprobación de estado ha fallado
 Couldn't load your conversations.,No se pudieron cargar tus conversaciones.
 Create a purchase invoice from a PDF,Crear una factura de compra desde un PDF
 Attach the supplier invoice,Adjunta la factura del proveedor

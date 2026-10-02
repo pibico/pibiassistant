@@ -56,14 +56,6 @@ dependencies = [
     "pymupdf>=1.24.0",  # PDF page rendering for Ollama vision OCR
     "python-magic>=0.4.27",
     "beautifulsoup4>=4.12,<5",  # Span Frappe v15 (~=4.12.2) and v16 (~=4.13.5) without forcing a downgrade
-
-    # Exact pin, not a floor. pibiAssistant and the SDK ship as a coupled pair: pibiAssistant calls
-    # methods that only exist from a given release onward, and a floor lets pip
-    # resolve to an older published version that lacks them — which surfaces as
-    # AttributeError at runtime, in production, rather than at install time.
-    # Local dev overrides this with `pip install -e apps/assistant_runtime_sdk`;
-    # UAT pins an exact prerelease (e.g. ==1.6.0rc1).
-    "assistant_runtime_sdk==1.9.0",
 ]
 
 [project.optional-dependencies]

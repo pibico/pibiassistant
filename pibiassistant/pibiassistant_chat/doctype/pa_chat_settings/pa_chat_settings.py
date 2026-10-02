@@ -15,18 +15,16 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-PA Chat Settings - Global configuration for PA Chat.
+PA Chat Settings - UI and retention configuration for PA Chat.
 
-Note: Models are now fetched from Assistant Runtime via the api.py module.
+AIDA runs natively on its own API services (configured in PA Core Settings), so
+this single holds no connection state, only the widget and retention options.
 """
 
 from frappe.model.document import Document
 
 
 class PAChatSettings(Document):
-    """PA Chat Settings - Global configuration for AR integration"""
+    """PA Chat Settings - global UI and retention options for PA Chat"""
 
-    def before_save(self):
-        from pibiassistant.pibiassistant_chat.tenant_credentials import preserve_tenant_secret_on_save
-
-        preserve_tenant_secret_on_save(self)
+    pass

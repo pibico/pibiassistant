@@ -118,9 +118,6 @@ class TestPAChatUserPreferencesDoctype(BaseAssistantTest):
         frappe.set_user("Administrator")
         # Force chat ON so _build_access returns the full payload (not early-return)
         frappe.db.set_single_value("PA Core Settings", "enable_pa_chat", 1)
-        frappe.db.set_single_value("PA Chat Settings", "registration_status", "Registered")
-        frappe.db.set_single_value("PA Chat Settings", "tenant_id", "test-tenant-id")
-        frappe.db.set_single_value("PA Chat Settings", "tenant_secret", "test-tenant-secret")
         from pibiassistant.pibiassistant_chat.gate import clear_chat_gate_cache
 
         clear_chat_gate_cache()

@@ -31,8 +31,6 @@ def get_aida_status() -> dict:
     """
     _require_system_manager()
     try:
-        settings = frappe.get_single("PA Chat Settings")
-
         from frappe.query_builder.functions import Count
         from frappe.utils import get_first_day, now
 
@@ -58,10 +56,10 @@ def get_aida_status() -> dict:
         aida = _aida_mode()
         return {
             "status": "active"
-            if chat_enabled and (aida or settings.registration_status == "Registered")
+            if chat_enabled and aida
             else "disabled",
             "enabled": chat_enabled,
-            "registration_status": "Registered" if aida else settings.registration_status,
+            "registration_status": "Registered" if aida else "Not Registered",
             "subscription_plan": "AIDA" if aida else snap.get("plan", "Not Registered"),
             "stats": {
                 "total_conversations": total_conversations,
