@@ -33,7 +33,7 @@
   height: var(--aida-topbar-h);
   padding: var(--aida-safe-top) calc(var(--aida-s-3) + var(--aida-safe-right)) 0 calc(var(--aida-s-4) + var(--aida-safe-left));
   background: var(--aida-surface);
-  border-bottom: 1px solid var(--aida-border);
+  box-shadow: var(--aida-shadow-sm);
 }
 .aida-topbar__burger { display: none; width: var(--aida-tap); height: var(--aida-tap); flex: none; }
 .aida-topbar__title {
@@ -41,8 +41,10 @@
   min-width: 0;
   margin: 0;
   overflow: hidden;
+  font-family: var(--aida-font-heading);
   font-size: var(--aida-fs-h3);
   font-weight: 600;
+  line-height: var(--aida-lh);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -77,32 +79,34 @@
   font-size: var(--aida-fs-xs);
   font-weight: 600;
   letter-spacing: .08em;
+  line-height: var(--aida-lh);
   text-transform: uppercase;
   color: var(--aida-text-muted);
 }
 .aida-welcome__greeting {
   margin: var(--aida-s-2) 0 0;
+  font-family: var(--aida-font-heading);
   font-size: var(--aida-fs-greeting);
   font-weight: 700;
-  line-height: 1.06;
-  letter-spacing: -.012em;
+  line-height: var(--aida-lh);
+  letter-spacing: 0;
   text-wrap: balance;
   overflow-wrap: anywhere;
 }
-.aida-welcome__sub { margin: var(--aida-s-2) 0 0; font-size: var(--aida-fs-body); color: var(--aida-text-secondary); }
+.aida-welcome__sub { margin: var(--aida-s-2) 0 0; line-height: var(--aida-lh-read); font-size: var(--aida-fs-body); color: var(--aida-text-secondary); }
 .aida-welcome__avatar {
   flex: none;
   width: var(--aida-avatar-hero);
   height: var(--aida-avatar-hero);
   object-fit: cover;
-  border: 1px solid var(--aida-border);
+  border: 0;
   border-radius: var(--aida-r-circle);
   box-shadow: var(--aida-shadow-md);
 }
 .aida-welcome__rule {
   height: 2px;
   margin-top: var(--aida-s-3);
-  background: linear-gradient(90deg, var(--aida-gold) 0 56px, var(--aida-border) 56px);
+  background: var(--aida-border);
 }
 .aida-welcome__composer { min-width: 0; }
 .aida-welcome__header,

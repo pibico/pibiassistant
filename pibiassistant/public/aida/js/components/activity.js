@@ -1,6 +1,7 @@
 import { h } from "../lib/dom.js";
 import { __ } from "../lib/i18n.js";
 import { icon } from "./icons.js";
+import { openPanel } from "./panel.js";
 
 const ARGS_MAX_CHARS = 4000;
 
@@ -39,10 +40,22 @@ export function approvalCard(approval, { onDecide, disabled = false }) {
     approval.toolName ? h("span", { class: "aida-approval__tool" }, approval.toolName) : null,
   );
   const details = h(
-    "details",
-    { class: "aida-approval__details" },
-    h("summary", null, __("Details")),
-    h("pre", { class: "aida-approval__args" }, argsText(approval.input)),
+    "button",
+    {
+      type: "button",
+      class: "aida-link-btn aida-approval__details",
+      "aria-haspopup": "dialog",
+      onClick: () => openPanel({
+        title: approval.action || approval.toolName || __("Details"),
+        body: [
+          approval.toolName ? h("p", { class: "aida-approval__tool" }, approval.toolName) : null,
+          h("pre", { class: "aida-approval__args" }, argsText(approval.input)),
+        ],
+        footer: [],
+      }),
+    },
+    icon("info", 14),
+    __("Details"),
   );
   const decision = (response, label, cls) =>
     h("button", { type: "button", class: ["aida-btn", cls], disabled, onClick: () => onDecide(approval.id, response) }, label);

@@ -7,7 +7,8 @@
   height: 100%;
   min-height: 0;
   background: var(--aida-surface);
-  border-right: 1px solid var(--aida-border);
+  box-shadow: var(--aida-shadow-sm);
+  z-index: 1;
 }
 .aida-sidebar__header {
   display: flex;
@@ -16,7 +17,6 @@
   flex: none;
   height: var(--aida-topbar-h);
   padding: 0 var(--aida-s-3);
-  border-bottom: 1px solid var(--aida-border);
 }
 .aida-logo {
   width: var(--aida-avatar-nav);
@@ -26,7 +26,8 @@
   flex: none;
 }
 .aida-wordmark {
-  font-size: 18px;
+  font-family: var(--aida-font-heading);
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--aida-accent-hover);
   letter-spacing: .01em;
@@ -51,7 +52,7 @@
   border-radius: var(--aida-r-md);
   transition: background-color var(--aida-dur-color), color var(--aida-dur-color);
 }
-.aida-nav__item:hover { background: var(--aida-subtle); }
+.aida-nav__item:hover { background: var(--aida-accent-soft); }
 .aida-nav__item[aria-current="page"] { background: var(--aida-accent-soft); color: var(--aida-accent-hover); }
 
 /* Recent chats */
@@ -60,7 +61,6 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  border-top: 1px solid var(--aida-border);
 }
 .aida-recent__head {
   display: flex;
@@ -68,10 +68,10 @@
   justify-content: space-between;
   flex: none;
   padding: var(--pad-y-sm) var(--aida-s-3);
-  border-bottom: 1px solid var(--aida-border);
 }
 .aida-recent__title {
   margin: 0;
+  font-family: var(--aida-font-heading);
   font-size: var(--aida-fs-xs);
   font-weight: 600;
   letter-spacing: .05em;
@@ -108,7 +108,7 @@
   flex: none;
   min-height: 28px;
   margin: 0 var(--aida-s-2) var(--pad-y-md);
-  font: 500 var(--aida-fs-sm) var(--aida-font-sans);
+  font: 500 var(--aida-fs-sm)/var(--aida-lh) var(--aida-font-button);
   color: var(--aida-text-secondary);
   background: none;
   border: 0;
@@ -123,12 +123,11 @@
   align-items: center;
   gap: var(--aida-s-1);
   margin-bottom: var(--pad-y-xs);
-  border-left: 3px solid transparent;
   border-radius: var(--aida-r-md);
   transition: background-color var(--aida-dur-color);
 }
-.aida-chat-item:hover { background: var(--aida-subtle); }
-.aida-chat-item.is-active { background: var(--aida-accent-soft); border-left-color: var(--aida-accent); }
+.aida-chat-item:hover { background: var(--aida-accent-soft); }
+.aida-chat-item.is-active { background: var(--aida-accent-soft); }
 .aida-chat-item__main {
   flex: 1;
   min-width: 0;
@@ -173,9 +172,6 @@
 .aida-chat-item:hover .aida-chat-item__delete,
 .aida-chat-item:focus-within .aida-chat-item__delete { opacity: 1; }
 .aida-chat-item__delete:hover { color: var(--aida-danger); background: var(--aida-danger-soft); }
-.aida-chat-item.is-confirming { padding: var(--aida-s-1) var(--aida-s-2) var(--aida-s-1) var(--aida-s-3); background: var(--aida-danger-soft); }
-.aida-chat-item__ask { flex: 1; font-size: var(--aida-fs-sm); font-weight: 500; color: var(--aida-danger); }
-.aida-chat-item__confirm { color: var(--aida-danger); }
 .aida-chat-item.is-deleting { padding: var(--pad-y-sm) var(--aida-s-3); opacity: .5; pointer-events: none; }
 .aida-chat-item.is-deleting .aida-chat-item__title { flex: 1; }
 
@@ -185,7 +181,6 @@
   flex: none;
   padding: var(--aida-s-2);
   padding-bottom: calc(var(--aida-s-2) + var(--aida-safe-bottom));
-  border-top: 1px solid var(--aida-border);
 }
 .aida-user__trigger {
   display: flex;
@@ -194,7 +189,7 @@
   width: 100%;
   min-height: 36px;
   padding: var(--pad-y-xs) var(--aida-s-2);
-  font: 500 var(--aida-fs-base) var(--aida-font-sans);
+  font: 500 var(--aida-fs-base)/var(--aida-lh) var(--aida-font-sans);
   color: var(--aida-text);
   text-align: left;
   background: none;

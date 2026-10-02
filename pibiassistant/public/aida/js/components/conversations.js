@@ -5,14 +5,13 @@ import { groupSessions, sessionTime } from "../lib/format.js";
 import { archiveSession, newChat } from "../lib/chat.js";
 import { chatPath } from "../router.js";
 import { icon } from "./icons.js";
+import { confirm } from "./dialog.js";
 
 const COLLAPSED_COUNT = 5;
 
 export function createConversations() {
-  let confirmingId = null;
   let deletingId = null;
   let showAll = false;
-  let focusConfirm = false;
 
   const list = h("ul", { class: "aida-recent__list" });
   const more = h("button", { type: "button", class: "aida-recent__more", hidden: true });
@@ -40,24 +39,6 @@ export function createConversations() {
         h("span", { class: "aida-spinner", role: "status", "aria-label": __("Archiving...") }),
       );
     }
-    if (s.session_id === confirmingId) {
-      focusConfirm = true;
-      return h(
-        "li",
-        { class: "aida-chat-item is-confirming" },
-        h("span", { class: "aida-chat-item__ask" }, __("Archive?")),
-        h(
-          "button",
-          { type: "button", class: "aida-icon-btn aida-chat-item__confirm", "aria-label": __("Confirm archive"), title: __("Confirm archive"), onClick: () => doArchive(s.session_id) },
-          icon("check", 16),
-        ),
-        h(
-          "button",
-          { type: "button", class: "aida-icon-btn aida-chat-item__cancel", "aria-label": __("Cancel"), title: __("Cancel"), onClick: () => setConfirming(null) },
-          icon("x", 16),
-        ),
-      );
-    }
     return h(
       "li",
       { class: ["aida-chat-item", active && "is-active"] },
@@ -69,7 +50,7 @@ export function createConversations() {
       ),
       h(
         "button",
-        { type: "button", class: "aida-chat-item__delete", "aria-label": __("Archive conversation"), title: __("Archive conversation"), onClick: () => setConfirming(s.session_id) },
+        { type: "button", class: "aida-chat-item__delete", "aria-label": __("Archive conversation"), title: __("Archive conversation"), onClick: () => askArchive(s.session_id) },
         icon("trash", 16),
       ),
     );
@@ -77,7 +58,6 @@ export function createConversations() {
 
   function render() {
     const { sessions, sessionsState, activeSessionId } = store.get();
-    focusConfirm = false;
     if (!sessions.length) {
       const loading = sessionsState === "idle" || sessionsState === "loading";
       list.replaceChildren(
@@ -102,17 +82,24 @@ export function createConversations() {
     );
     more.hidden = sessions.length <= COLLAPSED_COUNT;
     more.textContent = showAll ? __("Show Less") : __("Show All ({0})", sessions.length);
-    if (focusConfirm) list.querySelector(".aida-chat-item__cancel")?.focus();
   }
 
-  function setConfirming(id) {
-    confirmingId = id;
-    render();
-    if (id === null) list.querySelector(".aida-chat-item__delete")?.focus();
+  async function askArchive(id) {
+    const streamingHere = store.get().streaming.active && id === store.get().activeSessionId;
+    if (!streamingHere) {
+      const ok = await confirm({
+        title: __("Archive conversation"),
+        message: __("Archive this conversation?"),
+        confirmLabel: __("Confirm archive"),
+        cancelLabel: __("Cancel"),
+        danger: true,
+      });
+      if (!ok) return;
+    }
+    doArchive(id);
   }
 
   async function doArchive(id) {
-    confirmingId = null;
     deletingId = id;
     render();
     await archiveSession(id);

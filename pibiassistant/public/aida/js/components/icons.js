@@ -33,6 +33,7 @@ const PH = {
   "check-circle": "check-circle",
   "warning-circle": "warning-circle",
   "shield-warning": "shield-warning",
+  info: "info",
 };
 
 export function icon(name, size = 20) {

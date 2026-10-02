@@ -22,7 +22,7 @@ body {
   color: var(--aida-text);
   font-family: var(--aida-font-sans);
   font-size: var(--aida-fs-body);
-  line-height: 1.5;
+  line-height: var(--aida-lh);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -33,6 +33,19 @@ textarea,
 select {
   font: inherit;
   color: inherit;
+}
+
+button {
+  font-family: var(--aida-font-button);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--aida-font-heading);
+  line-height: var(--aida-lh);
+}
+
+code, pre, kbd, samp {
+  font-family: var(--aida-font-mono);
 }
 
 button {
@@ -71,7 +84,7 @@ a {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--aida-border) transparent;
+  scrollbar-color: var(--aida-border-hover) transparent;
 }
 
 ::-webkit-scrollbar {
@@ -84,7 +97,7 @@ a {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--aida-border);
+  background: var(--aida-border-hover);
   border-radius: var(--aida-r-pill);
 }
 
@@ -113,7 +126,7 @@ a {
   border-radius: var(--aida-r-md);
   background: var(--aida-surface);
   color: var(--aida-text);
-  border: 1px solid var(--aida-border);
+  box-shadow: var(--aida-shadow-sm);
   transform: translateY(-200%);
 }
 
