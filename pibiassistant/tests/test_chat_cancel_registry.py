@@ -59,6 +59,14 @@ class TestCancelStreamARPropagation(unittest.TestCase):
     """cancel_stream must reach AR, but never let AR block or break the
     local Stop the user is actually waiting on."""
 
+    def setUp(self):
+        # The cloud path always finalizes locally; AIDA mode is covered by test_chat_cancel_idle_session.
+        patcher = patch(
+            "pibiassistant.pibiassistant_chat.api.chat.aida_stream.is_aida_mode", return_value=False
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def _mock_frappe(self, fm):
         # No owning message row found -> ownership check and
         # _abort_pending_interactions's row lookup both no-op cleanly.

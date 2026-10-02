@@ -24,7 +24,7 @@ export function toolCardHtml(tool, { isToggling, isPanelOpen, searchTerm }) {
                     <div class="pa-tool-header">
                         <div class="pa-tool-title">
                             ${titleHtml}
-                            <span class="pa-category-badge ${esc(tool.category)}">${esc(tool.category_label)}</span>
+                            <span class="pa-category-badge ${esc(tool.category)}">${esc(__(tool.category_label))}</span>
                         </div>
                         <div class="pa-tool-actions">
                             <button class="pa-tool-settings-btn ${isPanelOpen ? 'active' : ''}"
@@ -49,7 +49,7 @@ export function toolCardHtml(tool, { isToggling, isPanelOpen, searchTerm }) {
                         <button type="button" class="pa-desc-toggle" aria-expanded="false">${__('Show more')}</button>
                     </div>
                     <div class="pa-tool-footer">
-                        <span class="pa-tool-badge">${esc(tool.plugin_display_name)}</span>
+                        <span class="pa-tool-badge">${esc(__(tool.plugin_display_name))}</span>
                         ${pluginDisabled ? '<span class="pa-plugin-disabled-notice"><i class="ph ph-warning-circle" aria-hidden="true"></i> ' + __('Plugin disabled') + '</span>' : ''}
                         ${tool.role_access_mode !== 'Allow All' ? '<span class="pa-tool-badge pa-tool-badge--lock"><i class="ph ph-lock" aria-hidden="true"></i> ' + __('Role restricted') + '</span>' : ''}
                     </div>

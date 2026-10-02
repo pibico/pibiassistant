@@ -86,13 +86,25 @@ class ChatGPTFetch(BaseTool):
             doc_id = arguments.get("id", "").strip()
 
             if not doc_id:
-                raise ValueError("Document ID is required")
+                raise frappe.ValidationError(_("Document ID is required"))
 
             # Parse ID format: "doctype/name"
             if "/" not in doc_id:
-                raise ValueError(f"Invalid document ID format. Expected 'doctype/name', got: {doc_id}")
+                raise frappe.ValidationError(
+                    _("Invalid document ID format. Expected 'doctype/name', got: {0}").format(doc_id)
+                )
 
             doctype, name = doc_id.split("/", 1)
+
+            if not frappe.db.exists("DocType", doctype):
+                raise frappe.ValidationError(_("Unknown DocType '{0}' in id '{1}'").format(doctype, doc_id))
+
+            if (
+                frappe.db.exists("DocType", doctype)
+                and frappe.has_permission(doctype, "read")
+                and not frappe.db.exists(doctype, name)
+            ):
+                raise frappe.DoesNotExistError(f"{doctype} {name}")
 
             # Layered permission check: role-based doctype gating + Frappe perms.
             # Mirrors the get_document tool so the ChatGPT fetch path doesn't
@@ -116,8 +128,7 @@ class ChatGPTFetch(BaseTool):
             text_content = self._format_document_as_text(doc_dict, doctype, name)
 
             # Generate URL for citation
-            site_url = frappe.utils.get_url()
-            url = f"{site_url}/app/{frappe.scrub(doctype)}/{name}"
+            url = frappe.utils.get_url_to_form(doctype, name)
 
             # Extract metadata
             metadata = {
@@ -130,19 +141,11 @@ class ChatGPTFetch(BaseTool):
             return {"id": doc_id, "title": title, "text": text_content, "url": url, "metadata": metadata}
 
         except frappe.DoesNotExistError:
-            error_msg = f"Document not found: {doc_id}"
-            frappe.log_error(title=_("ChatGPT Fetch Error"), message=error_msg)
-            raise ValueError(error_msg) from None
+            # Not a ValueError: the tool wrapper reports ValidationError subclasses without logging them.
+            raise frappe.DoesNotExistError(_("Document not found: {0}").format(doc_id)) from None
 
         except frappe.PermissionError as e:
-            error_msg = f"Permission denied: {str(e)}"
-            frappe.log_error(title=_("ChatGPT Fetch Permission Error"), message=error_msg)
-            raise ValueError(error_msg) from e
-
-        except ValueError:
-            # Input validation errors raised above ("Document ID is required",
-            # "Invalid document ID format", ...) — surface as-is.
-            raise
+            raise frappe.PermissionError(_("Permission denied: {0}").format(str(e))) from e
 
     def _format_document_as_text(self, doc_dict: Dict, doctype: str, name: str) -> str:
         """

@@ -1306,3 +1306,198 @@ Restore,Restaurar
 Continue,Continuar
 Close menu,Cerrar menú
 Transcription added. Review it and press send.,Transcripción añadida. Revísala y pulsa enviar.
+Close AIDA,Cerrar AIDA
+Approval needed,Aprobación necesaria
+navigate,navegar
+select,seleccionar
+close,cerrar
+Unnamed file,Archivo sin nombre
+KB,KB
+Create Document,Crear documento
+Update Document,Actualizar documento
+Delete Document,Eliminar documento
+Submit Document,Validar documento
+Invalid request parameters,Parámetros de solicitud no válidos
+Invalid pagination parameter,Parámetro de paginación no válido
+Error resuming the interrupted response. Please try again.,Error al reanudar la respuesta interrumpida. Inténtalo de nuevo.
+Error continuing the response. Please try again.,Error al continuar la respuesta. Inténtalo de nuevo.
+I ran the lookups but could not compose an answer. These are the raw results:,He hecho las consultas pero no he podido redactar una respuesta. Estos son los resultados en bruto:
+AIDA is not configured.,AIDA no está configurado.
+{0} is too long (maximum {1} characters),{0} es demasiado largo (máximo {1} caracteres)
+The file is too large.,El archivo es demasiado grande.
+AIDA is now connected to your ERP. You can ask questions about your business data in plain language and act on the answers.,AIDA ya está conectada a tu ERP. Ahora puedes hacer preguntas sobre tus datos de negocio en lenguaje natural y actuar sobre las respuestas.
+Three things you can try,Tres cosas que puedes probar
+Show me my top 10 customers by revenue,Muéstrame mis 10 mejores clientes por facturación
+Which sales orders are pending?,¿Qué pedidos de venta están pendientes?
+Summarize last month's sales,Resúmeme las ventas del mes pasado
+"Everything lives in your workspace: chat, documents, agents and settings. Open it with the button below.","Todo está en tu espacio de trabajo: chat, documentos, agentes y configuración. Ábrelo con el botón de abajo."
+Open your workspace,Abrir tu espacio de trabajo
+Need help? Use <strong>Help and Feedback</strong> inside the app and we will take care of it.,¿Necesitas ayuda? Usa <strong>Ayuda y Feedback</strong> dentro de la app y lo atenderemos.
+The pibiCo team,El equipo de pibiCo
+{0} on {1},{0} el {1}
+Tool '{0}' not found,Herramienta '{0}' no encontrada
+Tool '{0}' {1} successfully,Herramienta '{0}' {1} correctamente
+Failed to toggle {0} tools,No se pudieron cambiar {0} herramientas
+Successfully {0} {1} tools,{1} herramientas {0} correctamente
+Invalid category. Must be one of: {0},Categoría no válida. Debe ser una de: {0}
+Error querying tools: {0},Error al consultar las herramientas: {0}
+No tools found matching {0},No se encontraron herramientas que coincidan con {0}
+"{0} tools toggled, {1} failed","{0} herramientas cambiadas, {1} con error"
+Successfully {0} {1} {2} tools,{1} herramientas {2} {0} correctamente
+Tool '{0}' category updated to '{1}',Categoría de la herramienta '{0}' actualizada a '{1}'
+Invalid mode. Must be one of: {0},Modo no válido. Debe ser uno de: {0}
+Tool '{0}' role access updated,Acceso por roles de la herramienta '{0}' actualizado
+Plugin '{0}' {1} successfully,Plugin '{0}' {1} correctamente
+DocType {0} does not exist,El DocType {0} no existe
+Prompt arguments must be an object,Los argumentos del prompt deben ser un objeto
+Invalid value for field {0}: must be one of {1},Valor no válido para el campo {0}: debe ser uno de {1}
+Invalid value for field {0}: must be at least {1},Valor no válido para el campo {0}: debe ser al menos {1}
+Invalid value for field {0}: must be at most {1},Valor no válido para el campo {0}: debe ser como máximo {1}
+Invalid value for field {0}: must be at least {1} characters,Valor no válido para el campo {0}: debe tener al menos {1} caracteres
+Invalid value for field {0}: must be at most {1} characters,Valor no válido para el campo {0}: debe tener como máximo {1} caracteres
+{0} {1} not found,{0} {1} no encontrado
+Could not load dashboard data,No se pudieron cargar los datos del panel
+DocType '{0}' does not exist,El DocType '{0}' no existe
+DocType '{0}' exists,El DocType '{0}' existe
+No tools are loaded; enable a plugin,No hay herramientas cargadas; activa un plugin
+{0} tools loaded,{0} herramientas cargadas
+No tool errors today,Sin errores de herramientas hoy
+High tool failure rate: {0}%,Tasa de fallos de herramientas alta: {0} %
+Tool execution health good: {0}% failure rate,Ejecución de herramientas correcta: {0} % de fallos
+Health check failed,La comprobación de estado ha fallado
+Couldn't load your conversations.,No se pudieron cargar tus conversaciones.
+Create a purchase invoice from a PDF,Crear una factura de compra desde un PDF
+Attach the supplier invoice,Adjunta la factura del proveedor
+Create a purchase invoice from the PDF I will attach.,Crea una factura de compra a partir del PDF que voy a adjuntar.
+Who owes us money?,¿Quién nos debe dinero?
+Overdue receivables by customer,Cobros vencidos por cliente
+Show me the overdue sales invoices grouped by customer.,Muéstrame las facturas de venta vencidas agrupadas por cliente.
+Check stock levels,Revisar niveles de stock
+Items running low,Artículos con poco stock
+Which items are below their reorder level?,¿Qué artículos están por debajo de su nivel de reposición?
+Summarise my hours,Resumir mis horas
+Timesheets this week,Partes de horas de esta semana
+Summarise the hours logged in my timesheets this week.,Resume las horas registradas en mis partes de horas esta semana.
+Security: Empty query not allowed,Seguridad: no se permiten consultas vacías
+"Security: {0} operations not allowed in read-only mode. Only SELECT, SHOW, DESCRIBE, and EXPLAIN queries are permitted.","Seguridad: las operaciones {0} no están permitidas en modo de solo lectura. Solo se admiten consultas SELECT, SHOW, DESCRIBE y EXPLAIN."
+"Security: Only SELECT, SHOW, DESCRIBE, and EXPLAIN queries are allowed in read-only mode. Query starts with: {0}","Seguridad: en modo de solo lectura solo se admiten consultas SELECT, SHOW, DESCRIBE y EXPLAIN. La consulta empieza por: {0}"
+Security: Nested {0} operations not allowed in read-only mode,Seguridad: no se permiten operaciones {0} anidadas en modo de solo lectura
+Security: Database method '{0}' is not allowed in read-only mode. This method can modify data and is blocked for security.,Seguridad: el método de base de datos '{0}' no está permitido en modo de solo lectura. Puede modificar datos y está bloqueado por seguridad.
+Security: Database method '{0}' is not available in read-only mode. Available methods: {1},Seguridad: el método de base de datos '{0}' no está disponible en modo de solo lectura. Métodos disponibles: {1}
+Security: User '{0}' lacks System Manager role required for code execution. Current roles: {1},Seguridad: el usuario '{0}' no tiene el rol System Manager necesario para ejecutar código. Roles actuales: {1}
+Security: User '{0}' is disabled,Seguridad: el usuario '{0}' está desactivado
+This PDF file is damaged or cannot be read.,Este archivo PDF está dañado o no se puede leer.
+The voice service is unreachable. Please try again later.,El servicio de voz no está accesible. Inténtalo de nuevo más tarde.
+The voice service could not transcribe the audio (error {0}).,El servicio de voz no pudo transcribir el audio (error {0}).
+The voice service returned an invalid response.,El servicio de voz devolvió una respuesta no válida.
+The conversion service is unreachable. Please try again later.,El servicio de conversión no está accesible. Inténtalo de nuevo más tarde.
+The conversion service could not process this file (error {0}).,El servicio de conversión no pudo procesar este archivo (error {0}).
+The conversion service returned an invalid response.,El servicio de conversión devolvió una respuesta no válida.
+Core Operations,Operaciones básicas
+AIDA Tools,Herramientas AIDA
+Data Science & Analytics,Ciencia de datos y análisis
+Visualization & Business Intelligence,Visualización e inteligencia de negocio
+Custom Tools,Herramientas personalizadas
+Default: {0},Predeterminado: {0}
+Enter {0}…,Introduce {0}…
+Load earlier messages,Cargar mensajes anteriores
+Couldn't load earlier messages.,No se han podido cargar los mensajes anteriores.
+Prompt templates,Plantillas de prompt
+No templates match.,Ninguna plantilla coincide.
+{0} templates available,{0} plantillas disponibles
+A field or filter names a column that does not exist on this DocType. Check the field names with get_doctype_info.,Un campo o filtro nombra una columna que no existe en este DocType. Comprueba los nombres de campo con get_doctype_info.
+Missing required fields: {0},Faltan campos obligatorios: {0}
+Not found: {0},No encontrado: {0}
+Could not load the AIDA models. Please try again.,No se pudieron cargar los modelos de AIDA. Inténtalo de nuevo.
+No messages found for this session,No se han encontrado mensajes de esta sesión
+Generated on {0},Generado el {0}
+DocType {0} not found,No se encontró el DocType {0}
+You do not have access to AIDA. Ask an administrator for the PA User role.,No tienes acceso a AIDA. Pide a un administrador el rol PA User.
+No access to AIDA,Sin acceso a AIDA
+Go to the Desk,Ir al Escritorio
+The report ran and returned no rows for these filters.,El informe se ejecutó y no devolvió filas con estos filtros.
+"The query could not be run: a filter, field or value is not valid for this DocType. Check names and value formats with get_doctype_info.","No se pudo ejecutar la consulta: un filtro, campo o valor no es válido para este DocType. Revisa los nombres y formatos con get_doctype_info."
+{0} is a Single DocType: it has one record and no list. Use get_document with doctype and name '{0}' instead.,{0} es un DocType único: tiene un solo registro y no admite listado. Usa get_document con doctype y nombre '{0}'.
+"Some requested fields were not returned (unknown, restricted or not readable by this user): {0}.","Algunos campos solicitados no se devolvieron (desconocidos, restringidos o no legibles para este usuario): {0}."
+"For child tables, add a parenttype filter (e.g. {'parenttype': 'Sales Invoice'}) to read parent.","En tablas hijas, añade un filtro parenttype (p. ej. {'parenttype': 'Sales Invoice'}) para leer parent."
+"data is empty: pass at least one field to change, e.g. {'field': 'value'}.","data está vacío: indica al menos un campo a cambiar, p. ej. {'campo': 'valor'}."
+period must be one of: {0},period debe ser uno de: {0}
+period needs a Date or Datetime group_by; '{0}' is not one.,period requiere un group_by de tipo Date o Datetime; '{0}' no lo es.
+period requires group_by set to a Date or Datetime field.,period requiere que group_by sea un campo Date o Datetime.
+Insufficient read permissions for PA Skill,Permisos de lectura insuficientes para PA Skill
+Permission denied.,Permiso denegado.
+Permission denied,Permiso denegado
+You do not have permission to update {0} '{1}'.,No tienes permiso para actualizar {0} '{1}'.
+Insufficient read permissions for {0},Permisos de lectura insuficientes para {0}
+You do not have permission to create {0}.,No tienes permiso para crear {0}.
+Insufficient permissions for this operation.,Permisos insuficientes para esta operación.
+Insufficient permissions to access {0} '{1}',Permisos insuficientes para acceder a {0} '{1}'
+Insufficient permissions to delete {0} '{1}': {2},Permisos insuficientes para eliminar {0} '{1}': {2}
+Document ID is required,El ID del documento es obligatorio
+"Invalid document ID format. Expected 'doctype/name', got: {0}","Formato de ID de documento no válido. Se esperaba 'doctype/nombre', se recibió: {0}"
+Unknown DocType '{0}' in id '{1}',DocType desconocido '{0}' en el id '{1}'
+Document not found: {0},Documento no encontrado: {0}
+Permission denied: {0},Permiso denegado: {0}
+Query execution failed: {0},Falló la ejecución de la consulta: {0}
+Workflow execution failed: {0},Falló la ejecución del flujo de trabajo: {0}
+Document {0} '{1}' not found,Documento {0} '{1}' no encontrado
+No workflow configured for {0},No hay flujo de trabajo configurado para {0}
+Action '{0}' is not available for document in state '{1}',La acción '{0}' no está disponible para un documento en estado '{1}'
+Workflow action '{0}' executed successfully,Acción de flujo de trabajo '{0}' ejecutada correctamente
+{0} is not a submittable DocType,{0} no es un DocType validable
+Only submittable DocTypes can be submitted. {0} doesn't support submission.,Solo los DocType validables pueden validarse. {0} no admite validación.
+{0} '{1}' not found,{0} '{1}' no encontrado
+Cannot submit {0} document {1} '{2}'. Only draft documents can be submitted.,No se puede validar el documento {1} '{2}' ({0}). Solo los borradores pueden validarse.
+submitted,validado
+cancelled,cancelado
+unknown,desconocido
+Too many recipients: the limit is {0} per email.,Demasiados destinatarios: el límite es {0} por correo.
+Invalid email address(es): {0},Dirección(es) de correo no válida(s): {0}
+The URL contains characters that are not allowed,La URL contiene caracteres no permitidos
+color must be a hex code such as #4682B4,color debe ser un código hexadecimal como #4682B4
+A dashboard chart named '{0}' already exists. Choose another name.,Ya existe un gráfico de panel llamado '{0}'. Elige otro nombre.
+"aggregate_function must be Count, Sum or Average","aggregate_function debe ser Count, Sum o Average"
+A dashboard named '{0}' already exists. Choose another name.,Ya existe un panel llamado '{0}'. Elige otro nombre.
+Connection checks and usage statistics are visible to System Managers only.,Las comprobaciones de conexión y las estadísticas de uso solo son visibles para los administradores del sistema.
+Failed to enable assistant MCP API,No se pudo habilitar la API MCP del asistente
+Failed to disable assistant MCP API,No se pudo deshabilitar la API MCP del asistente
+Failed to enable MCP API,No se pudo habilitar la API MCP
+Failed to disable MCP API,No se pudo deshabilitar la API MCP
+Failed to cleanup assistant logs,No se pudieron limpiar los registros del asistente
+"A date or number value has an invalid format or is out of range. Dates must be real calendar dates written YYYY-MM-DD (datetimes YYYY-MM-DD HH:MM:SS); numbers must be plain digits.","Un valor de fecha o número tiene un formato no válido o está fuera de rango. Las fechas deben ser fechas reales con formato AAAA-MM-DD (fecha y hora AAAA-MM-DD HH:MM:SS); los números deben ser solo dígitos."
+"An image in the content has an unsupported source. Use https:// or /files/ image URLs.","Una imagen del contenido tiene un origen no admitido. Usa URL de imagen https:// o /files/."
+"This document is already submitted or cancelled, so its fields cannot be edited directly. To change it, cancel it from the form (Menu > Cancel) and amend it; for invoices a credit note is the usual correction.","Este documento ya está validado o cancelado, así que sus campos no se pueden editar directamente. Para cambiarlo, cancélalo desde el formulario (Menú > Cancelar) y enmiéndalo; en las facturas lo habitual es una factura rectificativa."
+"The {0} document type doesn't have any workflows set up. Workflows are used for business processes like approval flows.","El tipo de documento {0} no tiene ningún flujo de trabajo configurado. Los flujos de trabajo se usan para procesos como las aprobaciones."
+"Filter on '{0}': 'between' needs a list of exactly two values, e.g. ['between', ['2026-01-01', '2026-01-31']].","Filtro sobre '{0}': 'between' necesita una lista de exactamente dos valores, p. ej. ['between', ['2026-01-01', '2026-01-31']]."
+"Filter on '{0}': '{1}' needs a list of values.","Filtro sobre '{0}': '{1}' necesita una lista de valores."
+"Filter on '{0}': '{1}' is not a number; {2} fields take numeric values (Check fields take 0 or 1).","Filtro sobre '{0}': '{1}' no es un número; los campos {2} aceptan valores numéricos (los campos Check aceptan 0 o 1)."
+"Content truncated. Call get_skill again with offset={0} to continue, or read pa://skills/{1} for the whole text.","Contenido truncado. Vuelve a llamar a get_skill con offset={0} para continuar, o lee pa://skills/{1} para ver el texto completo."
+"Added ignore_index=True to pd.concat()","Se añadió ignore_index=True a pd.concat()"
+"Added warning about chained indexing","Se añadió un aviso sobre indexación encadenada"
+"matplotlib, seaborn, plotly, and scipy are NOT available in this sandbox. Plots cannot be rendered back to the caller. For charts, use the dashboard tools (create_dashboard_chart, create_dashboard) instead of plotting libraries.","matplotlib, seaborn, plotly y scipy NO están disponibles en este entorno aislado. Los gráficos no se pueden devolver a quien llama. Para gráficos, usa las herramientas de panel (create_dashboard_chart, create_dashboard) en lugar de librerías de dibujo."
+"Import statements detected that are not available or needed:","Se detectaron sentencias de importación no disponibles o innecesarias:"
+"Problematic imports found:","Importaciones problemáticas encontradas:"
+"Available pre-loaded libraries (use directly, no imports needed):","Librerías precargadas disponibles (úsalas directamente, sin importar):"
+"Example correct usage:","Ejemplo de uso correcto:"
+"Security: {0}","Seguridad: {0}"
+"Unicode Error: Code contains characters that cannot be encoded in UTF-8. Please remove or replace non-standard Unicode characters.","Error de Unicode: el código contiene caracteres que no se pueden codificar en UTF-8. Elimina o sustituye los caracteres Unicode no estándar."
+"Unicode Processing Error: {0}","Error al procesar Unicode: {0}"
+"Dangerous SQL operation detected in db.sql()","Operación SQL peligrosa detectada en db.sql()"
+"Dangerous SQL operation detected in frappe.db.sql()","Operación SQL peligrosa detectada en frappe.db.sql()"
+"Code execution via exec() not allowed","No se permite ejecutar código con exec()"
+"Code evaluation via eval() not allowed","No se permite evaluar código con eval()"
+"Dynamic imports via __import__() not allowed","No se permiten importaciones dinámicas con __import__()"
+"Code compilation not allowed","No se permite compilar código"
+"Frappe framework modification not allowed","No se permite modificar el framework Frappe"
+"Frappe local context modification not allowed","No se permite modificar el contexto local de Frappe"
+"Frappe session modification not allowed","No se permite modificar la sesión de Frappe"
+"File system access not allowed","No se permite el acceso al sistema de archivos"
+"User input not allowed in code execution","No se permite la entrada de usuario en la ejecución de código"
+"Database write operation db.set_value() not allowed","No se permite la escritura en base de datos con db.set_value()"
+"Database delete operation not allowed","No se permite borrar en la base de datos"
+"Database insert operation not allowed","No se permite insertar en la base de datos"
+"Database truncate operation not allowed","No se permite truncar en la base de datos"
+"Network access not allowed","No se permite el acceso a la red"
+"The file data is not valid base64.","Los datos del archivo no son base64 válido."
+"Error uploading file. Please try again.","Error al subir el archivo. Inténtalo de nuevo."
+"New: AIDA by pibiCo","Novedad: AIDA de pibiCo"

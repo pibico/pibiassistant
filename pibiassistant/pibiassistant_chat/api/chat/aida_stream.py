@@ -19,12 +19,12 @@ import requests
 from frappe import _
 
 from .._untrusted import wrap_untrusted
+from .._helpers import is_aida_mode  # noqa: F401  (re-exported for messages/relay)
 from ..chat.cancel import append_abort_marker, is_cancelled
+from .aida_tools import recent_turns
 from ..chat.helpers import _emit_socket_event, _ensure_assistant_msg, _find_assistant_msg_by_message_id
 
 _STATE_SIG = "aida-conversation"
-_TRANSCRIPT_MAX_MESSAGES = 20
-_TRANSCRIPT_MAX_CHARS = 1500
 # (connect, read): read bounds the gap between SSE lines, which is also how
 # often the Stop flag gets a chance to be polled while the model is silent.
 _TIMEOUT = (10, 90)
@@ -54,19 +54,23 @@ def acquire_turn_waiting(session_id: str, wait_s: float = 3.0) -> bool:
     return False
 
 
+def refresh_turn(session_id: str) -> None:
+    """Keep the lock alive while the relay still produces events (tool turns outlast the TTL)."""
+    try:
+        frappe.cache().expire(_turn_lock_key(session_id), _TURN_LOCK_TTL)
+    except Exception:
+        pass
+
+
+def is_turn_active(session_id: str) -> bool:
+    return bool(frappe.cache().get(_turn_lock_key(session_id)))
+
+
 def release_turn(session_id: str) -> None:
     try:
         frappe.cache().delete(_turn_lock_key(session_id))
     except Exception:
         pass
-
-
-def is_aida_mode() -> bool:
-    """True when PA Core Settings has an AIDA API key (native AIDA mode)."""
-    try:
-        return bool(frappe.get_doc("PA Core Settings").get_password("aida_api_key", raise_exception=False))
-    except Exception:
-        return False
 
 
 def get_conversation_id(session_id: str) -> str | None:
@@ -107,22 +111,10 @@ def clear_conversation_id(session_id: str) -> None:
 
 def _build_transcript(session_id: str, exclude_name: str | None) -> str:
     """Compact transcript of earlier turns, for sessions that have no AIDA conversation_id yet."""
-    filters = {"session_id": session_id, "errored": 0, "aborted": 0}
-    if exclude_name:
-        filters["name"] = ["!=", exclude_name]
-    rows = frappe.get_all(
-        "PA Chat Message",
-        filters=filters,
-        fields=["role", "content"],
-        order_by="creation desc",
-        limit_page_length=_TRANSCRIPT_MAX_MESSAGES,
-    )
-    lines = []
-    for r in reversed(rows):
-        if not r.content:
-            continue
-        label = "USER" if r.role == "user" else "ASSISTANT"
-        lines.append(f"{label}: {r.content[:_TRANSCRIPT_MAX_CHARS]}")
+    lines = [
+        f"{'USER' if role == 'user' else 'ASSISTANT'}: {text}"
+        for role, text in recent_turns(session_id, exclude_name)
+    ]
     if not lines:
         return ""
     return (
@@ -210,6 +202,7 @@ def _relay_aida_stream(
     continue_from_message_id=None,
     model_id=None,
     resume_responses=None,
+    extract_files=False,
 ):
     """Stream one AIDA turn to the SPA, persisting the assistant row unless restricted."""
     from ..block_builder import BlockBuilder
@@ -238,6 +231,7 @@ def _relay_aida_stream(
     prefix = ""
 
     def emit(payload):
+        refresh_turn(session_id)
         _emit_socket_event(session_id, {"session_id": session_id, **payload})
 
     def fail(text):
@@ -262,6 +256,8 @@ def _relay_aida_stream(
             )
 
     try:
+        if not restricted and not continue_from_message_id:
+            _ensure_assistant_msg(session_id, message_id, context)
         if not api_url or not api_key:
             fail(_("AIDA is not configured. Ask your administrator to set it up in PA Core Settings."))
             return
@@ -303,8 +299,6 @@ def _relay_aida_stream(
         headers = {"X-API-Key": api_key, "Content-Type": "application/json", "Accept": "text/event-stream"}
         url = f"{api_url}/api/v1/chat/completions"
 
-        if not restricted and not continue_from_message_id:
-            _ensure_assistant_msg(session_id, message_id, context)
         emit(
             {
                 "event": "stream_start",
@@ -313,6 +307,18 @@ def _relay_aida_stream(
                 **({"resumed": True} if resume_responses is not None else {}),
             }
         )
+
+        if extract_files and message_name and not restricted:
+            # Converting attachments is the slow part of a turn; it runs here, after the UI got
+            # stream_start, so the send request itself never waits on the conversion service.
+            from .helpers import _extract_file_attachments
+
+            file_content = _extract_file_attachments(message_name, parallel=True)
+            if file_content:
+                system_prompt_addendum = (system_prompt_addendum or "") + wrap_untrusted(
+                    file_content, kind="user_attached_files"
+                )
+                user_text = f"{system_prompt_addendum}\n\n{message or ''}"
 
         finish_reason = None
         tokens = {}
@@ -325,8 +331,8 @@ def _relay_aida_stream(
         from .aida_tools import chat_tool_specs, chunk_text, resume_tool_turn, run_tool_turn, tools_enabled
 
         resuming = resume_responses is not None
+        outcome = None
         if model and tools_enabled() and (resuming or not continue_from_message_id):
-            outcome = None
             try:
                 specs = chat_tool_specs(user)
                 if resuming:
@@ -358,7 +364,9 @@ def _relay_aida_stream(
                     )
             except Exception as e:
                 frappe.log_error(title="AIDA Tool Turn Error", message=str(e)[:500])
-                if resuming:
+                # Once a tool has run its result is only in this turn: a plain re-run would answer blind
+                # (or repeat a change), so surface the failure instead.
+                if resuming or block_builder.snapshot():
                     fail(_friendly_error(exc=e if isinstance(e, requests.exceptions.RequestException) else None))
                     return
             if outcome and outcome.get("expired"):
@@ -441,7 +449,7 @@ def _relay_aida_stream(
                 )
                 return
 
-        if resuming and not tool_done:
+        if (resuming or (outcome and outcome.get("tool_calls"))) and not tool_done:
             fail(_("AIDA returned an empty answer. Please try again."))
             return
 

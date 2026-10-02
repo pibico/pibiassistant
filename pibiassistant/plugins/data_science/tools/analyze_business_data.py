@@ -26,6 +26,13 @@ import frappe
 from frappe import _
 
 from pibiassistant.core.base_tool import BaseTool
+from pibiassistant.plugins.data_science.frames import clean_number
+from pibiassistant.plugins.limits import clamp_limit
+from pibiassistant.plugins.query_errors import client_error_message, log_failure
+from pibiassistant.plugins.query_errors import log_failure
+
+MAX_CORRELATION_FIELDS = 15
+MAX_CORRELATION_PAIRS = 20
 
 
 class AnalyzeFrappeData(BaseTool):
@@ -105,7 +112,7 @@ class AnalyzeFrappeData(BaseTool):
         fields = arguments.get("fields", [])
         filters = arguments.get("filters", {})
         date_field = arguments.get("date_field")
-        limit = arguments.get("limit", 1000)
+        limit = clamp_limit(arguments.get("limit"), 1000, 10000)
 
         # Input validation
         if not doctype:
@@ -167,7 +174,11 @@ class AnalyzeFrappeData(BaseTool):
             }
 
         except Exception as e:
-            return {"success": False, "error": str(e), "doctype": doctype, "analysis_type": analysis_type}
+            friendly = client_error_message(e)
+            if friendly:
+                return {"success": False, "error": friendly, "doctype": doctype, "analysis_type": analysis_type}
+            log_failure("Business Data Analysis Error", e)
+            return {"success": False, "error": str(e)[:2000], "doctype": doctype, "analysis_type": analysis_type}
 
     def _check_dependencies(self) -> Dict[str, Any]:
         """Check if required data science libraries are available"""
@@ -189,7 +200,13 @@ class AnalyzeFrappeData(BaseTool):
         # Get DocType meta to determine available fields
         meta = frappe.get_meta(doctype)
 
-        # If no specific fields provided, get all data fields
+        # Only real, permitted DB columns: virtual fields and permlevel-restricted fields fail or leak.
+        from frappe.model import get_permitted_fields
+
+        allowed = set(get_permitted_fields(doctype, ignore_virtual=True)) & set(
+            meta.get_valid_columns()
+        )
+
         if not fields:
             fields = ["name", "creation", "modified"]
             for field in meta.fields:
@@ -206,9 +223,11 @@ class AnalyzeFrappeData(BaseTool):
                     "Select",
                 ]:
                     fields.append(field.fieldname)
+        fields = [f for f in dict.fromkeys(fields) if f in allowed]
+        if not fields:
+            return []
 
-        # Get data
-        raw_data = frappe.get_all(
+        raw_data = frappe.get_list(
             doctype, filters=filters, fields=fields, limit=limit, order_by="creation desc"
         )
 
@@ -248,7 +267,7 @@ class AnalyzeFrappeData(BaseTool):
                             serializable_row[key] = str(value)
                 except Exception as e:
                     # Fallback: convert problematic values to string
-                    frappe.log_error(f"Analysis serialization error for key {key}: {str(e)}")
+                    log_failure("Analysis Serialization Error", e)
                     serializable_row[key] = str(value) if value is not None else None
 
             serializable_data.append(serializable_row)
@@ -289,11 +308,11 @@ class AnalyzeFrappeData(BaseTool):
             if df[column].dtype in ["int64", "float64"]:
                 field_profile.update(
                     {
-                        "min": df[column].min(),
-                        "max": df[column].max(),
-                        "mean": df[column].mean(),
-                        "median": df[column].median(),
-                        "std": df[column].std(),
+                        "min": clean_number(df[column].min()),
+                        "max": clean_number(df[column].max()),
+                        "mean": clean_number(df[column].mean()),
+                        "median": clean_number(df[column].median()),
+                        "std": clean_number(df[column].std()),
                     }
                 )
 
@@ -303,7 +322,7 @@ class AnalyzeFrappeData(BaseTool):
                 if len(non_null_values) > 0:
                     field_profile.update(
                         {
-                            "avg_length": non_null_values.astype(str).str.len().mean(),
+                            "avg_length": clean_number(non_null_values.astype(str).str.len().mean()),
                             "max_length": non_null_values.astype(str).str.len().max(),
                             "min_length": non_null_values.astype(str).str.len().min(),
                         }
@@ -337,16 +356,16 @@ class AnalyzeFrappeData(BaseTool):
         for column in numeric_columns:
             stats = {
                 "count": df[column].count(),
-                "mean": df[column].mean(),
-                "std": df[column].std(),
-                "min": df[column].min(),
-                "25%": df[column].quantile(0.25),
-                "50%": df[column].quantile(0.50),
-                "75%": df[column].quantile(0.75),
-                "max": df[column].max(),
-                "variance": df[column].var(),
-                "skewness": df[column].skew(),
-                "kurtosis": df[column].kurtosis(),
+                "mean": clean_number(df[column].mean()),
+                "std": clean_number(df[column].std()),
+                "min": clean_number(df[column].min()),
+                "25%": clean_number(df[column].quantile(0.25)),
+                "50%": clean_number(df[column].quantile(0.50)),
+                "75%": clean_number(df[column].quantile(0.75)),
+                "max": clean_number(df[column].max()),
+                "variance": clean_number(df[column].var()),
+                "skewness": clean_number(df[column].skew()),
+                "kurtosis": clean_number(df[column].kurtosis()),
             }
 
             statistics[column] = stats
@@ -481,10 +500,10 @@ class AnalyzeFrappeData(BaseTool):
         if len(numeric_df.columns) < 2:
             return {"message": "Need at least 2 numeric fields for correlation analysis"}
 
-        # Calculate correlation matrix
+        numeric_df = numeric_df.iloc[:, :MAX_CORRELATION_FIELDS]
         correlation_matrix = numeric_df.corr()
 
-        # Find strong correlations (> 0.7 or < -0.7)
+        # Find strong correlations (> 0.7 or < -0.7); NaN fails the comparison
         strong_correlations = []
 
         for i in range(len(correlation_matrix.columns)):
@@ -500,13 +519,20 @@ class AnalyzeFrappeData(BaseTool):
                         }
                     )
 
+        strong_correlations.sort(key=lambda c: abs(c["correlation"]), reverse=True)
+        total_strong = len(strong_correlations)
+        strong_correlations = strong_correlations[:MAX_CORRELATION_PAIRS]
+
         return {
             "numeric_fields": list(numeric_df.columns),
-            "correlation_matrix": correlation_matrix.to_dict(),
+            "correlation_matrix": {
+                col: {row: clean_number(val) for row, val in values.items()}
+                for col, values in correlation_matrix.to_dict().items()
+            },
             "strong_correlations": strong_correlations,
             "analysis_summary": {
-                "total_correlations_analyzed": len(strong_correlations),
-                "strongest_correlation": max([abs(c["correlation"]) for c in strong_correlations])
+                "total_correlations_analyzed": total_strong,
+                "strongest_correlation": abs(strong_correlations[0]["correlation"])
                 if strong_correlations
                 else 0,
             },

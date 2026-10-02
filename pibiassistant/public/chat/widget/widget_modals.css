@@ -22,15 +22,14 @@
 	margin: 8px 0 6px;
 	font-size: 18px;
 	font-weight: 600;
-	color: var(--pao-text-primary, #111827);
+	color: var(--pao-text-primary);
 }
 
 .pao-onboarding-header p {
-	color: var(--pao-text-muted, #9ca3af);
+	color: var(--pao-text-muted);
 	margin: 0;
 	font-size: 14px;
 }
-
 
 .pao-setup-section {
 	margin-top: 12px;
@@ -64,21 +63,16 @@
 	transform: none;
 }
 
-.pao-setup-btn.btn-success {
-	background: #10b981;
-	box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
-}
-
 .pao-setup-hint {
 	margin-top: 10px;
 	font-size: 12px;
-	color: var(--pao-text-muted, #9ca3af);
+	color: var(--pao-text-muted);
 }
 
 .pao-contact-admin {
 	margin-top: 12px;
 	padding: 8px 12px;
-	background: #FFF6E0;
+	background: var(--pao-bg-tertiary);
 	border: 0;
 	border-radius: 12px;
 	box-shadow: var(--pibico-card-shadow);
@@ -88,256 +82,15 @@
 .pao-contact-admin p {
 	margin: 0;
 	font-size: 13px;
-	color: #92400e;
-	line-height: 1.5;
+	color: var(--pao-text-primary);
+	display: flex;
+	gap: 6px;
+	align-items: flex-start;
 }
 
 /* Dark theme onboarding */
 html[data-theme="dark"] .pao-widget .pao-onboarding-header h2 {
-	color: #F2EFE6;
+	color: var(--pao-text-primary);
 }
 
-html[data-theme="dark"] .pao-widget .pao-contact-admin {
-	background: #78350f;
-}
 
-html[data-theme="dark"] .pao-widget .pao-contact-admin p {
-	color: #fef3c7;
-}
-
-/* ===================================
-   ONBOARDING CHAT ACTIONS
-   =================================== */
-
-/* ===================================
-   UPGRADE MODAL STYLES
-   =================================== */
-
-.pao-upgrade-modal {
-	padding: 8px 0;
-}
-
-/* Billing Toggle */
-.pao-billing-toggle {
-	display: flex;
-	justify-content: center;
-	gap: 8px;
-	margin-bottom: 12px;
-	padding: 8px;
-	background: var(--control-bg, #f1f5f9);
-	border-radius: 8px;
-}
-
-.pao-toggle-label {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding: 8px 16px;
-	font-size: 14px;
-	font-weight: 500;
-	color: var(--text-muted);
-	cursor: pointer;
-	border-radius: 6px;
-	transition: all 0.2s ease;
-}
-
-.pao-toggle-label:has(input:checked) {
-	background: white;
-	color: var(--text-color);
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.pao-toggle-label input {
-	display: none;
-}
-
-.pao-save-badge {
-	font-size: 10px;
-	font-weight: 600;
-	color: #10b981;
-	background: rgba(16, 185, 129, 0.1);
-	padding: 2px 6px;
-	border-radius: 4px;
-	margin-left: 4px;
-}
-
-/* Plans Grid */
-.pao-plans-grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-	gap: 8px;
-	margin-bottom: 20px;
-}
-
-.pao-plan-card {
-	position: relative;
-	padding: 20px 16px;
-	background: white;
-	border: 0;
-	box-shadow: var(--pibico-card-shadow);
-	border-radius: 12px;
-	text-align: center;
-	transition: all 0.2s ease;
-}
-
-.pao-plan-card:hover {
-	box-shadow: var(--pibico-card-shadow-hover);
-}
-
-.pao-plan-card.pao-plan-current {
-	background: #E3F3EB;
-}
-
-.pao-plan-card.pao-plan-popular {
-	background: #D6E8F5;
-	box-shadow: var(--pibico-card-shadow-hover);
-}
-
-.pao-plan-badge {
-	position: absolute;
-	top: -10px;
-	left: 50%;
-	transform: translateX(-50%);
-	padding: 4px 12px;
-	font-size: 10px;
-	font-weight: 600;
-	color: white;
-	background: linear-gradient(135deg, #3A74A3 0%, #2F6A9A 100%);
-	border-radius: 12px;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
-	white-space: nowrap;
-}
-
-.pao-plan-badge.pao-plan-badge-current {
-	background: #1E7A52;
-}
-
-.pao-plan-name {
-	margin: 8px 0 16px;
-	font-size: 18px;
-	font-weight: 600;
-	color: var(--text-color);
-}
-
-.pao-plan-price {
-	margin-bottom: 8px;
-}
-
-.pao-plan-amount {
-	font-size: 32px;
-	font-weight: 700;
-	color: var(--text-color);
-}
-
-.pao-plan-period {
-	font-size: 14px;
-	color: var(--text-muted);
-}
-
-.pao-plan-annual {
-	font-size: 12px;
-	color: var(--text-muted);
-	margin-bottom: 16px;
-}
-
-.pao-plan-savings {
-	color: #1E7A52;
-	font-weight: 600;
-}
-
-.pao-plan-features {
-	list-style: none;
-	padding: 0;
-	margin: 0 0 20px;
-	text-align: left;
-}
-
-.pao-plan-features li {
-	padding: 6px 0;
-	font-size: 13px;
-	color: var(--text-muted);
-	border-bottom: 1px solid var(--border-color, #f3f4f6);
-}
-
-.pao-plan-features li:last-child {
-	border-bottom: none;
-}
-
-.pao-plan-features li strong {
-	color: var(--text-color);
-}
-
-.pao-plan-btn {
-	width: 100%;
-	padding: 6px 16px;
-	font-size: 14px;
-	font-weight: 600;
-	border-radius: 8px;
-	cursor: pointer;
-	transition: all 0.2s ease;
-}
-
-.pao-plan-btn.btn-primary {
-	background: linear-gradient(135deg, #3A74A3 0%, #2F6A9A 100%);
-	border: none;
-	color: white;
-}
-
-.pao-plan-btn.btn-primary:hover {
-	background: linear-gradient(135deg, #386890 0%, #094539 100%);
-	transform: translateY(-1px);
-}
-
-/* Payment Info */
-.pao-payment-info {
-	text-align: center;
-	padding-top: 16px;
-}
-
-.pao-payment-info p {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	font-size: 12px;
-	color: var(--text-muted);
-	margin: 0;
-}
-
-.pao-payment-info .ph {
-	color: #10b981;
-}
-
-/* ===================================
-   SUCCESS MODAL STYLES
-   =================================== */
-
-.pao-success-content {
-	text-align: center;
-	padding: 20px;
-}
-
-.pao-success-content h3 {
-	margin: 0 0 12px;
-	font-size: 20px;
-	font-weight: 600;
-	color: var(--text-color);
-}
-
-.pao-success-content ul {
-	list-style: none;
-	padding: 0;
-	margin: 16px 0 0;
-}
-
-.pao-success-content li {
-	padding: 8px 0;
-	font-size: 14px;
-	color: var(--text-muted);
-}
-
-.pao-success-content li::before {
-	content: "✓ ";
-	color: #10b981;
-	font-weight: 600;
-}

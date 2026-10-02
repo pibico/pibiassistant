@@ -2,12 +2,12 @@ import { h } from "../lib/dom.js";
 import { __ } from "../lib/i18n.js";
 import { icon } from "./icons.js";
 
-function tiles() {
+export function tiles() {
   return [
-    { icon: "file", title: __("Summarise a document"), sub: __("Paste text or attach a file"), prompt: __("Summarise the document I will share with you.") },
-    { icon: "mail", title: __("Draft a professional email"), sub: __("Tell me the context and tone"), prompt: __("Help me draft a professional email.") },
-    { icon: "globe", title: __("Translate a text"), sub: __("Between Spanish, English and more"), prompt: __("Translate a text for me.") },
-    { icon: "lightbulb", title: __("Explain a concept simply"), sub: __("Step by step, with examples"), prompt: __("Explain a concept to me in simple terms.") },
+    { icon: "file", title: __("Create a purchase invoice from a PDF"), sub: __("Attach the supplier invoice"), prompt: __("Create a purchase invoice from the PDF I will attach.") },
+    { icon: "mail", title: __("Who owes us money?"), sub: __("Overdue receivables by customer"), prompt: __("Show me the overdue sales invoices grouped by customer.") },
+    { icon: "globe", title: __("Check stock levels"), sub: __("Items running low"), prompt: __("Which items are below their reorder level?") },
+    { icon: "lightbulb", title: __("Summarise my hours"), sub: __("Timesheets this week"), prompt: __("Summarise the hours logged in my timesheets this week.") },
   ];
 }
 

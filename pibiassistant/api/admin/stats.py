@@ -24,55 +24,9 @@ def get_usage_statistics() -> dict:
     try:
         api_logger.info(f"Usage statistics requested by user: {frappe.session.user}")
 
-        today = frappe.utils.today()
-        week_start = frappe.utils.add_days(today, -7)
+        from pibiassistant.utils.usage_statistics import collect_usage_statistics
 
-        # Audit log statistics
-        try:
-            total_audit = frappe.db.count("PA Audit Log") or 0
-            today_audit = frappe.db.count("PA Audit Log", {"creation": (">=", today)}) or 0
-            week_audit = frappe.db.count("PA Audit Log", {"creation": (">=", week_start)}) or 0
-        except Exception as e:
-            api_logger.warning(f"Audit stats error: {e}")
-            total_audit = today_audit = week_audit = 0
-
-        # Tool statistics
-        try:
-            from pibiassistant.utils.plugin_manager import get_plugin_manager
-
-            plugin_manager = get_plugin_manager()
-            all_tools = plugin_manager.get_all_tools()
-            total_tools = len(all_tools)
-            enabled_tools = len(all_tools)
-            api_logger.debug(f"Tool stats: total={total_tools}, enabled={enabled_tools}")
-        except Exception as e:
-            api_logger.warning(f"Tool stats error: {e}")
-            total_tools = enabled_tools = 0
-
-        # Recent activity
-        try:
-            recent_activity = (
-                frappe.db.get_list(
-                    "PA Audit Log",
-                    fields=["action", "tool_name", "user", "status", "timestamp"],
-                    order_by="timestamp desc",
-                    limit=10,
-                )
-                or []
-            )
-        except Exception as e:
-            api_logger.warning(f"Recent activity error: {e}")
-            recent_activity = []
-
-        return {
-            "success": True,
-            "data": {
-                "connections": {"total": total_audit, "today": today_audit, "this_week": week_audit},
-                "audit_logs": {"total": total_audit, "today": today_audit, "this_week": week_audit},
-                "tools": {"total": total_tools, "enabled": enabled_tools},
-                "recent_activity": recent_activity,
-            },
-        }
+        return {"success": True, "data": collect_usage_statistics()}
 
     except Exception as e:
         api_logger.error(f"Error getting usage statistics: {e}")

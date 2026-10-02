@@ -21,13 +21,7 @@ window.PAOPlanStrip = {
 	},
 
 	_escape(s) {
-		// Reuse the widget's sanitizer boundary if present; else minimal escape.
-		if (window.PAOCore && typeof PAOCore.escape_html === "function") {
-			return PAOCore.escape_html(s == null ? "" : String(s));
-		}
-		return (s == null ? "" : String(s)).replace(/[&<>"]/g, (c) => (
-			{ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]
-		));
+		return PAOCore.escape_html(s);
 	},
 
 	/** Count of completed (done/skipped) tasks, for the collapsed summary. */

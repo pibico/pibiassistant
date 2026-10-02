@@ -10,14 +10,14 @@ function pluginItemHtml(plugin, isToggling) {
                                     <div class="pa-plugin-info">
                                         <div class="pa-plugin-name">
                                             <i class="ph ph-cube" aria-hidden="true"></i>
-                                            ${esc(plugin.name)}
+                                            ${esc(__(plugin.name))}
                                         </div>
                                     </div>
                                     <div>
                                         <label class="switch">
                                             <input type="checkbox" class="pa-plugin-toggle"
                                                    data-plugin="${esc(plugin.plugin_id)}"
-                                                   aria-label="${__('Enable plugin')} ${esc(plugin.name)}"
+                                                   aria-label="${__('Enable plugin')} ${esc(__(plugin.name))}"
                                                    ${plugin.enabled ? 'checked' : ''}
                                                    ${isToggling ? 'disabled' : ''}>
                                             <span class="slider round"></span>

@@ -58,7 +58,6 @@
    Headings and labels: Figtree
    ============================================================ */
 .pa-admin-container .pa-page-title,
-.pa-admin-container .pa-card-title,
 .pa-admin-container .pa-sidebar-title,
 .pa-admin-container .pa-sidebar-label,
 .pa-admin-container .pa-tool-title,
@@ -72,9 +71,7 @@
 .pa-admin-container .pa-top-tab,
 .pa-admin-container .pa-panel-title,
 .pa-admin-container .pa-preview-label,
-.pa-admin-container .pa-table th,
-.pa-admin-container .pa-act__name,
-.pa-admin-container .pa-bulk-label {
+.pa-admin-container .pa-act__name {
     font-family: var(--pibico-font-heading);
 }
 
@@ -108,20 +105,6 @@
     padding-bottom: 6px;
 }
 .pa-admin-container .pa-item-card.toggle-in-progress { opacity: 0.6; }
-.pa-admin-container .pa-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-    padding: 4px 0;
-}
-.pa-admin-container .pa-card-title {
-    font-size: 1.15rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
 
 /* ============================================================
    Page header: primary gradient banner
@@ -147,8 +130,7 @@
     font-weight: 600;
     color: #fff;
 }
-.pa-admin-container .pa-page-actions,
-.pa-admin-container .pa-header-right {
+.pa-admin-container .pa-page-actions {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -242,8 +224,7 @@
     font-size: 0.8rem;
 }
 .pa-admin-container .pa-sidebar-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
-.pa-admin-container .pa-endpoint-compact,
-.pa-admin-container .pa-settings-value {
+.pa-admin-container .pa-endpoint-compact {
     padding: 4px 8px;
     font-size: 0.8rem;
     margin-bottom: 6px;
@@ -254,8 +235,6 @@
     word-break: break-all;
 }
 .pa-admin-container .pa-endpoint-url { font-size: 0.8rem; word-break: break-all; }
-.pa-admin-container .pa-endpoint-row { display: flex; gap: 8px; align-items: stretch; }
-.pa-admin-container .pa-endpoint-row .pa-endpoint-url { flex: 1; }
 .pa-admin-container .pa-copy-endpoint { flex-shrink: 0; }
 
 .pa-admin-container .pa-quick-list { list-style: none; padding: 0; margin: 0; }
@@ -297,8 +276,6 @@
     letter-spacing: 0.4px;
 }
 .pa-admin-container .pa-analytics-value { font-size: 1.15rem; font-weight: 600; color: var(--pa-text); }
-.pa-admin-container .pa-analytics-value--money { color: var(--pibico-brick-dark); }
-[data-theme="dark"] .pa-admin-container .pa-analytics-value--money { color: var(--pibico-brick-light); }
 #analytics-model { font-size: 0.9rem; word-break: break-all; }
 .pa-admin-container .pa-analytics-spark { width: 100%; height: 28px; margin-top: 4px; }
 .pa-admin-container .pa-spark-svg { width: 100%; height: 100%; display: block; }
@@ -438,7 +415,6 @@
     flex-wrap: wrap;
 }
 .pa-admin-container .pa-registry-card .pa-filter-bar { margin-bottom: 10px; }
-.pa-admin-container .pa-bulk-label { font-size: 0.8rem; font-weight: 600; color: var(--pa-muted); margin-right: 4px; }
 .pa-admin-container .pa-bulk-scope {
     font-size: 0.8rem;
     color: var(--pa-muted);
@@ -704,14 +680,12 @@
 /* ============================================================
    Tables: gradient header
    ============================================================ */
-.pa-admin-container .pa-table,
 .pa-admin-container .pa-preview-content table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.85rem;
     margin: 8px 0;
 }
-.pa-admin-container .pa-table th,
 .pa-admin-container .pa-preview-content th {
     background: var(--pa-grad);
     color: #fff;
@@ -720,7 +694,6 @@
     text-align: left;
     border: none;
 }
-.pa-admin-container .pa-table td,
 .pa-admin-container .pa-preview-content td {
     padding: 6px 12px;
     color: var(--pa-text);
@@ -728,7 +701,6 @@
     border-bottom: 1px solid var(--pa-divider);
     vertical-align: top;
 }
-.pa-admin-container .pa-table tbody tr:hover td,
 .pa-admin-container .pa-preview-content tr:hover td { background: var(--pa-accent-soft); }
 
 /* ============================================================
@@ -806,6 +778,9 @@
     .pa-admin-container .pa-panel-backdrop,
     .pa-admin-container .ph-spin,
     .pa-admin-container .pa-skeleton-line { transition: none; animation: none; }
+    .pa-admin-container *,
+    .pa-admin-container *::before,
+    .pa-admin-container *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
 }
 .pa-admin-container .pa-panel-header {
     display: flex;
@@ -1003,7 +978,6 @@
     .pa-admin-container .pa-view-tab { flex: 0 0 auto; white-space: nowrap; }
     .pa-admin-container .pa-endpoint-compact,
     .pa-admin-container .pa-endpoint-url { max-width: 100%; word-break: break-all; overflow-wrap: anywhere; }
-    .pa-admin-container .pa-table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .pa-admin-container .pa-analytics-grid { grid-template-columns: 1fr; }
     .pa-admin-container .pa-filter-input { min-width: 0; }
 }

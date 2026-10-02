@@ -61,9 +61,12 @@ class TestAnalyticsAdminOnly(BaseAssistantTest):
         from pibiassistant.pibiassistant_chat.api.analytics import get_analytics_data
 
         # No client -> not-registered error dict, never a PermissionError.
-        with patch(
-            "pibiassistant.pibiassistant_chat.api.analytics._get_client",
-            return_value=None,
+        with (
+            patch("pibiassistant.pibiassistant_chat.api.analytics._aida_mode", return_value=False),
+            patch(
+                "pibiassistant.pibiassistant_chat.api.analytics.get_pa_cloud_client",
+                return_value=None,
+            ),
         ):
             res = get_analytics_data()
 

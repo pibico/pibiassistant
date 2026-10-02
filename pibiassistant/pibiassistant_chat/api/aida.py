@@ -5,16 +5,19 @@ import time
 import frappe
 import requests
 from frappe import _
+from frappe.utils import cint
 
 from ._rate_limits import rate_limit, session_user_or_ip
 
 _AUDIO_EXTENSIONS = {".mp3", ".wav", ".m4a", ".ogg", ".oga", ".webm", ".mp4", ".flac", ".aac", ".opus"}
 _AUDIO_MAX_BYTES = 25 * 1024 * 1024
+# Below gunicorn's request timeout (120 s) so a stuck conversion cannot get the worker killed.
+_CONVERT_TIMEOUT = 90
 
 
 def _get_settings():
-    """Return the PA Core Settings singleton (cached per request)."""
-    return frappe.get_doc("PA Core Settings")
+    """Return the PA Core Settings singleton from the document cache (no query per call)."""
+    return frappe.get_cached_doc("PA Core Settings")
 
 
 def _get_aida_config():
@@ -54,24 +57,66 @@ def _emit(session_id, event, **kwargs):
     )
 
 
-@frappe.whitelist()
-def get_models():
-    """Fetch available providers and models from the AIDA Chat API."""
-    api_url, api_key, _, _ = _get_aida_config()
-    if not api_url or not api_key:
-        return {"success": False, "providers": {}}
+_MODELS_CACHE_SECONDS = 600
+_MODELS_STALE_SECONDS = 24 * 3600
 
+
+def _fetch_models(api_url, api_key):
+    """The upstream model list, cached on success. Detail is logged, never returned to callers."""
     try:
-        r = requests.get(
-            f"{api_url}/api/v1/models",
-            headers={"X-API-Key": api_key},
-            timeout=10,
-        )
-        if r.status_code == 200:
-            return r.json()
-        return {"success": False, "providers": {}, "error": r.text[:200]}
+        r = requests.get(f"{api_url}/api/v1/models", headers={"X-API-Key": api_key}, timeout=10)
     except Exception as e:
-        return {"success": False, "providers": {}, "error": str(e)[:200]}
+        frappe.log_error(title="AIDA Models Error", message=str(e)[:500])
+        return {"success": False, "providers": {}, "error": _("Could not load the AIDA models. Please try again.")}
+    if r.status_code != 200:
+        frappe.log_error(title="AIDA Models Error", message=f"HTTP {r.status_code}: {r.text[:300]}")
+        return {"success": False, "providers": {}, "error": _("Could not load the AIDA models. Please try again.")}
+    data = r.json()
+    if data.get("providers"):
+        cache = frappe.cache()
+        cache.set_value(f"pa_aida_models:{api_url}", data, expires_in_sec=_MODELS_CACHE_SECONDS)
+        cache.set_value(f"pa_aida_models_stale:{api_url}", data, expires_in_sec=_MODELS_STALE_SECONDS)
+    return data
+
+
+def refresh_models_cache():
+    """Background job: refresh the model list after a stale answer was served."""
+    api_url, api_key, _provider, _model = _get_aida_config()
+    if api_url and api_key:
+        _fetch_models(api_url, api_key)
+
+
+@frappe.whitelist()
+def get_models(refresh=0):
+    """Available providers and models from the AIDA Chat API.
+
+    Fresh for 10 min; after that the last good list is served at once while a
+    background job refreshes it (``refresh=1`` forces a synchronous fetch).
+    Errors are never cached.
+    """
+    _assert_can_use_aida()
+    api_url, api_key, _provider, _model = _get_aida_config()
+    if not api_url or not api_key:
+        return {"success": False, "providers": {}, "error": _("AIDA is not configured.")}
+
+    if not cint(refresh):
+        cache = frappe.cache()
+        cached = cache.get_value(f"pa_aida_models:{api_url}", expires=True)
+        if cached:
+            return cached
+        stale = cache.get_value(f"pa_aida_models_stale:{api_url}", expires=True)
+        if stale:
+            try:
+                frappe.enqueue(
+                    "pibiassistant.pibiassistant_chat.api.aida.refresh_models_cache",
+                    queue="short",
+                    job_id=f"pa_aida_models_refresh:{frappe.local.site}",
+                    deduplicate=True,
+                )
+                return stale
+            except Exception:
+                pass
+    return _fetch_models(api_url, api_key)
 
 
 @frappe.whitelist()
@@ -93,52 +138,65 @@ def get_overview():
     }
 
 
+_HEALTH_TIMEOUT = 4
+_HEALTH_CACHE_SECONDS = 45
+
+
+def _check_health(url, key):
+    try:
+        r = requests.get(f"{url}/api/v1/health", headers={"X-API-Key": key}, timeout=_HEALTH_TIMEOUT)
+        return {
+            "ok": r.status_code == 200,
+            "detail": f"{url} — HTTP {r.status_code}",
+            "error": r.text[:100] if r.status_code != 200 else "",
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:100]}
+
+
+def _health_targets():
+    chat_url, chat_key, _p, _m = _get_aida_config()
+    conv_url, conv_key = _get_convert_config()
+    voice_url, voice_key = _get_voice_config()
+    return (
+        ("Chat API", chat_url, chat_key),
+        ("Convert API", conv_url, conv_key),
+        ("Voice API", voice_url, voice_key),
+    )
+
+
+def _health_cache_key(targets):
+    return "pa_aida_health:" + "|".join(f"{u}:{bool(k)}" for _l, u, k in targets)
+
+
+def cached_connection_status():
+    """The last test_connections result if it is still fresh, else None (never calls the network)."""
+    return frappe.cache().get_value(_health_cache_key(_health_targets()), expires=True)
+
+
 @frappe.whitelist()
-def test_connections():
-    """Test connectivity to all configured AIDA APIs. Returns status for each."""
+def test_connections(refresh=0):
+    """Test connectivity to all configured AIDA APIs (in parallel, cached 45 s). Returns status for each."""
     if "System Manager" not in frappe.get_roles():
         frappe.throw(_("Not permitted"), frappe.PermissionError)
-    results = {}
 
-    # Test Chat API
-    chat_url, chat_key, _p, _m = _get_aida_config()
-    if chat_url and chat_key:
-        try:
-            r = requests.get(f"{chat_url}/api/v1/health", headers={"X-API-Key": chat_key}, timeout=10)
-            results["Chat API"] = {"ok": r.status_code == 200,
-                                   "detail": f"{chat_url} — HTTP {r.status_code}",
-                                   "error": r.text[:100] if r.status_code != 200 else ""}
-        except Exception as e:
-            results["Chat API"] = {"ok": False, "error": str(e)[:100]}
-    else:
-        results["Chat API"] = {"ok": False, "error": _("Not configured")}
+    targets = _health_targets()
+    cache_key = _health_cache_key(targets)
+    if not cint(refresh):
+        cached = frappe.cache().get_value(cache_key, expires=True)
+        if cached:
+            return cached
 
-    # Test Convert API
-    conv_url, conv_key = _get_convert_config()
-    if conv_url and conv_key:
-        try:
-            r = requests.get(f"{conv_url}/api/v1/health", headers={"X-API-Key": conv_key}, timeout=10)
-            results["Convert API"] = {"ok": r.status_code == 200,
-                                      "detail": f"{conv_url} — HTTP {r.status_code}",
-                                      "error": r.text[:100] if r.status_code != 200 else ""}
-        except Exception as e:
-            results["Convert API"] = {"ok": False, "error": str(e)[:100]}
-    else:
-        results["Convert API"] = {"ok": False, "error": _("Not configured")}
+    from concurrent.futures import ThreadPoolExecutor
 
-    # Test Voice API
-    voice_url, voice_key = _get_voice_config()
-    if voice_url and voice_key:
-        try:
-            r = requests.get(f"{voice_url}/api/v1/health", headers={"X-API-Key": voice_key}, timeout=10)
-            results["Voice API"] = {"ok": r.status_code == 200,
-                                    "detail": f"{voice_url} — HTTP {r.status_code}",
-                                    "error": r.text[:100] if r.status_code != 200 else ""}
-        except Exception as e:
-            results["Voice API"] = {"ok": False, "error": str(e)[:100]}
-    else:
-        results["Voice API"] = {"ok": False, "error": _("Not configured")}
+    configured = [(label, url, key) for label, url, key in targets if url and key]
+    with ThreadPoolExecutor(max_workers=len(configured) or 1) as pool:
+        checked = dict(zip((t[0] for t in configured), pool.map(lambda t: _check_health(t[1], t[2]), configured)))
 
+    results = {
+        label: checked.get(label) or {"ok": False, "error": _("Not configured")} for label, _u, _k in targets
+    }
+    frappe.cache().set_value(cache_key, results, expires_in_sec=_HEALTH_CACHE_SECONDS)
     return results
 
 
@@ -319,27 +377,37 @@ def convert_bytes_to_markdown(content, filename):
             headers={"X-API-Key": convert_key},
             files={"file": (filename, content)},
             data={"output_format": "markdown", "use_vlm": "true", "detect_tables": "true"},
-            timeout=300,
+            timeout=_CONVERT_TIMEOUT,
         )
     except requests.exceptions.RequestException as e:
-        return "", _("Convert API unreachable: {0}").format(str(e)[:150])
+        frappe.log_error(title="AIDA Convert Error", message=str(e)[:500])
+        return "", _("The conversion service is unreachable. Please try again later.")
     if resp.status_code not in (200, 201):
-        return "", _("Convert API error {0}: {1}").format(resp.status_code, resp.text[:200])
-    result = resp.json()
+        frappe.log_error(title="AIDA Convert Error", message=f"HTTP {resp.status_code}: {resp.text[:300]}")
+        return "", _("The conversion service could not process this file (error {0}).").format(resp.status_code)
+    try:
+        result = resp.json()
+    except ValueError:
+        return "", _("The conversion service returned an invalid response.")
     if result.get("success") is False:
         return "", _("Convert API: {0}").format(result.get("error") or _("conversion failed"))
     return result.get("markdown") or result.get("content") or "", ""
 
 
 @frappe.whitelist()
+@rate_limit(session_user_or_ip, limit=20, seconds=60)
 def convert_document(file_url=None):
     """Convert a PDF/image/office file to markdown via the AIDA Convert API."""
     if not file_url:
         frappe.throw(_("file_url is required"))
+    _assert_can_use_aida()
 
     file_doc = frappe.get_doc("File", {"file_url": file_url})
     file_doc.check_permission("read")
-    with open(file_doc.get_full_path(), "rb") as f:
+    file_path = file_doc.get_full_path()
+    if os.path.getsize(file_path) > _AUDIO_MAX_BYTES:
+        frappe.throw(_("The file is too large."))
+    with open(file_path, "rb") as f:
         content = f.read()
 
     filename = file_doc.file_name or file_url.split("/")[-1]
@@ -349,8 +417,14 @@ def convert_document(file_url=None):
     return {"ok": True, "markdown": markdown, "filename": filename}
 
 
+def _transcription_language(language=None) -> str:
+    code = (language or frappe.local.lang or "es").split("-")[0].split("_")[0].lower()
+    return code if code.isalpha() and len(code) in (2, 3) else "es"
+
+
 @frappe.whitelist()
-def transcribe_audio(file_url=None):
+@rate_limit(session_user_or_ip, limit=20, seconds=60)
+def transcribe_audio(file_url=None, language=None):
     """Transcribe an audio file via the AIDA Voice API.
 
     Accepts a Frappe file URL, downloads it server-side, sends it to Whisper,
@@ -376,17 +450,31 @@ def transcribe_audio(file_url=None):
     if os.path.getsize(file_path) > _AUDIO_MAX_BYTES:
         frappe.throw(_("The audio file is too large."))
     with open(file_path, "rb") as f:
+        text, error = post_transcription(voice_url, voice_key, filename, f, _transcription_language(language))
+    if error:
+        return {"ok": False, "error": error}
+    return {"ok": True, "text": text, "filename": filename}
+
+
+def post_transcription(voice_url, voice_key, filename, audio, language, mime_type=None):
+    """POST audio to the AIDA Voice API. Returns (text, error); upstream detail is logged, never returned."""
+    file_part = (filename, audio, mime_type) if mime_type else (filename, audio)
+    try:
         resp = requests.post(
             f"{voice_url}/api/v1/transcriptions",
             headers={"X-API-Key": voice_key},
-            files={"audio_file": (filename, f)},
-            data={"language": "es", "task": "transcribe"},
+            files={"audio_file": file_part},
+            data={"language": language, "task": "transcribe"},
             timeout=120,
         )
-
+    except requests.exceptions.RequestException as e:
+        frappe.log_error(title="AIDA Voice Error", message=str(e)[:500])
+        return "", _("The voice service is unreachable. Please try again later.")
     if resp.status_code not in (200, 201):
-        return {"ok": False, "error": _("Voice API error {0}: {1}").format(resp.status_code, resp.text[:200])}
-
-    result = resp.json()
-    text = result.get("text", result.get("transcription", ""))
-    return {"ok": True, "text": text, "filename": filename}
+        frappe.log_error(title="AIDA Voice Error", message=f"HTTP {resp.status_code}: {resp.text[:300]}")
+        return "", _("The voice service could not transcribe the audio (error {0}).").format(resp.status_code)
+    try:
+        result = resp.json()
+    except ValueError:
+        return "", _("The voice service returned an invalid response.")
+    return result.get("text", result.get("transcription", "")) or "", ""

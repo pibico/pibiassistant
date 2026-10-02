@@ -27,7 +27,7 @@ class TestFACChatTab(BaseAssistantTest):
         field = meta.get_field("pa_chat_tab")
         self.assertIsNotNone(field, "pa_chat_tab field must exist")
         self.assertEqual(field.fieldtype, "Tab Break")
-        self.assertEqual(field.label, "PA Chat")
+        self.assertEqual(field.label, "AIDA Chat")
 
     def test_pa_chat_description_html_exists_before_toggle(self):
         meta = frappe.get_meta("PA Core Settings")

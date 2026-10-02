@@ -34,7 +34,10 @@ def get_tool_registry() -> dict:
 
         return {"tools": formatted_tools}
     except Exception as e:
-        frappe.log_error(f"Failed to get tool registry: {str(e)}")
+        frappe.log_error(
+            title="Failed to get tool registry",
+            message=f"Failed to get tool registry: {str(e)}",
+        )
         return {"tools": []}
 
 
@@ -61,7 +64,7 @@ def get_plugin_stats() -> dict:
 
         return {"enabled_count": len(enabled), "total_count": len(discovered), "plugins": plugins}
     except Exception as e:
-        frappe.log_error(f"Failed to get plugin stats: {str(e)}")
+        frappe.log_error(title="Failed to get plugin stats", message=f"Failed to get plugin stats: {str(e)}")
         return {"enabled_count": 0, "total_count": 0, "plugins": []}
 
 
@@ -88,7 +91,7 @@ def get_tool_stats() -> dict:
 
         return {"total_tools": len(tools), "categories": categories}
     except Exception as e:
-        frappe.log_error(f"Failed to get tool stats: {str(e)}")
+        frappe.log_error(title="Failed to get tool stats", message=f"Failed to get tool stats: {str(e)}")
         return {"total_tools": 0, "categories": {}}
 
 
@@ -100,17 +103,17 @@ def toggle_plugin(plugin_name: str, enable: bool):
     reliable state persistence across Gunicorn workers.
     """
     frappe.only_for(["System Manager", "PA Admin"])
-    from pibiassistant.utils.plugin_manager import get_plugin_manager
+    from pibiassistant.utils.plugin_manager import PluginNotFoundError, get_plugin_manager
 
     try:
         plugin_manager = get_plugin_manager()
 
         if enable:
             plugin_manager.enable_plugin(plugin_name)
-            message = f"Plugin '{plugin_name}' enabled successfully"
+            message = _("Plugin '{0}' enabled successfully").format(plugin_name)
         else:
             plugin_manager.disable_plugin(plugin_name)
-            message = f"Plugin '{plugin_name}' disabled successfully"
+            message = _("Plugin '{0}' disabled successfully").format(plugin_name)
 
         cache = frappe.cache()
         cache.delete_keys("plugin_*")
@@ -122,7 +125,12 @@ def toggle_plugin(plugin_name: str, enable: bool):
 
         plugin_manager.refresh_plugins()
 
-        return {"success": True, "message": _(message)}
+        return {"success": True, "message": message}
+    except PluginNotFoundError as e:
+        return {"success": False, "message": _("Error: {0}").format(str(e))}
     except Exception as e:
-        frappe.log_error(f"Failed to toggle plugin '{plugin_name}': {str(e)}")
-        return {"success": False, "message": _(f"Error: {str(e)}")}
+        frappe.log_error(
+            title="Failed to toggle plugin",
+            message=f"Failed to toggle plugin '{plugin_name}': {str(e)}",
+        )
+        return {"success": False, "message": _("Error: {0}").format(str(e))}

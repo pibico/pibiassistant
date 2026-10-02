@@ -77,14 +77,3 @@ def register_base_tool(mcp_server, tool_instance):
     # Register with MCP server
     mcp_server.add_tool(build_tool_dict(tool_instance))
 
-
-def register_all_base_tools(mcp_server, tool_instances):
-    """
-    Register multiple BaseTool instances.
-
-    Args:
-        mcp_server: MCPServer instance
-        tool_instances: List of BaseTool instances
-    """
-    for tool in tool_instances:
-        register_base_tool(mcp_server, tool)

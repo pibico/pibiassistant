@@ -2,7 +2,7 @@ import { h } from "../lib/dom.js";
 import { __ } from "../lib/i18n.js";
 import { store, setUi } from "../lib/store.js";
 import { groupSessions, sessionTime } from "../lib/format.js";
-import { archiveSession, newChat } from "../lib/chat.js";
+import { archiveSession, newChat, refreshSessions } from "../lib/chat.js";
 import { chatPath } from "../router.js";
 import { icon } from "./icons.js";
 import { confirm } from "./dialog.js";
@@ -61,7 +61,17 @@ export function createConversations() {
     if (!sessions.length) {
       const loading = sessionsState === "idle" || sessionsState === "loading";
       list.replaceChildren(
-        loading
+        sessionsState === "error"
+          ? h(
+              "li",
+              { class: "aida-recent__state aida-recent__empty", role: "alert" },
+              h("p", { class: "aida-recent__empty-title" }, __("Couldn't load your conversations.")),
+              h("button", {
+                type: "button", class: "aida-btn aida-btn--outline",
+                onClick: () => { store.set({ sessionsState: "loading" }); refreshSessions(); },
+              }, __("Retry")),
+            )
+          : loading
           ? h("li", { class: "aida-recent__state" }, h("span", { class: "aida-spinner", role: "status", "aria-label": __("Loading conversation...") }))
           : h(
               "li",

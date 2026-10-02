@@ -14,6 +14,7 @@ from frappe import _
 from pibiassistant.pibiassistant_chat.gate import is_chat_enabled
 
 from .._helpers import (
+    _aida_mode,
     _require_system_manager,
     _safe_error,
 )
@@ -32,44 +33,43 @@ def get_aida_status() -> dict:
     try:
         settings = frappe.get_single("PA Chat Settings")
 
-        total_conversations = len(
-            frappe.get_all("PA Chat Message", distinct=True, pluck="session_id", limit_page_length=0)
+        from frappe.query_builder.functions import Count
+        from frappe.utils import get_first_day, now
+
+        message = frappe.qb.DocType("PA Chat Message")
+        total_conversations = (
+            frappe.qb.from_(message).select(Count(message.session_id).distinct()).run()[0][0] or 0
+        )
+        monthly_conversations = (
+            frappe.qb.from_(message)
+            .select(Count(message.session_id).distinct())
+            .where(message.creation >= get_first_day(now()))
+            .run()[0][0]
+            or 0
         )
 
         total_users = frappe.db.count("PA Chat User Preferences")
-
-        from frappe.utils import get_first_day, now
-
-        current_month_start = get_first_day(now())
-        monthly_conversations = len(
-            frappe.get_all(
-                "PA Chat Message",
-                filters={"creation": [">=", current_month_start]},
-                distinct=True,
-                pluck="session_id",
-                limit_page_length=0,
-            )
-        )
 
         from pibiassistant.pibiassistant_chat.quota_cache import get_quota_snapshot
 
         snap = get_quota_snapshot()
 
         chat_enabled = is_chat_enabled()
+        aida = _aida_mode()
         return {
             "status": "active"
-            if chat_enabled and settings.registration_status == "Registered"
+            if chat_enabled and (aida or settings.registration_status == "Registered")
             else "disabled",
             "enabled": chat_enabled,
-            "registration_status": settings.registration_status,
-            "subscription_plan": snap.get("plan", "Not Registered"),
+            "registration_status": "Registered" if aida else settings.registration_status,
+            "subscription_plan": "AIDA" if aida else snap.get("plan", "Not Registered"),
             "stats": {
                 "total_conversations": total_conversations,
                 "monthly_conversations": monthly_conversations,
                 "total_users": total_users,
                 "quota_used": snap.get("quota_used", 0),
                 "quota_total": snap.get("quota_total", 0),
-                "is_unlimited": snap.get("quota_total", 0) == -1,
+                "is_unlimited": aida or snap.get("quota_total", 0) == -1,
             },
             "version": "2.0.0",
         }

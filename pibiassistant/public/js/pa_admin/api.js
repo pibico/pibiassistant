@@ -35,6 +35,7 @@ export function call(method, args = {}, { type = 'POST', freeze = false, silent 
                 args,
                 type,
                 freeze,
+                silent: true,
                 callback: (response) => finish(resolve, response ? response.message : undefined),
                 error: fail,
             });

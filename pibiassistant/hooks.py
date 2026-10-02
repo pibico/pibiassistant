@@ -72,17 +72,6 @@ app_version = app_version
 # automatically create page for each record of this doctype
 # website_generators = ["Web Page"]
 
-# Jinja
-# ----------
-
-# add methods and filters to jinja environment
-jenv = {
-    "methods": [
-        "pibiassistant.utils.template_helpers.get_assistant_status",
-        "pibiassistant.utils.template_helpers.get_tool_count",
-    ]
-}
-
 # Installation
 # ------------
 
@@ -139,7 +128,6 @@ permission_query_conditions = {
 
 doc_events = {
     "PA Core Settings": {"on_update": "pibiassistant.utils.cache.invalidate_settings_cache"},
-    "PA Audit Log": {"after_insert": "pibiassistant.utils.cache.invalidate_dashboard_cache"},
 }
 
 # Scheduled Tasks
@@ -148,7 +136,6 @@ doc_events = {
 scheduler_events = {
     "cron": {
         "0 0 * * *": ["pibiassistant.pibiassistant_core.server.cleanup_old_logs"],
-        "*/30 * * * *": ["pibiassistant.utils.cache.warm_cache"],
     },
     # Hourly tasks removed - no longer needed after Assistant Connection Log removal
 }
@@ -230,7 +217,10 @@ page_renderer = ["pibiassistant.api.oauth_wellknown_renderer.WellKnownRenderer"]
 # Handle CORS for OAuth endpoints (dynamic client registration, token endpoints, etc.)
 # Sets frappe.conf.allow_cors (V15) and frappe.local.allow_cors (V16+) based on
 # "Allowed Public Client Origins" setting - works immediately without restart
-before_request = ["pibiassistant.api.oauth_cors.set_cors_for_oauth_endpoints"]
+before_request = [
+    "pibiassistant.api.oauth_cors.set_cors_for_oauth_endpoints",
+    "pibiassistant.utils.warmup.prewarm_tool_registry",
+]
 
 # Automatically update python controller files with type annotations for DocTypes
 # Use Developer Mode in Bench set up to auto append type annotation
@@ -256,7 +246,6 @@ standard_roles = [
 # Startup
 # -------
 
-app_startup = "pibiassistant.startup.startup"
 before_migrate = "pibiassistant.utils.migration_hooks.before_migrate"
 after_migrate = [
     "pibiassistant.startup.startup",
@@ -408,7 +397,6 @@ app_include_js = [
     _widget_asset("/assets/pibiassistant/chat/widget/widget_richblocks.js"),
     _widget_asset("/assets/pibiassistant/chat/widget/widget_ui.js"),
     _widget_asset("/assets/pibiassistant/chat/widget/widget_context.js"),
-    _widget_asset("/assets/pibiassistant/chat/widget/widget_routing.js"),
     _widget_asset("/assets/pibiassistant/chat/widget/widget_streaming.js"),
     _widget_asset("/assets/pibiassistant/chat/widget/widget_plan.js"),
     _widget_asset("/assets/pibiassistant/chat/widget/widget_templates.js"),

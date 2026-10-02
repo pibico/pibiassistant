@@ -81,12 +81,15 @@ def _attach_files_to_message(file_urls: list[str], message_name: str) -> int:
     permissions, so without ``owner`` any caller could name an arbitrary private
     ``file_url`` and have ``_extract_file_attachments`` read it into the prompt.
 
+    Only pending composer uploads qualify: a file the caller owns that is already attached
+    to a business document must not be moved off it.
+
     Clearing ``pa_pending_chat_attachment`` is what takes the file out of the
     orphan sweep's reach — uploads are flagged on selection, not on send.
     """
     file_docs = frappe.get_all(
         "File",
-        filters={"file_url": ["in", file_urls], "owner": frappe.session.user},
+        filters={"file_url": ["in", file_urls], "owner": frappe.session.user, "pa_pending_chat_attachment": 1},
         fields=["name", "file_url"],
         limit_page_length=0,
     )
@@ -115,11 +118,76 @@ def _attach_files_to_message(file_urls: list[str], message_name: str) -> int:
     return linked
 
 
-def _extract_file_attachments(message_name: str) -> str:
+MAX_FILE_CHARS = 30000
+MAX_ATTACHMENT_CHARS = 60000
+_TRUNCATED = "\n[... truncated: the file is longer than what fits in the prompt; ask for a specific part ...]"
+
+
+def _clip(text: str, limit: int) -> str:
+    return text if len(text) <= limit else text[:limit] + _TRUNCATED
+
+
+def _describe_file(extractor, file_info) -> str:
+    """The prompt block for one attached file; a failed read becomes a note the model can relay."""
+    try:
+        result = extractor.execute({"file_url": file_info.file_url, "operation": "extract"})
+
+        if result.get("success") and result.get("content"):
+            size_bytes = file_info.file_size or 0
+            if size_bytes < 1024:
+                size_str = f"{size_bytes} B"
+            elif size_bytes < 1024 * 1024:
+                size_str = f"{size_bytes / 1024:.1f} KB"
+            else:
+                size_str = f"{size_bytes / (1024 * 1024):.1f} MB"
+
+            return "\n".join(
+                [
+                    f"\nFile: {file_info.file_name}",
+                    f"URL: {file_info.file_url}",
+                    f"Size: {size_str}",
+                    "Content:",
+                    _clip(result["content"], MAX_FILE_CHARS),
+                    "-" * 80,
+                ]
+            )
+        return (
+            f"\nFile: {file_info.file_name}\nURL: {file_info.file_url}\n"
+            f"The content of this file could not be read: {result.get('error') or 'unknown error'}"
+        )
+
+    except Exception as e:
+        frappe.log_error(
+            title="AIDA File Extraction",
+            message=f"Error extracting file {file_info.file_name}: {e!s}",
+        )
+        return (
+            f"\nFile: {file_info.file_name}\nURL: {file_info.file_url}\n"
+            "The content of this file could not be read."
+        )
+
+
+def _describe_file_in_own_context(site: str, user: str, file_info) -> str:
+    """_describe_file in a worker thread: Frappe's context is per thread, so open a private one."""
+    frappe.init(site=site)
+    frappe.connect()
+    try:
+        frappe.set_user(user)  # nosemgrep: frappe-setuser
+        from pibiassistant.plugins.data_science.tools.extract_file_content import ExtractFileContent
+
+        return _describe_file(ExtractFileContent(), file_info)
+    finally:
+        frappe.destroy()
+
+
+def _extract_file_attachments(message_name: str, parallel: bool = False) -> str:
     """
     Extract content from files attached to a AIDA Message.
 
-    Uses the ExtractFileContent tool from pibiassistant.
+    Uses the ExtractFileContent tool from pibiassistant. Each file is clipped to
+    ``MAX_FILE_CHARS`` and the whole block to ``MAX_ATTACHMENT_CHARS``. With
+    ``parallel`` the files are converted concurrently (the conversion service is
+    the slow part), each in its own Frappe context.
     """
     try:
         attached_files = frappe.get_all(
@@ -141,34 +209,25 @@ def _extract_file_attachments(message_name: str) -> str:
             frappe.log_error(title="AIDA File Extraction", message="pibiassistant not installed")
             return ""
 
-        file_contents = ["[Attached Files]"]
+        if parallel and len(attached_files) > 1:
+            from concurrent.futures import ThreadPoolExecutor
 
-        for file_info in attached_files:
-            try:
-                result = extractor.execute({"file_url": file_info.file_url, "operation": "extract"})
-
-                if result.get("success") and result.get("content"):
-                    size_bytes = file_info.file_size or 0
-                    if size_bytes < 1024:
-                        size_str = f"{size_bytes} B"
-                    elif size_bytes < 1024 * 1024:
-                        size_str = f"{size_bytes / 1024:.1f} KB"
-                    else:
-                        size_str = f"{size_bytes / (1024 * 1024):.1f} MB"
-
-                    file_contents.append(f"\nFile: {file_info.file_name}")
-                    file_contents.append(f"Size: {size_str}")
-                    file_contents.append("Content:")
-                    file_contents.append(result["content"])
-                    file_contents.append("-" * 80)
-
-            except Exception as e:
-                frappe.log_error(
-                    title="AIDA File Extraction",
-                    message=f"Error extracting file {file_info.file_name}: {e!s}",
+            site, user = frappe.local.site, frappe.session.user
+            with ThreadPoolExecutor(max_workers=min(len(attached_files), 4)) as pool:
+                blocks = list(
+                    pool.map(lambda f: _describe_file_in_own_context(site, user, f), attached_files)
                 )
+        else:
+            blocks = [_describe_file(extractor, f) for f in attached_files]
 
-        return "\n".join(file_contents) if len(file_contents) > 1 else ""
+        out, budget = [], MAX_ATTACHMENT_CHARS
+        for block in blocks:
+            if budget <= 0:
+                out.append("\nFurther attached files were left out: the prompt size limit was reached.")
+                break
+            out.append(_clip(block, budget))
+            budget -= len(block)
+        return "\n".join(["[Attached Files]", *out]) if out else ""
 
     except Exception as e:
         frappe.log_error(

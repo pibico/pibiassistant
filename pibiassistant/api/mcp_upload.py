@@ -28,12 +28,15 @@ def _consume(token: str) -> dict | None:
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 @rate_limit(ip_only, limit=20, seconds=60)
 def upload_attachment(token: str | None = None) -> dict:
-    state = _consume(token or "")
-    if not state:
+    # Check the request is usable before burning the single-use link.
+    if not token or not frappe.cache().get_value(token_key(token)):
         frappe.throw(_("This upload link is invalid or has expired."), frappe.PermissionError)
     upload = frappe.request.files.get("file") if frappe.request else None
     if not upload:
         frappe.throw(_("No file was sent."), frappe.ValidationError)
+    state = _consume(token)
+    if not state:
+        frappe.throw(_("This upload link is invalid or has expired."), frappe.PermissionError)
     content = upload.stream.read(attachments.MAX_ATTACH_BYTES + 1)
     frappe.set_user(state["user"])
     try:

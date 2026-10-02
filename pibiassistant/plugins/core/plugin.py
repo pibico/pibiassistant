@@ -50,6 +50,8 @@ class CorePlugin(BasePlugin):
             "get_document",
             "update_document",
             "list_documents",
+            "aggregate_documents",
+            "get_linked_documents",
             "delete_document",
             "submit_document",
             # Attachments (existing Frappe file, small base64 payload, or a one-time upload link)
@@ -69,6 +71,10 @@ class CorePlugin(BasePlugin):
             # Workflow tools
             "run_workflow",
             "get_pending_approvals",
+            # Skills
+            "get_skill",
+            # AIDA health
+            "get_aida_status",
         ]
 
     def validate_environment(self):

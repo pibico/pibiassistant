@@ -37,7 +37,10 @@ def get_prompt_templates_list() -> dict:
             "published": published,
         }
     except Exception as e:
-        frappe.log_error(f"Failed to get prompt templates list: {str(e)}")
+        frappe.log_error(
+            title="Failed to get prompt templates list",
+            message=f"Failed to get prompt templates list: {str(e)}",
+        )
         return {"success": False, "error": str(e), "templates": [], "total": 0, "published": 0}
 
 
@@ -66,7 +69,10 @@ def toggle_prompt_template_status(name: str, publish: bool):
         }
     except Exception as e:
         frappe.db.rollback()
-        frappe.log_error(f"Failed to toggle prompt template '{name}': {str(e)}")
+        frappe.log_error(
+            title="Failed to toggle prompt template",
+            message=f"Failed to toggle prompt template '{name}': {str(e)}",
+        )
         return {"success": False, "message": _("Error: {0}").format(str(e))}
 
 
@@ -100,5 +106,8 @@ def preview_prompt_template(name: str):
             "arguments": arguments,
         }
     except Exception as e:
-        frappe.log_error(f"Failed to preview prompt template '{name}': {str(e)}")
+        frappe.log_error(
+            title="Failed to preview prompt template",
+            message=f"Failed to preview prompt template '{name}': {str(e)}",
+        )
         return {"success": False, "message": _("Error: {0}").format(str(e))}

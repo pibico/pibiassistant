@@ -50,11 +50,11 @@ Or for specific origins:
 
 ---
 
-### Method 2: Assistant Core Settings (EXPERIMENTAL)
+### Method 2: PA Core Settings (EXPERIMENTAL)
 
 **⚠️ This method is experimental and may change in future versions.**
 
-1. Go to **Assistant Core Settings**
+1. Go to **PA Core Settings**
 2. Enable **Dynamic Client Registration**
 3. Scroll to **Allowed Public Client Origins**
 4. Enter origins (one per line):
@@ -79,7 +79,7 @@ Or for specific origins:
 ### Scenario 1: Production (Claude Desktop/Web)
 **Configuration:** None needed
 
-Leave both `site_config.json` and Assistant Core Settings empty.
+Leave both `site_config.json` and PA Core Settings empty.
 
 ```bash
 # No CORS configuration needed!
@@ -150,7 +150,7 @@ Without CORS configuration:
 The CORS handler (`oauth_cors.py`) checks configuration in this order:
 
 1. **`frappe.conf.oauth_cors_allowed_origins`** (site_config.json)
-2. **Assistant Core Settings** > allowed_public_client_origins
+2. **PA Core Settings** > allowed_public_client_origins
 
 If neither is set, CORS is disabled (production default).
 
@@ -163,7 +163,7 @@ CORS is enabled for these OAuth endpoints:
 - `/.well-known/oauth-protected-resource`
 - `/api/method/frappe.integrations.oauth2.*`
 - `/api/method/pibiassistant.api.oauth_registration.register_client`
-- `/api/method/pibiassistant.api.fac_endpoint.handle_mcp`
+- `/api/method/pibiassistant.api.pa_endpoint.handle_mcp`
 
 ---
 
@@ -237,7 +237,7 @@ A: Only for browser-based OAuth clients like MCP Inspector during development.
 **Q: Is it safe to use `"*"` in production?**
 A: No. Only use `"*"` for local development. Use specific origins in production.
 
-**Q: Can I use both site_config.json and Assistant Core Settings?**
+**Q: Can I use both site_config.json and PA Core Settings?**
 A: Yes, but site_config.json takes precedence.
 
 **Q: Do I need to restart after changing site_config.json?**

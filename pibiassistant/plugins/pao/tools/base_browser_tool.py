@@ -153,7 +153,3 @@ class BaseBrowserTool(BaseTool):
             "The PA widget did not respond. It may be closed, on a page where it "
             "is not mounted, or the user navigated away. Continue without browser data."
         )
-
-    def set_timeout(self, timeout: int) -> None:
-        """Set the timeout for browser response (in seconds)."""
-        self._timeout = timeout

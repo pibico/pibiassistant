@@ -52,7 +52,7 @@ def link_meta(**fields):
         fieldtype, options = spec
         return MagicMock(fieldtype=fieldtype, options=options)
 
-    return MagicMock(is_submittable=0, get_field=get_field)
+    return MagicMock(is_submittable=0, issingle=0, istable=0, get_field=get_field)
 
 
 @contextmanager

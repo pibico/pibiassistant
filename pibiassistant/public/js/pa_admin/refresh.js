@@ -28,11 +28,19 @@ export function startRefresh(ctx) {
     });
     ctx.scope.add(on(qs('#refresh-all', ctx.root), 'click', refreshAll));
     ctx.scope.interval(updateLastRefreshedLabel, 5000);
-    ctx.scope.interval(() => {
+    const autoRefresh = () => {
         if (!state.autoRefreshEnabled || hasToggleInProgress()) return;
         state.lastRefreshedAt = new Date();
         updateLastRefreshedLabel();
         emit('refresh', { scope: 'auto' });
+    };
+    ctx.scope.interval(() => {
+        if (!document.hidden) autoRefresh();
     }, 30000);
+    ctx.scope.on(document, 'visibilitychange', () => {
+        if (document.hidden) return;
+        const ts = state.lastRefreshedAt;
+        if (!ts || Date.now() - ts.getTime() >= 30000) autoRefresh();
+    });
     updateLastRefreshedLabel();
 }

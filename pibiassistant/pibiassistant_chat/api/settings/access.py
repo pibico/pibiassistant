@@ -9,6 +9,7 @@ from __future__ import annotations
 import frappe
 from frappe import _
 
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_mode
 from pibiassistant.pibiassistant_chat.api.auth import _ar_user_id, _is_tenant_owner
 from pibiassistant.pibiassistant_chat.cloud_url import get_pa_cloud_url
 from pibiassistant.pibiassistant_chat.gate import is_chat_enabled
@@ -88,8 +89,7 @@ def can_use_pao() -> dict:
             }
 
         # AIDA mode: when aida_api_key is configured, bypass cloud registration
-        aida_key = frappe.get_doc("PA Core Settings").get_password("aida_api_key")
-        if aida_key:
+        if _aida_mode():
             user = frappe.session.user
             if user == "Guest":
                 return {

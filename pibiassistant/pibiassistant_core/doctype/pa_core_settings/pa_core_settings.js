@@ -38,6 +38,7 @@ window.pibiassistant_panel = window.pibiassistant_panel || async function () {
 function load_aida_models(frm, show_message) {
     frappe.call({
         method: 'pibiassistant.pibiassistant_chat.api.aida.get_models',
+        args: { refresh: show_message ? 1 : 0 },
         callback: function(r) {
             if (r.message && r.message.success) {
                 let providers = r.message.providers || {};
@@ -97,8 +98,8 @@ function update_model_options(frm, reset_invalid) {
 function show_aida_test_results(results) {
     let rows = Object.entries(results || {}).map(function([name, info]) {
         let icon = info.ok
-            ? '<i class="ph ph-check-circle" aria-hidden="true" style="color: var(--green-600, #176B3A); vertical-align: -0.125em;"></i>'
-            : '<i class="ph ph-x-circle" aria-hidden="true" style="color: var(--red-600, #B3261E); vertical-align: -0.125em;"></i>';
+            ? '<i class="ph ph-check-circle pa-ps-test-ok" aria-hidden="true"></i>'
+            : '<i class="ph ph-x-circle pa-ps-test-fail" aria-hidden="true"></i>';
         let detail = info.ok ? info.detail : info.error;
         return `<p>${icon} <b>${frappe.utils.escape_html(name)}</b>: ${frappe.utils.escape_html(detail || '')}</p>`;
     });
@@ -137,6 +138,7 @@ frappe.ui.form.on("PA Core Settings", {
         frm.add_custom_button(__('Test AIDA APIs'), function() {
             frappe.call({
                 method: 'pibiassistant.pibiassistant_chat.api.aida.test_connections',
+                args: { refresh: 1 },
                 freeze: true,
                 freeze_message: __('Testing AIDA API connections...'),
                 callback: function(r) {

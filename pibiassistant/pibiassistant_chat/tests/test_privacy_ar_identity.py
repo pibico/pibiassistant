@@ -28,11 +28,15 @@ class TestPrivacyArIdentity(BaseAssistantTest):
         self.assertNotEqual(self.admin_email, "Administrator", "test premise: docname != email")
 
     def _patch_client(self):
-        """Patch _get_client to return a MagicMock SDK client."""
+        """Patch cloud_client_or_throw to return a MagicMock SDK client."""
         client = MagicMock()
-        p = patch("pibiassistant.pibiassistant_chat.api.privacy._get_client", return_value=client)
-        p.start()
-        self.addCleanup(p.stop)
+        for p in (
+            patch("pibiassistant.pibiassistant_chat.api.privacy.cloud_client_or_throw", return_value=client),
+            patch("pibiassistant.pibiassistant_chat.api._helpers._aida_mode", return_value=False),
+            patch("pibiassistant.pibiassistant_chat.api.privacy._aida_mode", return_value=False),
+        ):
+            p.start()
+            self.addCleanup(p.stop)
         return client
 
     def test_save_initial_consent_addresses_ar_by_email(self):

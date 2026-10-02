@@ -38,7 +38,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from pibiassistant.plugins.base_plugin import BasePlugin
 
 
-class FacoPlugin(BasePlugin):
+class AidaPlugin(BasePlugin):
     """
     Plugin bundling tools originally shipped in frappe_assistant_copilot.
 

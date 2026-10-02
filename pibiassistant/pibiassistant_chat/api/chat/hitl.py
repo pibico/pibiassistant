@@ -1,4 +1,4 @@
-"""HITL pause inspection — proxies AR's get_pending_interrupt.
+"""HITL pause inspection — the AIDA pending approval, or AR's get_pending_interrupt.
 
 Called by the chat frontend on ``ChatView`` mount, on socket reconnect,
 and from the widget's init() so it can re-render the InteractionCard
@@ -18,8 +18,16 @@ def get_pending_interrupt(session_id: str) -> dict:
     """Forward to AR. Returns ``{pending: False}`` on transport or
     configuration error so the frontend hydration path can degrade
     silently — the user can still type a new message."""
-    if not session_id:
-        frappe.throw(_("session_id is required"))
+    from .._helpers import _validate_session_id
+
+    _validate_session_id(session_id)
+
+    from .aida_stream import is_aida_mode
+
+    if is_aida_mode():
+        from .aida_tools import pending_payload
+
+        return pending_payload(session_id, frappe.session.user)
 
     client = get_pa_cloud_client()
     if client is None:

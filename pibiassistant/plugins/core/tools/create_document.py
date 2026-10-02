@@ -25,6 +25,8 @@ import frappe
 from frappe import _
 
 from pibiassistant.core.base_tool import BaseTool
+from pibiassistant.plugins.core.field_guard import check_field_names, restricted_fields_for_doctype
+from pibiassistant.plugins.query_errors import DB_ERRORS, client_error_message, log_failure, permission_error_result
 
 
 class DocumentCreate(BaseTool):
@@ -97,18 +99,7 @@ class DocumentCreate(BaseTool):
 
         try:
             # Filter out sensitive fields that user shouldn't be able to set
-            from pibiassistant.core.security_config import ADMIN_ONLY_FIELDS, SENSITIVE_FIELDS
-
-            # Get restricted fields for this role and doctype
-            restricted_fields = set()
-            restricted_fields.update(SENSITIVE_FIELDS.get("all_doctypes", []))
-            restricted_fields.update(SENSITIVE_FIELDS.get(doctype, []))
-
-            if user_role == "PA User":
-                restricted_fields.update(ADMIN_ONLY_FIELDS.get("all_doctypes", []))
-                doctype_admin_fields = ADMIN_ONLY_FIELDS.get(doctype, [])
-                if doctype_admin_fields != "*":
-                    restricted_fields.update(doctype_admin_fields)
+            restricted_fields = restricted_fields_for_doctype(doctype, user_role)
 
             # Check for attempts to set restricted fields
             restricted_fields_attempted = [field for field in data.keys() if field in restricted_fields]
@@ -118,6 +109,14 @@ class DocumentCreate(BaseTool):
                     "error": f"Cannot set restricted fields: {', '.join(restricted_fields_attempted)}. These fields require higher privileges.",
                 }
                 return result
+
+            field_error = check_field_names(frappe.get_meta(doctype), data.keys(), creating=True)
+            if field_error:
+                return field_error
+
+            submit_ignored = bool(submit) and not frappe.get_meta(doctype).is_submittable
+            if submit_ignored:
+                submit = False
 
             # Enhanced submit permission checking based on user role
             if submit:
@@ -248,12 +247,15 @@ class DocumentCreate(BaseTool):
 
             # Submit if requested and allowed
             if submit and doc.docstatus == 0:
+                frappe.db.savepoint("pa_submit")
                 try:
                     doc.submit()
                     result["submitted"] = True
                     result["docstatus"] = 1
                     result["message"] = f"{doctype} '{doc.name}' created and submitted successfully"
                 except Exception as e:
+                    frappe.db.rollback(save_point="pa_submit")
+                    doc.reload()
                     result["message"] = f"{doctype} '{doc.name}' created as draft. Submit failed: {str(e)}"
                     result["submit_error"] = str(e)
             else:
@@ -274,16 +276,18 @@ class DocumentCreate(BaseTool):
             if doc.docstatus == 0:
                 result["next_steps"] = [
                     "Document is in draft state",
-                    "You can update this document using document_update tool",
+                    "You can update this document using update_document tool",
                     f"Submit permission: {'Available' if result['can_submit'] else 'Not available'}",
                 ]
             else:
                 result["next_steps"] = [
                     "Document is submitted and cannot be modified",
-                    "Use document_get to view the submitted document",
+                    "Use get_document to view the submitted document",
                 ]
 
-            # Log successful creation
+            if submit_ignored:
+                result["message"] += f" ({doctype} is not submittable; submit was ignored)"
+
             # Add warnings if any fields were silently overridden
             if warnings:
                 result["warnings"] = warnings
@@ -325,12 +329,19 @@ class DocumentCreate(BaseTool):
                     else f"Use get_doctype_info tool with doctype='{doctype}' to see all required fields."
                 ),
             }
-        except Exception as e:
-            frappe.log_error(
-                title=_("Document Creation Error"), message=f"Error creating {doctype}: {str(e)}"
+        except frappe.PermissionError as e:
+            return permission_error_result(
+                e,
+                _("You do not have permission to create {0}.").format(doctype),
+                guidance=_("Insufficient permissions for this operation."),
+                doctype=doctype,
             )
+        except Exception as e:
+            if DB_ERRORS and isinstance(e, DB_ERRORS):
+                return {"success": False, "error": client_error_message(e), "doctype": doctype}
+            log_failure("Document Creation Error", e)
 
-            error_msg = str(e)
+            error_msg = str(e)[:2000] or type(e).__name__
 
             # Provide specific guidance based on error type
             result = {"success": False, "error": error_msg, "doctype": doctype}

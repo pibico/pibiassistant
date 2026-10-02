@@ -5,14 +5,13 @@
 """Voice-to-text proxy. Forwards browser audio to the AIDA Voice API
 or to AIDA (legacy path). Gates the call on PA Chat being enabled."""
 
-from __future__ import annotations
-
 import frappe
-import requests
 from frappe import _
+from frappe.utils import cint
 
 from pibiassistant.pibiassistant_chat.gate import is_chat_enabled
 
+from .aida import _transcription_language, post_transcription
 from ._rate_limits import rate_limit, session_user_or_ip
 
 MAX_AUDIO_BYTES = 10_485_760  # 10 MB
@@ -48,26 +47,18 @@ def transcribe(duration_ms: int = 0, language: str | None = None) -> dict:
         )
 
     mime_type = audio_file.mimetype or "audio/webm"
-    lang = (language or "").strip() or "es"
+    lang = _transcription_language(language)
     filename = audio_file.filename or "audio.webm"
+    duration_ms = max(cint(duration_ms), 0)
 
     from pibiassistant.pibiassistant_chat.api.aida import _get_voice_config
     voice_url, voice_key = _get_voice_config()
 
     if voice_url and voice_key:
-        resp = requests.post(
-            f"{voice_url}/api/v1/transcriptions",
-            headers={"X-API-Key": voice_key},
-            files={"audio_file": (filename, audio_bytes, mime_type)},
-            data={"language": lang, "task": "transcribe"},
-            timeout=120,
-        )
-        if resp.status_code not in (200, 201):
-            frappe.throw(_("Voice API error {0}: {1}").format(resp.status_code, resp.text[:200]))
-
-        result = resp.json()
-        return {"text": result.get("text", result.get("transcription", "")),
-                "duration_seconds": int(duration_ms or 0) / 1000}
+        text, error = post_transcription(voice_url, voice_key, filename, audio_bytes, lang, mime_type)
+        if error:
+            frappe.throw(error)
+        return {"text": text, "duration_seconds": duration_ms / 1000}
 
     # Legacy cloud path
     from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
@@ -81,18 +72,6 @@ def transcribe(duration_ms: int = 0, language: str | None = None) -> dict:
         audio_bytes=audio_bytes,
         mime_type=mime_type,
         user_id=_ar_user_id(frappe.session.user),
-        duration_ms=int(duration_ms or 0),
+        duration_ms=duration_ms,
         language=lang,
     )
-
-
-def _resolve_default_language() -> str:
-    """Fallback used only when the client sent no language hint.
-
-    The browser sends `navigator.language` (and the SPA also reads the
-    AR Tenant User profile locale ahead of that). If neither is present —
-    a non-browser SDK caller, a stripped form, or a request from an iframe
-    that lost its locale — fall back to English. Whisper's auto-detect on
-    silent audio is the failure mode we're trying to avoid.
-    """
-    return "en"

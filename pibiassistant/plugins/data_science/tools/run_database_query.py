@@ -27,6 +27,9 @@ import pandas as pd
 from frappe import _
 
 from pibiassistant.core.base_tool import BaseTool
+from pibiassistant.plugins.data_science.frames import rows_to_dicts
+from pibiassistant.plugins.limits import clamp_limit
+from pibiassistant.plugins.query_errors import log_failure, strip_schema
 
 
 class QueryAndAnalyse(BaseTool):
@@ -101,7 +104,7 @@ class QueryAndAnalyse(BaseTool):
             validate_query = arguments.get("validate_query", True)
             format_results = arguments.get("format_results", True)
             include_schema_info = arguments.get("include_schema_info", False)
-            limit = min(arguments.get("limit", 100), 1000)  # Cap at 1000 rows
+            limit = clamp_limit(arguments.get("limit"), 100, 1000)
 
             # Validate query security
             validation_result = self._validate_query_security(query)
@@ -140,9 +143,9 @@ class QueryAndAnalyse(BaseTool):
             return response
 
         except Exception as e:
-            frappe.log_error(title=_("Query and Analyse Error"), message=f"Error executing query: {str(e)}")
+            log_failure("Query and Analyse Error", e)
 
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": strip_schema(str(e))[:2000]}
 
     def _validate_query_security(self, query: str) -> Dict[str, Any]:
         """Validate query for security - only SELECT statements allowed"""
@@ -195,12 +198,18 @@ class QueryAndAnalyse(BaseTool):
 
             start_time = time.time()
 
-            # Add LIMIT if not present and within bounds
-            if "LIMIT" not in query.upper():
-                query = f"{query.rstrip(';')} LIMIT {limit}"
-
-            # Execute query
-            result = frappe.db.sql(query, as_dict=True)
+            # A wrapper applies the cap regardless of any LIMIT the caller wrote
+            # (or hid in a comment/identifier).
+            inner = query.rstrip().rstrip(";")
+            try:
+                result = rows_to_dicts(
+                    frappe.db.sql(f"SELECT * FROM ({inner}\n) AS pa_limited LIMIT {limit}", as_dict=True)
+                )
+            except Exception as e:
+                # Joins selecting same-named columns cannot be wrapped as a derived table.
+                if "duplicate column" not in str(e).lower():
+                    raise
+                result = rows_to_dicts(frappe.db.sql(inner, as_dict=True))[:limit]
 
             execution_time = (time.time() - start_time) * 1000  # Convert to milliseconds
 
@@ -212,7 +221,7 @@ class QueryAndAnalyse(BaseTool):
             }
 
         except Exception as e:
-            return {"success": False, "error": f"Query execution failed: {str(e)}"}
+            return {"success": False, "error": _("Query execution failed: {0}").format(strip_schema(str(e))[:2000])}
 
     def _analyze_results(self, data: List[Dict], analysis_type: str) -> Dict[str, Any]:
         """Analyze query results"""
@@ -220,7 +229,7 @@ class QueryAndAnalyse(BaseTool):
             return {"message": "No data returned from query"}
 
         try:
-            df = pd.DataFrame(data)
+            df = pd.DataFrame(rows_to_dicts(data))
 
             analysis = {
                 "basic_info": {

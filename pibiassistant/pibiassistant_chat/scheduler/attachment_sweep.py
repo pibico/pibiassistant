@@ -11,6 +11,9 @@ that no message and no retention policy will ever reach.
 `send_message` clears the flag when it links the file to a PA Chat Message.
 Anything still flagged after 24h was never sent, so it is deleted.
 
+The same pass reaps ``debug-bundle-*.zip`` exports (private copies of whole
+conversations) once they are older than 24h.
+
 Idempotent; per-file delete errors are swallowed so one bad file cannot wedge
 the batch.
 """
@@ -40,6 +43,18 @@ def sweep_orphan_chat_attachments() -> dict:
             # Defence in depth: the flag alone is not a safe delete key. A file
             # that did get linked to a message backs a live conversation, even
             # if clearing the flag failed.
+            "attached_to_name": ["is", "not set"],
+        },
+        pluck="name",
+        limit=BATCH_SIZE,
+    )
+
+    stale += frappe.get_all(
+        "File",
+        filters={
+            "file_name": ["like", "debug-bundle-%.zip"],
+            "is_private": 1,
+            "creation": ["<", cutoff],
             "attached_to_name": ["is", "not set"],
         },
         pluck="name",

@@ -407,30 +407,33 @@ def _relay_ar_interrupt_resume(
         from .aida_stream import is_aida_mode
 
         if is_aida_mode():
-            from .aida_stream import _relay_aida_stream
+            from .aida_stream import _relay_aida_stream, release_turn
             from .aida_tools import peek_pending
 
-            pending = peek_pending(session_id, user)
-            if not pending:
-                _emit_socket_event(
+            try:
+                pending = peek_pending(session_id, user)
+                if not pending:
+                    _emit_socket_event(
+                        session_id,
+                        {
+                            "event": "stream_error",
+                            "session_id": session_id,
+                            "error": _("There is nothing pending to approve in this conversation."),
+                        },
+                    )
+                    return
+                _relay_aida_stream(
                     session_id,
-                    {
-                        "event": "stream_error",
-                        "session_id": session_id,
-                        "error": _("There is nothing pending to approve in this conversation."),
-                    },
+                    "",
+                    None,
+                    user,
+                    restricted=restricted,
+                    continue_from_message_id=pending["message_id"],
+                    model_id=model_id,
+                    resume_responses=[r for r in (interrupt_response or []) if isinstance(r, dict)],
                 )
-                return
-            _relay_aida_stream(
-                session_id,
-                "",
-                None,
-                user,
-                restricted=restricted,
-                continue_from_message_id=message_id or pending["message_id"],
-                model_id=model_id,
-                resume_responses=[r for r in (interrupt_response or []) if isinstance(r, dict)],
-            )
+            finally:
+                release_turn(session_id)
             return
 
         from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
@@ -928,6 +931,7 @@ def _relay_ar_stream(
     continue_from_message_id=None,
     web_search=None,
     thinking_enabled=None,
+    extract_files=False,
 ):
     """
     Relay SSE stream from AR to frontend via Socket.IO.
@@ -986,20 +990,24 @@ def _relay_ar_stream(
     block_builder = None
 
     try:
-        from .aida_stream import _relay_aida_stream, is_aida_mode
+        from .aida_stream import _relay_aida_stream, is_aida_mode, release_turn
 
         if is_aida_mode():
-            _relay_aida_stream(
-                session_id,
-                original_message,
-                message_name,
-                user,
-                restricted=restricted,
-                system_prompt_addendum=system_prompt_addendum,
-                context=context,
-                continue_from_message_id=continue_from_message_id,
-                model_id=model_id,
-            )
+            try:
+                _relay_aida_stream(
+                    session_id,
+                    original_message,
+                    message_name,
+                    user,
+                    restricted=restricted,
+                    system_prompt_addendum=system_prompt_addendum,
+                    context=context,
+                    continue_from_message_id=continue_from_message_id,
+                    model_id=model_id,
+                    extract_files=extract_files,
+                )
+            finally:
+                release_turn(session_id)
             return
 
         from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
@@ -1481,8 +1489,9 @@ def _persist_partial_assistant_turn(
     import json as _json_mod
 
     assistant_row = _find_assistant_msg_by_message_id(session_id, ar_message_id) if ar_message_id else None
-    if not assistant_row:
-        # Tier 2: most recent assistant row in this session.
+    if not assistant_row and not ar_message_id:
+        # Tier 2 (legacy, no message_id): most recent assistant row in this session. With a
+        # message_id it would overwrite the previous turn's answer, so a new row is created instead.
         assistant_row = frappe.db.get_value(
             "PA Chat Message",
             {"session_id": session_id, "role": "assistant"},

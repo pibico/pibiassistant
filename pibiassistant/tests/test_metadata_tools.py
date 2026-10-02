@@ -62,7 +62,7 @@ class TestMetadataTools(BaseAssistantTest):
 
     def test_get_doctype_metadata_basic(self):
         """Test basic DocType metadata retrieval"""
-        if not self.registry.has_tool("get_doctype_info"):
+        if not self.registry.get_tool("get_doctype_info"):
             self.skipTest("get_doctype_info tool not available")
 
         arguments = {"doctype": "User"}
@@ -125,12 +125,15 @@ class TestMetadataTools(BaseAssistantTest):
         roles_entry = next((c for c in child_tables if c["fieldname"] == "roles"), None)
         self.assertIsNotNone(roles_entry, f"Expected 'roles' in child_tables, got {child_tables}")
         self.assertEqual(roles_entry["options"], "Has Role")
-        self.assertIn(roles_entry["fieldtype"], ("Table", "Table MultiSelect"))
 
-        # Recursive child field metadata must be present so create_document has everything it needs.
+        # Compact child field lines ('fieldname: Fieldtype>options') so create_document has what it needs.
         self.assertTrue(roles_entry["fields"], "Child table 'roles' should expose its own fields")
-        child_field_names = {f["fieldname"] for f in roles_entry["fields"]}
-        self.assertIn("role", child_field_names)
+        self.assertTrue(any(line.startswith("role: Link>Role") for line in roles_entry["fields"]))
+
+        verbose = MetadataTools.get_doctype_metadata("User", include_layout=True)
+        verbose_roles = next(c for c in verbose["child_tables"] if c["fieldname"] == "roles")
+        self.assertIn(verbose_roles["fieldtype"], ("Table", "Table MultiSelect"))
+        self.assertIn("role", {f["fieldname"] for f in verbose_roles["fields"]})
 
     def test_get_doctype_metadata_distinguishes_single_from_child_table(self):
         """Regression guard for #192: is_single must use meta.issingle, not meta.istable."""

@@ -28,42 +28,52 @@ from typing import Any, Dict, List, Optional, Tuple
 import frappe
 from frappe import _
 
-# Substrings that always indicate a credential. Matched case-insensitively
-# anywhere in the key name.
-_ALWAYS_SENSITIVE = (
-    "password",
-    "secret",
-    "api_key",
-    "apikey",
-    "auth",
-    "bearer",
-    "credential",
-    "private_key",
+# Credential words matched as whole underscore/camelCase-delimited words, so
+# "api_key", "client_secret", "authorization" or "access_token" are redacted
+# but "author", "secretary" and "authorized_amount" are not. Count-style keys
+# ("input_tokens", "total_tokens") are not credentials either.
+_SENSITIVE_WORDS = frozenset(
+    {
+        "password",
+        "passwords",
+        "passwd",
+        "pwd",
+        "secret",
+        "secrets",
+        "apikey",
+        "auth",
+        "authorization",
+        "bearer",
+        "credential",
+        "credentials",
+        "token",
+        "jwt",
+    }
 )
-
-# Token-as-credential matcher: matches keys like ``token``, ``access_token``,
-# ``refresh_token``, ``jwt_token``. Excludes metric-style keys like
-# ``input_tokens`` / ``output_tokens`` / ``total_tokens`` / ``tokens_used``
-# (the trailing ``s`` distinguishes a count from a credential).
-_SENSITIVE_TOKEN_RE = re.compile(r"(?:^|[_\W])token(?:$|[_\W])", re.IGNORECASE)
+_SENSITIVE_PAIRS = (("api", "key"), ("private", "key"), ("access", "key"))
 
 
 def _is_sensitive_key(key: Any) -> bool:
-    """Return True if ``key`` looks like a credential and should be redacted.
-
-    Matches the historical heuristic for password/secret/api_key/auth keys but
-    no longer over-redacts token-count metrics (``input_tokens``,
-    ``output_tokens``, ``total_tokens``) — the previous substring blocklist
-    matched any key containing ``token``, which clobbered usage data in audit
-    log output for tools that forward LLM token counts.
-    """
+    """Return True if ``key`` looks like a credential and should be redacted."""
     if not isinstance(key, str):
         return False
-    lower = key.lower()
-    if any(s in lower for s in _ALWAYS_SENSITIVE):
+    spaced = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", key).lower()
+    words = [w for w in re.split(r"[^a-z0-9]+", spaced) if w]
+    if _SENSITIVE_WORDS.intersection(words):
         return True
-    return bool(_SENSITIVE_TOKEN_RE.search(lower))
+    return any(pair == tuple(words[i : i + 2]) for pair in _SENSITIVE_PAIRS for i in range(len(words)))
 
+
+def redact_sensitive(value: Any) -> Any:
+    """Return a copy of ``value`` with credential-shaped keys redacted at any depth."""
+    if isinstance(value, dict):
+        return {k: "***REDACTED***" if _is_sensitive_key(k) else redact_sensitive(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [redact_sensitive(v) for v in value]
+    return value
+
+
+_TOOL_SAVEPOINT = "pa_tool"
 
 class BaseTool(ABC):
     """
@@ -128,25 +138,76 @@ class BaseTool(ABC):
             if field not in arguments:
                 frappe.throw(_("Missing required field: {0}").format(field), frappe.ValidationError)
 
-        # Validate field types
-        for field, value in arguments.items():
-            if field in properties:
-                expected_type = properties[field].get("type")
-                if not self._validate_type(value, expected_type):
-                    frappe.throw(
-                        _("Invalid type for field {0}: expected {1}").format(field, expected_type),
-                        frappe.ValidationError,
-                    )
+        if properties and self.inputSchema.get("additionalProperties") is not True:
+            unknown = sorted(str(k) for k in arguments if k not in properties)
+            if unknown:
+                frappe.throw(
+                    _("Unknown argument(s): {0}. Valid arguments: {1}").format(
+                        ", ".join(unknown), ", ".join(sorted(properties))
+                    ),
+                    frappe.ValidationError,
+                )
 
-    def check_permission(self) -> None:
+        # Validate field types and constraints
+        for field, value in arguments.items():
+            spec = properties.get(field)
+            if not spec:
+                continue
+            expected_type = spec.get("type")
+            if not self._validate_type(value, expected_type):
+                frappe.throw(
+                    _("Invalid type for field {0}: expected {1}").format(field, expected_type),
+                    frappe.ValidationError,
+                )
+            self._validate_constraints(field, value, spec)
+
+    @staticmethod
+    def _validate_constraints(field: str, value: Any, spec: Dict[str, Any]) -> None:
+        """Enforce the JSON-schema enum, minimum/maximum and minLength/maxLength keywords."""
+        enum = spec.get("enum")
+        if enum is not None and value not in enum:
+            frappe.throw(
+                _("Invalid value for field {0}: must be one of {1}").format(
+                    field, ", ".join(str(e) for e in enum)
+                ),
+                frappe.ValidationError,
+            )
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            if "minimum" in spec and value < spec["minimum"]:
+                frappe.throw(
+                    _("Invalid value for field {0}: must be at least {1}").format(field, spec["minimum"]),
+                    frappe.ValidationError,
+                )
+            if "maximum" in spec and value > spec["maximum"]:
+                frappe.throw(
+                    _("Invalid value for field {0}: must be at most {1}").format(field, spec["maximum"]),
+                    frappe.ValidationError,
+                )
+        if isinstance(value, str):
+            if "minLength" in spec and len(value) < spec["minLength"]:
+                frappe.throw(
+                    _("Invalid value for field {0}: must be at least {1} characters").format(
+                        field, spec["minLength"]
+                    ),
+                    frappe.ValidationError,
+                )
+            if "maxLength" in spec and len(value) > spec["maxLength"]:
+                frappe.throw(
+                    _("Invalid value for field {0}: must be at most {1} characters").format(
+                        field, spec["maxLength"]
+                    ),
+                    frappe.ValidationError,
+                )
+
+    def check_permission(self, user: Optional[str] = None) -> None:
         """
-        Check if current user has required permissions.
+        Check if ``user`` (default: the session user) has required permissions.
 
         Raises:
             frappe.PermissionError: If permission check fails
         """
         if self.requires_permission:
-            if not frappe.has_permission(self.requires_permission, "read"):
+            if not frappe.has_permission(self.requires_permission, "read", user=user):
                 frappe.throw(
                     _("Insufficient permissions to execute {0}").format(self.name), frappe.PermissionError
                 )
@@ -162,13 +223,36 @@ class BaseTool(ABC):
             "object": dict,
         }
 
+        if isinstance(expected_type, list):
+            return any(self._validate_type(value, t) for t in expected_type)
+        if expected_type == "null":
+            return value is None
+        if expected_type in ("integer", "number") and isinstance(value, bool):
+            return False
+        if expected_type == "number" and isinstance(value, int):
+            return True
         if expected_type in type_map:
             return isinstance(value, type_map[expected_type])
         return True
 
-    def to_mcp_format(self) -> Dict[str, Any]:
-        """Convert tool to MCP protocol format"""
-        return {"name": self.name, "description": self.description, "inputSchema": self.inputSchema}
+    def _begin_savepoint(self) -> bool:
+        try:
+            frappe.db.savepoint(_TOOL_SAVEPOINT)
+            return True
+        except Exception:
+            # No DB connection in this context (in-memory tools); nothing to protect.
+            self.logger.debug(f"{self.name}: no savepoint available")
+            return False
+
+    @staticmethod
+    def _rollback_partial_writes(has_savepoint: bool) -> None:
+        if not has_savepoint:
+            return
+        try:
+            frappe.db.rollback(save_point=_TOOL_SAVEPOINT)
+        except Exception:
+            # Savepoint is gone when the tool committed itself; nothing to undo.
+            pass
 
     def _safe_execute(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -181,6 +265,7 @@ class BaseTool(ABC):
             Execution result with success/error status
         """
         start_time = time.time()
+        has_savepoint = False
 
         try:
             # Check dependencies
@@ -194,7 +279,9 @@ class BaseTool(ABC):
             # Validate arguments
             self.validate_arguments(arguments)
 
-            # Execute tool
+            # Execute tool; a failure must not leave partial writes behind
+            # because the request itself still ends normally and commits.
+            has_savepoint = self._begin_savepoint()
             result = self.execute(arguments)
 
             # Calculate execution time
@@ -207,6 +294,7 @@ class BaseTool(ABC):
             tool_reported_failure = isinstance(result, dict) and result.get("success") is False
 
             if tool_reported_failure:
+                self._rollback_partial_writes(has_savepoint)
                 response = {
                     "success": False,
                     "result": result,
@@ -226,6 +314,7 @@ class BaseTool(ABC):
             return response
 
         except frappe.PermissionError as e:
+            self._rollback_partial_writes(has_savepoint)
             execution_time = time.time() - start_time
             response = {
                 "success": False,
@@ -236,11 +325,10 @@ class BaseTool(ABC):
 
             self.log_execution(arguments, response, execution_time, status="Permission Denied")
 
-            frappe.log_error(title=_("Permission Error"), message=f"{self.name}: {str(e)}")
-
             return response
 
         except frappe.ValidationError as e:
+            self._rollback_partial_writes(has_savepoint)
             execution_time = time.time() - start_time
             response = {
                 "success": False,
@@ -251,11 +339,10 @@ class BaseTool(ABC):
 
             self.log_execution(arguments, response, execution_time, status="Error")
 
-            frappe.log_error(title=_("Validation Error"), message=f"{self.name}: {str(e)}")
-
             return response
 
         except TimeoutError as e:
+            self._rollback_partial_writes(has_savepoint)
             execution_time = time.time() - start_time
             response = {
                 "success": False,
@@ -277,6 +364,7 @@ class BaseTool(ABC):
             return response
 
         except Exception as e:
+            self._rollback_partial_writes(has_savepoint)
             execution_time = time.time() - start_time
             tb = traceback.format_exc()
             response = {
@@ -297,7 +385,7 @@ class BaseTool(ABC):
             self.logger.error(f"Tool execution failed: {self.name} - {str(e)}", exc_info=True)
             frappe.log_error(
                 title=_("Tool Execution Error"),
-                message=f"Tool: {self.name}\nError: {str(e)}\nType: {type(e).__name__}\nArgs: {arguments}\n\nFull traceback:\n{tb}",
+                message=f"Tool: {self.name}\nError: {str(e)}\nType: {type(e).__name__}\nArgs: {self._sanitize_arguments(arguments)}\n\nFull traceback:\n{tb}",
             )
 
             return response
@@ -442,13 +530,7 @@ class BaseTool(ABC):
 
     def _sanitize_arguments(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Remove sensitive data from arguments for logging"""
-        sanitized = {}
-        for key, value in arguments.items():
-            if _is_sensitive_key(key):
-                sanitized[key] = "***REDACTED***"
-            else:
-                sanitized[key] = value
-        return sanitized
+        return redact_sensitive(arguments)
 
     def _sanitize_data(self, data: Any) -> Any:
         """Helper method to sanitize data recursively"""

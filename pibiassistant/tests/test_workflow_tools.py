@@ -62,7 +62,7 @@ class TestWorkflowTools(BaseAssistantTest):
 
     def test_get_workflow_actions_basic(self):
         """Test getting workflow actions"""
-        if not self.registry.has_tool("run_workflow"):
+        if not self.registry.get_tool("run_workflow"):
             self.skipTest("run_workflow tool not available")
 
         # This is a placeholder - workflow functionality may be complex

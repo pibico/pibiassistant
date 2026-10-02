@@ -67,16 +67,3 @@ def initialize_plugin_system():
 
     except Exception as e:
         api_logger.error(f"Failed to initialize plugin system: {e}")
-
-
-# Legacy compatibility - can be removed after verifying no external calls
-def load_enabled_plugins_from_settings():
-    """Legacy compatibility function - now handled by plugin manager initialization"""
-    api_logger.debug("load_enabled_plugins_from_settings called - delegating to plugin manager")
-    initialize_plugin_system()
-
-
-def ensure_enhanced_registry_initialized():
-    """Legacy compatibility function - now handled by plugin manager initialization"""
-    api_logger.debug("ensure_enhanced_registry_initialized called - delegating to plugin manager")
-    initialize_plugin_system()

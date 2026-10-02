@@ -9,9 +9,8 @@ the bounded background pool defined in this module. The relay itself
 lives in ``relay.py``.
 """
 
-from __future__ import annotations
-
 import json
+import re
 from concurrent.futures import ThreadPoolExecutor
 
 import frappe
@@ -21,6 +20,7 @@ from .._rate_limits import (
     rate_limit,
     session_user_or_ip,
 )
+from .._helpers import _validate_session_id
 from .._untrusted import wrap_untrusted
 from ..chat.helpers import (
     _attach_files_to_message,
@@ -51,6 +51,18 @@ def _flag(value) -> bool:
     if isinstance(value, str):
         return value.strip().lower() in ("1", "true", "yes")
     return bool(value)
+
+
+def _parse_json_param(value, default):
+    """Parse a JSON request parameter; malformed input is a client error, not a server fault."""
+    if not isinstance(value, str):
+        return value
+    if not value:
+        return default
+    try:
+        return json.loads(value)
+    except ValueError:
+        frappe.throw(_("Invalid request parameters"), frappe.ValidationError)
 
 
 _MAX_SIGNAL_COUNT = 999
@@ -129,6 +141,26 @@ def _render_client_signals_unguarded(raw) -> str:
     )
 
 
+_INTERRUPT_ANSWERS = frozenset({"approve", "rejected", "trust", "session"})
+
+
+def _validate_interrupt_response(value) -> None:
+    """A resume answers each pending card: a non-empty list of {interruptId, response} objects."""
+    valid = (
+        isinstance(value, list)
+        and value
+        and all(
+            isinstance(item, dict)
+            and isinstance(item.get("interruptId"), str)
+            and item["interruptId"]
+            and item.get("response") in _INTERRUPT_ANSWERS
+            for item in value
+        )
+    )
+    if not valid:
+        frappe.throw(_("Invalid request parameters"), frappe.ValidationError)
+
+
 def _assert_session_owner(session_id: str) -> None:
     """Refuse to drive a conversation the caller does not own.
 
@@ -194,30 +226,37 @@ def send_message(
     """
     turn_held = False
     try:
-        message = (message or "").strip()
+        if not isinstance(message, str):
+            frappe.throw(_("Invalid request parameters"), frappe.ValidationError)
+        message = message.strip()
         if len(message) > _MAX_MESSAGE_CHARS:
             frappe.throw(
                 _("The message is too long (maximum {0} characters).").format(_MAX_MESSAGE_CHARS),
                 frappe.ValidationError,
             )
 
+        _validate_session_id(session_id)
+
         # Parse context if provided as string (for backwards compatibility)
-        if isinstance(context, str):
-            context = json.loads(context) if context else {}
+        context = _parse_json_param(context, {})
+        if context and not isinstance(context, dict):
+            frappe.throw(_("Invalid request parameters"), frappe.ValidationError)
 
         # Parse file_urls if provided as string
-        if isinstance(file_urls, str):
-            file_urls = json.loads(file_urls) if file_urls else []
+        file_urls = _parse_json_param(file_urls, [])
         if not file_urls:
             file_urls = []
+        elif not isinstance(file_urls, list) or not all(isinstance(u, str) for u in file_urls):
+            frappe.throw(_("Invalid request parameters"), frappe.ValidationError)
         else:
             file_urls = list(dict.fromkeys(file_urls))  # Deduplicate preserving order
 
         # Parse attachments if provided as string (for Vision API)
-        if isinstance(attachments, str):
-            attachments = json.loads(attachments) if attachments else []
+        attachments = _parse_json_param(attachments, [])
         if not attachments:
             attachments = []
+        if not isinstance(attachments, list) or not all(isinstance(a, dict) for a in attachments):
+            frappe.throw(_("Invalid request parameters"), frappe.ValidationError)
 
         if not message:
             if not file_urls and not attachments:
@@ -274,7 +313,10 @@ def send_message(
         # File attachments depend on a persisted user message row. When the
         # user has restricted processing (M15), we don't persist, so there
         # is nothing to enrich — AR processes the prompt as-is.
-        if user_msg is not None:
+        # In AIDA mode the (slow) conversion runs in the relay thread after stream_start, so
+        # this request returns at once instead of pinning a web worker for the whole conversion.
+        extract_in_relay = aida_mode and user_msg is not None and bool(file_urls)
+        if user_msg is not None and not aida_mode:
             file_content = _extract_file_attachments(user_msg.name)
             if file_content:
                 # Wrap file content in an untrusted envelope so the LLM treats
@@ -283,9 +325,14 @@ def send_message(
                 system_prompt_addendum = (system_prompt_addendum or "") + file_addendum
 
         if file_urls and aida_mode:
+            scope = (
+                {"attached_to_doctype": "PA Chat Message", "attached_to_name": user_msg.name}
+                if user_msg is not None
+                else {"pa_pending_chat_attachment": 1}
+            )
             stored = frappe.get_all(
                 "File",
-                filters={"file_url": ["in", file_urls], "owner": frappe.session.user},
+                filters={"file_url": ["in", file_urls], "owner": frappe.session.user, **scope},
                 fields=["file_name", "file_url"],
                 limit_page_length=20,
             )
@@ -340,6 +387,7 @@ def send_message(
             # off — only coerce when the caller actually supplied a value.
             web_search=_flag(web_search) if web_search is not None else None,
             thinking_enabled=_flag(thinking_enabled) if thinking_enabled is not None else None,
+            extract_files=extract_in_relay,
         )
 
         return {
@@ -399,13 +447,14 @@ def resume_interrupt(
     Returns:
             dict: Acknowledgment that resume processing has started
     """
+    turn_held = False
     try:
-        # Parse interrupt_response
-        if isinstance(interrupt_response, str):
-            interrupt_response = json.loads(interrupt_response) if interrupt_response else []
+        _validate_session_id(session_id)
+        interrupt_response = _parse_json_param(interrupt_response, [])
 
         if not interrupt_response:
             frappe.throw(_("interrupt_response is required"))
+        _validate_interrupt_response(interrupt_response)
 
         _assert_session_owner(session_id)
 
@@ -417,6 +466,15 @@ def resume_interrupt(
             frappe.throw(access_check.get("reason", _("Cannot use AIDA")))
 
         effective_client_type = client_type or "spa"
+
+        # The AIDA relay releases the turn lock when it ends, so the resume has to hold it.
+        if is_aida_mode():
+            if not acquire_turn_waiting(session_id):
+                frappe.throw(
+                    _("AIDA is still answering the previous message. Wait for it to finish."),
+                    frappe.ValidationError,
+                )
+            turn_held = True
 
         # Zero-retention: load the client-held session blob to round-trip on
         # resume. Skipped for GDPR-restricted users (AIDA-M15) — same rule as
@@ -457,9 +515,15 @@ def resume_interrupt(
     # handler below would mask the ownership refusal as a generic error.
     except frappe.PermissionError:
         raise
+    except frappe.ValidationError:
+        if turn_held:
+            release_turn(session_id)
+        raise
     except Exception as e:
+        if turn_held:
+            release_turn(session_id)
         frappe.log_error(title="AIDA Agent Error", message=f"Error in resume_interrupt: {e!s}")
-        frappe.throw(_("Error resuming interrupt: {0}").format(str(e)))
+        frappe.throw(_("Error resuming the interrupted response. Please try again."))
 
 
 @frappe.whitelist(methods=["POST"])
@@ -494,6 +558,7 @@ def continue_response(
     try:
         if not message_id:
             frappe.throw(_("message_id is required"))
+        _validate_session_id(session_id)
 
         _assert_session_owner(session_id)
 
@@ -565,4 +630,4 @@ def continue_response(
         if turn_held:
             release_turn(session_id)
         frappe.log_error(title="AIDA Agent Error", message=f"Error in continue_response: {e!s}")
-        frappe.throw(_("Error continuing response: {0}").format(str(e)))
+        frappe.throw(_("Error continuing the response. Please try again."))

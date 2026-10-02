@@ -1,3 +1,4 @@
+import { escapeHtml as esc } from './dom.js';
 const stack = [];
 let seq = 0;
 let prevOverflow = null;
@@ -5,7 +6,6 @@ let keyBound = false;
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-const esc = (s) => frappe.utils.escape_html(String(s ?? ''));
 const reduceMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function focusables(panel) {
@@ -128,9 +128,9 @@ export function openPanel({ title = '', body = '', footer = null, root = null, r
                 unbindKeys();
                 const back = resolveFocus(returnFocus) || resolveFocus(opener);
                 if (back) back.focus();
-                if (onClose) onClose(reason);
             };
             layer.classList.remove('is-open');
+            if (onClose) onClose(reason);
             if (immediate || reduceMotion()) {
                 finish();
                 return;

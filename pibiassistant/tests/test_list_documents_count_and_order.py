@@ -23,7 +23,7 @@ Regression tests for:
 """
 
 from contextlib import ExitStack, contextmanager
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from pibiassistant.plugins.core.tools.list_documents import DocumentList
 from pibiassistant.tests.base_test import BaseAssistantTest
@@ -51,6 +51,9 @@ def list_harness(submittable=False, rows=None):
                 "pibiassistant.plugins.core.tools.list_documents.is_submittable",
                 return_value=submittable,
             )
+        )
+        stack.enter_context(
+            patch("frappe.get_meta", return_value=MagicMock(issingle=0, istable=0, is_submittable=0))
         )
         gl = stack.enter_context(patch("frappe.get_list"))
         # First call → document rows; second call → count result
@@ -140,6 +143,9 @@ class TestCountQueryNoDict(BaseAssistantTest):
             log_error_mock = stack.enter_context(
                 patch("pibiassistant.plugins.core.tools.list_documents.frappe.log_error")
             )
+            stack.enter_context(
+                patch("frappe.get_meta", return_value=MagicMock(issingle=0, istable=0, is_submittable=0))
+            )
             gl = stack.enter_context(
                 patch("pibiassistant.plugins.core.tools.list_documents.frappe.get_list")
             )
@@ -179,6 +185,9 @@ class TestCountQueryNoDict(BaseAssistantTest):
             )
             stack.enter_context(
                 patch("pibiassistant.plugins.core.tools.list_documents.frappe.log_error")
+            )
+            stack.enter_context(
+                patch("frappe.get_meta", return_value=MagicMock(issingle=0, istable=0, is_submittable=0))
             )
             gl = stack.enter_context(
                 patch("pibiassistant.plugins.core.tools.list_documents.frappe.get_list")

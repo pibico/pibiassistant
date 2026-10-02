@@ -26,8 +26,8 @@ window.PAOWidgetTemplates = {
 					? `<p class="pao-arg-desc">${this.escape(arg.description)}</p>`
 					: "";
 				const placeholder = arg.default
-					? `Default: ${this.escape(arg.default)}`
-					: `Enter ${label.toLowerCase()}…`;
+					? __("Default: {0}", [String(arg.default)])
+					: __("Enter {0}…", [label.toLowerCase()]);
 
 				return `
 				<div class="pao-arg-field">
@@ -93,6 +93,7 @@ window.PAOWidgetTemplates = {
 
 			try {
 				const response = await frappe.call({
+					silent: true,
 					method: "pibiassistant.pibiassistant_chat.api.prompts.get_rendered_prompt",
 					type: "GET",
 					args: {
@@ -157,6 +158,7 @@ window.PAOWidgetTemplates = {
 	async get_rendered_prompt(promptName, args) {
 		try {
 			const response = await frappe.call({
+				silent: true,
 				method: "pibiassistant.pibiassistant_chat.api.prompts.get_rendered_prompt",
 				type: "GET",
 				args: {
@@ -209,11 +211,6 @@ window.PAOWidgetTemplates = {
 	},
 
 	escape(s) {
-		return String(s == null ? "" : s)
-			.replace(/&/g, "&amp;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;")
-			.replace(/"/g, "&quot;")
-			.replace(/'/g, "&#39;");
+		return PAOCore.escape_html(s);
 	},
 };

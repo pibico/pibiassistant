@@ -5,7 +5,7 @@ import { local, KEYS } from "../lib/storage.js";
 import * as api from "../lib/api.js";
 import { icon } from "./icons.js";
 
-export function setSelectedModel(id) {
+function setSelectedModel(id) {
   local.set(KEYS.model, id);
   store.set({ selectedModel: id });
 }
@@ -25,14 +25,14 @@ export async function loadModels() {
   } catch (err) {
     console.error("get_available_models failed", err);
     store.set({ models: [], modelsState: "error" });
-    if (store.get().selectedModel !== "auto") setSelectedModel("auto");
   }
 }
 
 function labelOf(state) {
   if (state.selectedModel === "auto") return __("Auto");
   const m = state.models.find((x) => x.model_id === state.selectedModel);
-  return m ? m.display_name : __("Auto");
+  if (m) return m.display_name;
+  return state.modelsState === "ready" ? __("Auto") : state.selectedModel;
 }
 
 export function createModelPicker() {

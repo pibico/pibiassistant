@@ -3,12 +3,59 @@ import { __, getLang } from "./i18n.js";
 
 const DAY = 86400000;
 
+const NAIVE = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?$/;
+const zoneFormats = new Map();
+let siteZone;
+
+function validZone(tz) {
+  if (typeof tz !== "string" || !tz) return null;
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: tz });
+    return tz;
+  } catch {
+    return null;
+  }
+}
+
+// The server stores naive timestamps in the site time zone; pass null to fall back to the browser zone
+export function setSiteTimezone(tz) {
+  siteZone = validZone(tz);
+}
+
+function zoneOffset(tz, utcMs) {
+  let fmt = zoneFormats.get(tz);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric",
+      hour: "numeric", minute: "numeric", second: "numeric",
+    });
+    zoneFormats.set(tz, fmt);
+  }
+  const p = {};
+  for (const part of fmt.formatToParts(new Date(Math.floor(utcMs / 1000) * 1000))) p[part.type] = Number(part.value);
+  return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - Math.floor(utcMs / 1000) * 1000;
+}
+
+function naiveToMs(m, tz) {
+  const [y, mo, d, h, mi, s] = [m[1], m[2], m[3], m[4], m[5], m[6] || 0].map(Number);
+  const frac = m[7] ? Number(("0." + m[7])) * 1000 : 0;
+  if (!tz) return new Date(y, mo - 1, d, h, mi, s).getTime() + Math.floor(frac);
+  const wall = Date.UTC(y, mo - 1, d, h, mi, s);
+  let ms = wall - zoneOffset(tz, wall);
+  ms = wall - zoneOffset(tz, ms);
+  return ms + Math.floor(frac);
+}
+
 export function parseServerTs(value) {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (value instanceof Date) return value.getTime();
   if (typeof value === "string") {
-    const iso = /^\d{4}-\d{2}-\d{2} /.test(value) ? value.replace(" ", "T") : value;
-    const ms = new Date(iso).getTime();
+    const naive = NAIVE.exec(value.trim());
+    if (naive) {
+      if (siteZone === undefined) siteZone = validZone(globalThis.aida_tz);
+      return naiveToMs(naive, siteZone);
+    }
+    const ms = new Date(value).getTime();
     if (!Number.isNaN(ms)) return ms;
   }
   return Date.now();
@@ -76,6 +123,29 @@ function contentFromBlocks(raw) {
   }
 }
 
+export function defaultMessage(key, fields) {
+  return {
+    key,
+    role: "user",
+    content: "",
+    ts: 0,
+    messageId: null,
+    status: "done",
+    errorText: null,
+    retryable: false,
+    truncated: false,
+    model: null,
+    promptTokens: null,
+    completionTokens: null,
+    durationMs: null,
+    files: [],
+    tools: [],
+    approvals: [],
+    source: "live",
+    ...fields,
+  };
+}
+
 export function fromHistoryRow(row) {
   if (!row || (row.role !== "user" && row.role !== "assistant")) return null;
   const attached = new Map();
@@ -84,23 +154,13 @@ export function fromHistoryRow(row) {
     if (!attached.has(url)) attached.set(url, { name: a.file_name || a.name || "", url });
   }
   const files = [...attached.values()];
-  const base = {
-    key: "h_" + row.name,
+  const base = defaultMessage("h_" + row.name, {
     role: row.role,
     ts: parseServerTs(row.timestamp),
     messageId: row.message_id || null,
-    errorText: null,
-    retryable: false,
-    truncated: false,
-    model: null,
-    promptTokens: null,
-    completionTokens: null,
-    durationMs: null,
     files,
-    tools: [],
-    approvals: [],
     source: "history",
-  };
+  });
   if (row.role === "user") {
     return { ...base, content: String(row.content || ""), status: "done" };
   }

@@ -24,7 +24,7 @@ export function createStore(initial) {
   };
 }
 
-export const INITIAL_STATE = Object.freeze({
+const INITIAL_STATE = Object.freeze({
   user: { id: "", fullName: "", firstName: "", image: null },
   route: { name: "chat", sessionId: null },
   sessions: [],
@@ -32,6 +32,7 @@ export const INITIAL_STATE = Object.freeze({
   activeSessionId: null,
   messages: [],
   historyState: "idle",
+  history: { hasMore: false, loadingMore: false, offset: 0 },
   streaming: { active: false, key: null, stopping: false, slow: false },
   models: [],
   modelsState: "idle",

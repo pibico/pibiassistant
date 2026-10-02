@@ -36,4 +36,3 @@ export function apply(theme) {
   }
 }
 
-export const init = apply;

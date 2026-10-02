@@ -3,12 +3,22 @@
 
 """Attach a file to an existing document (for example the source PDF of a purchase invoice)."""
 
+import re
 from typing import Any, Dict
 
 import frappe
+from frappe import _
 
 from pibiassistant.core.base_tool import BaseTool
+from pibiassistant.plugins.query_errors import permission_error_result
 from pibiassistant.utils import attachments
+
+
+def normalize_base64(data: Any) -> str:
+    """Accept MIME-wrapped, urlsafe and unpadded base64, which models and clients often emit."""
+    text = re.sub(r"^data:[^,]*,", "", str(data or "")).strip()
+    text = re.sub(r"\s+", "", text).replace("-", "+").replace("_", "/")
+    return text + "=" * (-len(text) % 4)
 
 
 class AttachFile(BaseTool):
@@ -56,13 +66,13 @@ class AttachFile(BaseTool):
                     doctype,
                     docname,
                     arguments["filename"],
-                    attachments.decode_base64(content_b64),
+                    attachments.decode_base64(normalize_base64(content_b64)),
                     is_private=arguments.get("is_private", True) is not False,
                 )
         except attachments.AttachmentError as e:
             return {"success": False, "error": str(e)}
         except frappe.PermissionError as e:
-            return {"success": False, "error": str(e) or "Permission denied."}
+            return permission_error_result(e, _("Permission denied."))
         return {"success": True, "file": file}
 
 

@@ -21,6 +21,8 @@ from frappe import _
 from pibiassistant.pibiassistant_chat.cloud_url import PRODUCTION_AIDA_CLOUD_URL, get_pa_cloud_url
 from pibiassistant.utils.cache import get_cached_server_settings
 
+from ._helpers import _aida_mode
+
 if TYPE_CHECKING:
     from frappe.model.document import Document
 
@@ -51,13 +53,7 @@ def initialize_spa() -> dict:
     is_admin = "System Manager" in user_roles
 
     # === AIDA mode: bypass cloud registration entirely ===
-    aida_key = ""
-    try:
-        aida_key = frappe.get_doc("PA Core Settings").get_password("aida_api_key") or ""
-    except Exception:
-        pass
-
-    if aida_key:
+    if _aida_mode():
         access = _build_access(settings, user, user_roles, is_admin)
         access["mcp_endpoint_url"] = ""
         return {
@@ -440,6 +436,7 @@ def _aida_capabilities() -> dict:
     caps["billing_enabled"] = False
     caps["features"]["billing"] = False
     caps["features"]["mcp_servers"] = False
+    caps["version"] = "aida"
     return caps
 
 

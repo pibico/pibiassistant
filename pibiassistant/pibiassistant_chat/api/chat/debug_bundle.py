@@ -11,8 +11,6 @@ the role gate is the FIRST thing the endpoint does, and the generated File is
 always private so the conversation content is never world-readable.
 """
 
-from __future__ import annotations
-
 import io
 import json
 import zipfile
@@ -48,8 +46,9 @@ def export_debug_bundle(session_id: str) -> dict:
     if "System Manager" not in frappe.get_roles():
         frappe.throw(_("Only System Manager can export debug bundles"), frappe.PermissionError)
 
-    if not session_id:
-        frappe.throw(_("session_id is required"))
+    from .._helpers import _validate_session_id
+
+    _validate_session_id(session_id)
 
     messages = frappe.get_all(
         "PA Chat Message",
@@ -64,6 +63,9 @@ def export_debug_bundle(session_id: str) -> dict:
         ["state_blob", "state_sig", "format_version", "turn_seq", "updated_at"],
         as_dict=True,
     )
+
+    if not messages and not state:
+        frappe.throw(_("No messages found for this session"), frappe.DoesNotExistError)
 
     versions = {
         "frappe": frappe.__version__,

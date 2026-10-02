@@ -17,6 +17,7 @@ from ._helpers import (
 )
 from ._untrusted import wrap_untrusted
 from .auth import _ar_user_id
+from .chat.helpers import _update_subscription_cache
 
 
 def _assert_mobile_oauth_request() -> None:
@@ -57,6 +58,38 @@ def _assert_mobile_oauth_request() -> None:
         )
 
 
+def _cookie_bridge_page(cookies: dict, redirect_to: str) -> str:
+    """HTML that sets each prepared cookie on the real origin, then redirects.
+
+    Every value reaches the script as a JSON string literal, never raw text:
+    cookies carry user-controlled data (full_name, user_image) and a stray quote
+    or ``</script>`` would otherwise break the bridge or inject script.
+    """
+    import json as _json
+    from urllib.parse import quote
+
+    cookie_lines = []
+    for key, opts in cookies.items():
+        value = quote((opts.get("value") or "").encode("utf-8"))
+        max_age = opts.get("max_age") or ""
+        # AIDA-M5: SameSite=Strict neutralizes cross-site request forgery if
+        # the planted cookie ever leaks to a third-party context. The mobile
+        # WebView navigates same-origin after this bridge, so Strict is safe.
+        cookie = f"{key}={value}; path=/; SameSite=Strict; Secure" + (f"; max-age={max_age}" if max_age else "")
+        cookie_lines.append(f"document.cookie = {_json.dumps(cookie)};")
+
+    # json.dumps emits a correctly-escaped JS string literal; "</" is split so
+    # the literal can never close the inline <script> element.
+    cookies_js = "\n".join(cookie_lines).replace("</", "<\\/")
+    safe_redirect_js = _json.dumps(redirect_to).replace("</", "<\\/")
+
+    return f"""<!DOCTYPE html>
+<html><head><script>
+{cookies_js}
+window.location.replace({safe_redirect_js});
+</script></head><body></body></html>"""
+
+
 @frappe.whitelist(methods=["GET"])
 def create_web_session() -> Response:
     """Create a browser session from a Bearer token and redirect.
@@ -75,8 +108,6 @@ def create_web_session() -> Response:
     Query params:
             redirect_to (str): The Frappe page to open after auth (e.g. /app/sales-order/SO-001)
     """
-    import json as _json
-
     redirect_to = frappe.form_dict.get("redirect_to") or "/app"
     user = frappe.session.user
 
@@ -99,33 +130,7 @@ def create_web_session() -> Response:
     login_manager = frappe.auth.LoginManager()
     login_manager.login_as(user)
 
-    # Build JS cookie-setting code from all cookies LoginManager prepared
-    cookie_lines = []
-    for key, opts in frappe.local.cookie_manager.cookies.items():
-        value = opts.get("value") or ""
-        max_age = opts.get("max_age") or ""
-        # AIDA-M5: SameSite=Strict neutralizes cross-site request forgery if
-        # the planted cookie ever leaks to a third-party context. The mobile
-        # WebView navigates same-origin after this bridge, so Strict is safe.
-        cookie_lines.append(
-            f'document.cookie = "{key}={value}; path=/; SameSite=Strict; Secure'
-            + (f"; max-age={max_age}" if max_age else "")
-            + '";'
-        )
-
-    cookies_js = "\n".join(cookie_lines)
-
-    # JSON-encode for JS string context. html.escape would be wrong here —
-    # it doesn't neutralize javascript:/data: URIs and breaks inside quoted
-    # JS literals. json.dumps emits a correctly-escaped JS string literal.
-    safe_redirect_js = _json.dumps(redirect_to)
-
-    # Return HTML that sets cookies on the real origin, then redirects
-    page = f"""<!DOCTYPE html>
-<html><head><script>
-{cookies_js}
-window.location.replace({safe_redirect_js});
-</script></head><body></body></html>"""
+    page = _cookie_bridge_page(frappe.local.cookie_manager.cookies, redirect_to)
 
     return Response(page, status=200, content_type="text/html")
 
@@ -147,7 +152,6 @@ def download_file_by_token(file_url: str | None = None) -> Response:
     if not file_url:
         frappe.throw(_("file_url is required"))
 
-    import mimetypes
     import os
 
     # Look up the File doc via its file_url — do NOT derive a disk path from
@@ -158,7 +162,7 @@ def download_file_by_token(file_url: str | None = None) -> Response:
         frappe.throw(_("File not found"), frappe.DoesNotExistError)
 
     file_doc = frappe.get_doc("File", file_doc_name)
-    file_doc.check_permission(ptype="read")
+    file_doc.check_permission("read")
 
     # Only after the permission check, resolve the real on-disk path.
     file_path = file_doc.get_full_path()
@@ -166,20 +170,35 @@ def download_file_by_token(file_url: str | None = None) -> Response:
     if not os.path.exists(file_path):
         frappe.throw(_("File not found"), frappe.DoesNotExistError)
 
-    # file_path comes from a permission-checked File doc (check_permission at
-    # line 151) — the caller's file_url is never used to build the path.
+    # file_path comes from a permission-checked File doc (check_permission above) —
+    # the caller's file_url is never used to build the path.
     with open(file_path, "rb") as f:  # nosemgrep: frappe-security-file-traversal
         content = f.read()
 
-    filename = os.path.basename(file_path)
-    content_type = mimetypes.guess_type(file_url)[0] or "application/octet-stream"
+    return _file_response(content, os.path.basename(file_path), file_url)
 
+
+_INLINE_TYPES = ("image/png", "image/jpeg", "image/gif", "image/webp", "application/pdf")
+
+
+def _file_response(content: bytes, filename: str, file_url: str) -> Response:
+    """Serve bytes inline only for safe previewable types; everything else downloads.
+
+    Uploaded HTML/SVG served inline from the site origin would run script with the
+    user's session, so those are forced to attachment and sniffing is disabled.
+    """
+    import mimetypes
+
+    content_type = mimetypes.guess_type(file_url)[0] or "application/octet-stream"
+    disposition = "inline" if content_type in _INLINE_TYPES else "attachment"
+    safe_name = "".join(c for c in filename if c not in '"\\\r\n')
     return Response(
         content,
         status=200,
         content_type=content_type,
         headers={
-            "Content-Disposition": f'inline; filename="{filename}"',
+            "Content-Disposition": f'{disposition}; filename="{safe_name}"',
+            "X-Content-Type-Options": "nosniff",
         },
     )
 
@@ -542,33 +561,6 @@ def _log_conversation(session_id, message, response, model, credits=None, routin
 
     except Exception as e:
         frappe.log_error(title="AIDA Mobile Log Error", message=f"Error logging conversation: {e!s}")
-
-
-def _update_subscription_cache(credits_used):
-    """Fold this turn's credits into the quota cache and trigger sync if stale.
-
-    quota_used is credit-denominated (mirrors AR's credits_used), so pass the
-    turn's credits_used — never the raw token count.
-    """
-    try:
-        from pibiassistant.pibiassistant_chat.quota_cache import get_field, increment_used
-
-        increment_used(credits_used)
-
-        last_sync = get_field("last_sync", "")
-        if last_sync:
-            from frappe.utils import now, time_diff_in_hours
-
-            hours_since_sync = time_diff_in_hours(now(), last_sync)
-            if hours_since_sync > 12:
-                frappe.enqueue(
-                    "pibiassistant.pibiassistant_chat.api.billing.sync_subscription_status",
-                    queue="short",
-                    deduplicate=True,
-                    job_id="sync-subscription-status",
-                )
-    except Exception as e:
-        frappe.log_error(title="AIDA Cache Error", message=f"Error updating subscription cache: {e!s}")
 
 
 # ============================================================================

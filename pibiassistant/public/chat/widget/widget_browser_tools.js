@@ -364,20 +364,12 @@ window.PAOBrowserTools = {
 
 				// Upload using existing attachment API
 				try {
-					const response = await fetch(
+					const { json: result } = await PAOCore.post_form(
 						"/api/method/pibiassistant.pibiassistant_chat.api.settings.uploads.upload_message_file",
-						{
-							method: "POST",
-							body: formData,
-							headers: {
-								"X-Frappe-CSRF-Token": frappe.csrf_token,
-							},
-						}
+						formData
 					);
 
-					const result = await response.json();
-
-					if (result.message && result.message.success) {
+					if (result && result.message && result.message.success) {
 						const fileData = result.message.file;
 
 						return {
@@ -392,7 +384,7 @@ window.PAOBrowserTools = {
 						return {
 							error:
 								"Screenshot upload failed: " +
-								(result.message?.error || "Unknown error"),
+								((result && result.message?.error) || PAOCore.server_error_text(result) || "Unknown error"),
 							width: canvas.width,
 							height: canvas.height,
 						};
@@ -839,12 +831,7 @@ window.PAOBrowserTools = {
 	 * boundary and must keep working even if DOMPurify fails to load.
 	 */
 	_escapeHtml(text) {
-		return String(text || "")
-			.replace(/&/g, "&amp;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;")
-			.replace(/"/g, "&quot;")
-			.replace(/'/g, "&#39;");
+		return PAOCore.escape_html(text);
 	},
 
 	/**
@@ -855,6 +842,8 @@ window.PAOBrowserTools = {
 	async _processPendingCalls() {
 		try {
 			const owningWidget = window.pao_widget;
+			// A conversation id generated on this load cannot have calls queued yet.
+			if (owningWidget && owningWidget.session_id && !owningWidget.session_restored) return;
 			const response = await frappe.call({
 				method: "pibiassistant.plugins.pao.tools.browser_bridge.get_pending_browser_tool_calls",
 				args: { session_id: owningWidget ? owningWidget.session_id : null },

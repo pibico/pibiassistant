@@ -25,29 +25,6 @@
 	vertical-align: middle;
 }
 
-/* Welcome section avatar */
-.pao-welcome .aida-avatar-welcome {
-	display: block;
-	margin: 0 auto 8px;
-	box-shadow: 0 4px 12px rgba(70, 130, 180, 0.25);
-}
-
-/* Message avatar */
-.aida-avatar-message {
-	display: block;
-}
-
-/* Keep the pulse/spin keyframes used by other widget elements */
-@keyframes pao-pulse {
-	0%, 100% { opacity: 0.4; }
-	50% { opacity: 1; }
-}
-
-@keyframes pao-spin {
-	from { transform: rotate(0deg); }
-	to { transform: rotate(360deg); }
-}
-
 @media (prefers-reduced-motion: reduce) {
 	.aida-avatar {
 		animation: none !important;

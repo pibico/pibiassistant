@@ -88,3 +88,27 @@ class TestChatAttachmentSweep(BaseAssistantTest):
 
         self.assertEqual(result["status"], "chat_module_disabled")
         self.assertTrue(frappe.db.exists("File", orphan))
+
+
+class TestDebugBundleSweep(BaseAssistantTest):
+    def setUp(self):
+        super().setUp()
+        frappe.db.set_single_value("PA Core Settings", "enable_pa_chat", 1)
+        frappe.clear_cache()
+        clear_chat_gate_cache()
+
+    def _bundle(self, age_hours, name="debug-bundle-ZZ-sweep.zip"):
+        f = frappe.get_doc(
+            {"doctype": "File", "file_name": name, "content": b"PK-" + frappe.generate_hash(length=8).encode(), "is_private": 1}
+        ).insert(ignore_permissions=True)
+        frappe.db.set_value("File", f.name, "creation", add_to_date(now(), hours=-age_hours), update_modified=False)
+        self.addCleanup(lambda: frappe.db.exists("File", f.name) and frappe.delete_doc("File", f.name, force=True, ignore_permissions=True))
+        return f.name
+
+    def test_old_bundles_are_reaped_recent_ones_and_other_files_stay(self):
+        old, recent = self._bundle(30), self._bundle(2)
+        other = self._bundle(30, name="ZZ-keep-me.zip")
+        sweep_orphan_chat_attachments()
+        self.assertFalse(frappe.db.exists("File", old))
+        self.assertTrue(frappe.db.exists("File", recent))
+        self.assertTrue(frappe.db.exists("File", other))

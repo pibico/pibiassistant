@@ -1,4 +1,4 @@
-const esc = (s) => frappe.utils.escape_html(String(s ?? ''));
+import { escapeHtml as esc } from './dom.js';
 
 export function alert(msg, indicator = 'green', seconds = 5, { html = false } = {}) {
     frappe.show_alert({ message: html ? msg : esc(msg), indicator }, seconds);

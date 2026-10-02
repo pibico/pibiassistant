@@ -8,11 +8,11 @@ If you're looking at how to **create tools** in your own Frappe app, see [EXTERN
 
 ## What is a skill?
 
-A skill is a markdown document that is exposed to MCP clients as a resource at `fac://skills/<skill-id>`. LLM clients (Claude Desktop, Claude Web, MCP Inspector, etc.) discover skills via the MCP `resources/list` call and fetch individual skill content via `resources/read`.
+A skill is a markdown document that is exposed to MCP clients as a resource at `pa://skills/<skill-id>`. LLM clients (Claude Desktop, Claude Web, MCP Inspector, etc.) discover skills via the MCP `resources/list` call and fetch individual skill content via `resources/read`.
 
 Two kinds of skills:
 
-- **Tool Usage** — teaches the LLM how to use one specific MCP tool well. Linked to a tool name via the `linked_tool` field; when Assistant Core Settings is in `replace` mode the tool's description is shortened and the LLM is pointed at the skill URI.
+- **Tool Usage** — teaches the LLM how to use one specific MCP tool well. Linked to a tool name via the `linked_tool` field; when PA Core Settings is in `replace` mode the tool's description is shortened and the LLM is pointed at the skill URI.
 - **Workflow** — describes a multi-step procedure that may involve several tools. Not linked to any single tool.
 
 Skills are stored as `PA Skill` DocType rows. When your app registers a skill through the hook described below, the row is marked `is_system=1` with `source_app=<your_app>` and becomes part of the app's lifecycle — re-synced on every `bench migrate` and removed when your app is uninstalled.
@@ -72,7 +72,7 @@ The manifest is a flat JSON array of skill objects. Canonical example: [`pibiass
 
 | Field | Required | Type | Default (hook-installed) | Notes |
 |---|---|---|---|---|
-| `skill_id` | yes | string | — | Must match `^[a-z0-9_-]+$`. Globally unique across all apps. Used as the MCP resource URI suffix (`fac://skills/<skill_id>`). |
+| `skill_id` | yes | string | — | Must match `^[a-z0-9_-]+$`. Globally unique across all apps. Used as the MCP resource URI suffix (`pa://skills/<skill_id>`). |
 | `title` | yes | string | — | Human-readable name shown in MCP clients. |
 | `description` | yes | string | — | One-line description. Appears in `resources/list` and, under `replace` skill-mode, is the short description the LLM sees for the linked tool. Keep it under ~200 characters. |
 | `content_file` | yes | string | — | Filename of the markdown content, relative to `content_dir`. If the file is missing the skill is **skipped with a warning** — it is never installed with empty content. |
@@ -90,7 +90,7 @@ The manifest is a flat JSON array of skill objects. Canonical example: [`pibiass
 
 The markdown content is the actual teaching material. It is what gets loaded into the LLM's context when the client fetches `resources/read`. It should be dense — every line should teach something the LLM couldn't guess from the tool's JSON schema.
 
-Use the FAC-bundled skills as references: [`docs/skills/list_documents.md`](../skills/list_documents.md), [`docs/skills/create_document.md`](../skills/create_document.md), [`docs/skills/extract_file_content.md`](../skills/extract_file_content.md).
+Use the pibiAssistant-bundled skills as references: [`docs/skills/list_documents.md`](../skills/list_documents.md), [`docs/skills/create_document.md`](../skills/create_document.md), [`docs/skills/extract_file_content.md`](../skills/extract_file_content.md).
 
 Recommended structure for a Tool Usage skill:
 
@@ -252,7 +252,7 @@ If the content file is missing, you'll see a warning instead and the skill will 
 | `bench migrate` (subsequent) | Re-syncs `title`, `description`, `status`, `visibility`, `skill_type`, `linked_tool`, `category`, `content` from the manifest. `owner_user` and `is_system` are preserved. |
 | Skill removed from manifest | Row is deleted on the next `bench migrate`. Log: `Removed obsolete app skill: <skill_id> (from acme_billing)`. See [`migration_hooks.py:712-726`](../../pibiassistant/utils/migration_hooks.py). |
 | `bench uninstall-app acme_billing` | Every `PA Skill` with `source_app="acme_billing"` is deleted via the `before_app_uninstall` hook. See [`migration_hooks.py:550-578`](../../pibiassistant/utils/migration_hooks.py). |
-| User tries to delete a system skill from the UI | Rejected. System skills can only be removed by the owning app. If the app has been uninstalled, the skill becomes orphaned and the UI allows deletion. See [`pa_skill.py:60-78`](../../pibiassistant/assistant_core/doctype/pa_skill/pa_skill.py). |
+| User tries to delete a system skill from the UI | Rejected. System skills can only be removed by the owning app. If the app has been uninstalled, the skill becomes orphaned and the UI allows deletion. See [`pa_skill.py:60-78`](../../pibiassistant/pibiassistant_core/doctype/pa_skill/pa_skill.py). |
 
 ---
 
@@ -282,7 +282,7 @@ bench --site <your-site> console
 >>> from pibiassistant.api.handlers.resources import handle_resources_list
 >>> result = handle_resources_list()
 >>> [r for r in result["resources"] if "acme" in r["uri"]]
-[{'uri': 'fac://skills/acme-generate-invoice-usage',
+[{'uri': 'pa://skills/acme-generate-invoice-usage',
   'name': 'How to Use generate_invoice',
   'description': 'Create an Acme invoice from a Sales Order, ...',
   'mimeType': 'text/markdown'}]
@@ -308,7 +308,7 @@ In Claude Desktop (or MCP Inspector) the skill should appear in the resource lis
 
 ## Related documentation
 
-- [Skills User Guide](../guides/SKILLS_USER_GUIDE.md) — creating skills through the FAC Admin UI
+- [Skills User Guide](../guides/SKILLS_USER_GUIDE.md) — creating skills through the pibiAssistant Admin UI
 - [External App Tool Development](EXTERNAL_APP_DEVELOPMENT.md) — shipping MCP tools from your own app
 - [Technical Documentation](../architecture/TECHNICAL_DOCUMENTATION.md) — `SkillManager`, caching, MCP bindings
 - [Architecture](../internals/INTERNALS.md) — where the skills subsystem fits in the overall design

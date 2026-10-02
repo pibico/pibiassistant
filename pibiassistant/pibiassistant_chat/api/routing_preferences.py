@@ -9,7 +9,7 @@ the hop where "which member is asking" is actually established.
 """
 
 import frappe
-from pibiassistant.pibiassistant_chat.api._helpers import _aida_unavailable
+from ._helpers import cloud_client_or_throw as _client
 from frappe import _
 
 from pibiassistant.pibiassistant_chat.api.auth import _ar_user_id
@@ -20,15 +20,6 @@ _STATUSES = ("active", "suspended")
 _RULE_MODES = ("shadow", "on")
 _MATCH_KINDS = ("doctype", "keyword", "task_type")
 _SCOPES = ("Tenant",)  # personal rules are not open yet — see create()
-
-
-def _client():
-    from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
-
-    client = get_pa_cloud_client()
-    if not client:
-        return _aida_unavailable()
-    return client
 
 
 @frappe.whitelist(methods=["GET"])

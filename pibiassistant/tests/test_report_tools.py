@@ -68,7 +68,7 @@ class TestReportTools(BaseAssistantTest):
 
     def test_execute_report_query_report(self):
         """Test query report execution"""
-        if not self.registry.has_tool("generate_report"):
+        if not self.registry.get_tool("generate_report"):
             self.skipTest("generate_report tool not available")
 
         # Try a simple report that should exist
@@ -93,7 +93,7 @@ class TestReportTools(BaseAssistantTest):
 
     def test_execute_report_nonexistent_report(self):
         """Test execution of nonexistent report"""
-        if not self.registry.has_tool("generate_report"):
+        if not self.registry.get_tool("generate_report"):
             self.skipTest("generate_report tool not available")
 
         arguments = {"report_name": "NonExistent Report 12345"}
@@ -146,7 +146,7 @@ class TestReportToolsIntegration(BaseAssistantTest):
 
     def test_report_error_handling(self):
         """Test report error handling"""
-        if not self.registry.has_tool("generate_report"):
+        if not self.registry.get_tool("generate_report"):
             self.skipTest("generate_report tool not available")
 
         # Test with invalid arguments

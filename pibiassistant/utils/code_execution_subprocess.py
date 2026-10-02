@@ -195,12 +195,82 @@ def _make_restricted_import():
     return restricted_import
 
 
+_FRAPPE_ALLOWED = frozenset(
+    {
+        "get_all", "get_list", "get_doc", "get_single", "get_meta", "get_cached_doc",
+        "has_permission", "get_roles", "format_value", "_dict", "bold", "as_json",
+        "PermissionError", "DoesNotExistError", "ValidationError", "DuplicateEntryError",
+    }
+)
+
+
+class _ModuleGuard:
+    """Hands user code a module's callables but never a nested module such as
+    ``frappe.utils.frappe``, which would be a way back to the real framework."""
+
+    def __init__(self, module, allow_modules=()):
+        object.__setattr__(self, "_module", module)
+        object.__setattr__(self, "_allow_modules", frozenset(allow_modules))
+
+    def __getattr__(self, name):
+        import types
+
+        if name.startswith(("_", "read_", "to_")) or name in _IO_NAMES:
+            raise PermissionError(f"'{name}' is not available in the sandbox")
+        value = getattr(self._module, name, None)
+        if isinstance(value, types.ModuleType) and name in self._allow_modules:
+            return _ModuleGuard(value)
+        if value is None or isinstance(value, types.ModuleType):
+            raise PermissionError(f"'{name}' is not available in the sandbox")
+        return value
+
+    def __setattr__(self, name, value):
+        raise PermissionError("The sandbox is read-only")
+
+
+class _SandboxFrappe:
+    """Read-only facade over ``frappe``: no conf, site config, local, flags or cache."""
+
+    def __init__(self, frappe_module, secure_db):
+        object.__setattr__(self, "_frappe", frappe_module)
+        object.__setattr__(self, "_secure_db", secure_db)
+
+    def __getattr__(self, name):
+        if name == "db":
+            return self._secure_db
+        if name == "utils":
+            return _ModuleGuard(self._frappe.utils)
+        if name == "session":
+            return self._frappe._dict(user=self._frappe.session.user)
+        if name not in _FRAPPE_ALLOWED:
+            raise PermissionError(f"frappe.{name} is not available in the sandbox")
+        return getattr(self._frappe, name)
+
+    def __setattr__(self, name, value):
+        raise PermissionError("The sandbox is read-only")
+
+
+class _SandboxDB:
+    """Public read API of ReadOnlyDatabase only (no ``_original_db`` handle)."""
+
+    def __init__(self, secure_db):
+        object.__setattr__(self, "_secure_db", secure_db)
+
+    def __getattr__(self, name):
+        if name.startswith("_"):
+            raise PermissionError(f"db.{name} is not available in the sandbox")
+        return getattr(self._secure_db, name)
+
+    def __setattr__(self, name, value):
+        raise PermissionError("The sandbox is read-only")
+
+
 def _setup_execution_environment(user: str) -> dict:
     """Build the sandboxed globals dict for exec()."""
     import frappe
 
     from pibiassistant.utils.read_only_db import ReadOnlyDatabase
-    from pibiassistant.utils.tool_api import FrappeAssistantAPI
+    from pibiassistant.utils.tool_api import SandboxToolAPI
 
     env = {
         "__builtins__": {
@@ -229,7 +299,7 @@ def _setup_execution_environment(user: str) -> dict:
             "type": type,
             "isinstance": isinstance,
             "hasattr": hasattr,
-            "getattr": getattr,
+            "getattr": _safe_getattr,
             "Exception": Exception,
             "ValueError": ValueError,
             "TypeError": TypeError,
@@ -281,8 +351,9 @@ def _setup_execution_environment(user: str) -> dict:
     for alias, pkg in [("pd", "pandas"), ("np", "numpy")]:
         try:
             mod = __import__(pkg)
-            env[alias] = mod
-            env[pkg] = mod
+            guarded = _ModuleGuard(mod, _NUMPY_SAFE_MODULES if pkg == "numpy" else ())
+            env[alias] = guarded
+            env[pkg] = guarded
             available.append(f"{pkg} ({alias})")
         except ImportError:
             missing.append(pkg)
@@ -291,12 +362,12 @@ def _setup_execution_environment(user: str) -> dict:
             env[pkg] = stub
 
     # Frappe integration — read-only
-    secure_db = ReadOnlyDatabase(frappe.db)
-    tools_api = FrappeAssistantAPI(user)
+    secure_db = _SandboxDB(ReadOnlyDatabase(frappe.db))
+    tools_api = SandboxToolAPI(user)
 
     env.update(
         {
-            "frappe": frappe,
+            "frappe": _SandboxFrappe(frappe, secure_db),
             "get_doc": frappe.get_doc,
             "get_list": frappe.get_list,
             "get_all": frappe.get_all,
@@ -416,6 +487,75 @@ def _extract_variables(execution_globals: dict, return_variables: list) -> dict:
 # ---------------------------------------------------------------------------
 
 
+# str.format and string.Formatter resolve "{0.__globals__}" inside the format string,
+# which is a dunder hop the attribute check below cannot see.
+_FORMAT_NAMES = frozenset({"format", "format_map", "vformat", "get_field", "Formatter"})
+# pandas/numpy readers, writers and evaluators reach the filesystem, the network or the interpreter.
+_IO_NAMES = frozenset(
+    {
+        "read_csv", "read_table", "read_fwf", "read_json", "read_excel", "read_html", "read_xml",
+        "read_pickle", "read_parquet", "read_feather", "read_orc", "read_hdf", "read_sql",
+        "read_sql_query", "read_sql_table", "read_sas", "read_spss", "read_stata", "read_clipboard",
+        "read_gbq", "to_csv", "to_json", "to_excel", "to_html", "to_xml", "to_pickle", "to_parquet",
+        "to_feather", "to_orc", "to_hdf", "to_sql", "to_stata", "to_latex", "to_markdown",
+        "to_clipboard", "to_gbq", "to_string", "ExcelFile", "ExcelWriter", "HDFStore", "eval",
+        "load", "loads", "save", "savez", "savez_compressed", "savetxt", "loadtxt", "genfromtxt",
+        "fromfile", "fromregex", "recfromcsv", "recfromtxt", "memmap", "open_memmap", "DataSource",
+        "tofile", "dump", "dumps", "tofile", "show_config", "get_include", "setup", "testing", "lookfor", "info", "source", "fromstring", "frombuffer",
+    }
+)
+# Subset checked on every attribute of user code; generic words (load, save, dumps) stay usable on json and friends.
+_IO_METHODS = frozenset(n for n in _IO_NAMES if n.startswith(("read_", "to_")) or n in {
+    "ExcelFile", "ExcelWriter", "HDFStore", "eval", "tofile", "dump", "fromfile", "memmap"})
+_NUMPY_SAFE_MODULES = ("random", "linalg", "fft", "polynomial", "ma")
+_SECRET_CONF_MARKERS = ("password", "secret", "key", "token")
+
+
+def _scrub_conf_secrets(frappe_module) -> None:
+    """Last line of defence: whatever user code reaches, site secrets are gone from this
+    disposable process (the DB connection is already open)."""
+    conf = frappe_module.local.conf
+    for key in [k for k in list(conf) if any(m in str(k).lower() for m in _SECRET_CONF_MARKERS)]:
+        conf.pop(key, None)
+
+
+def _safe_getattr(obj, name, *default):
+    if isinstance(name, str) and (
+        (name.startswith("_") and name != "_dict") or name in _FORMAT_NAMES or name in _IO_METHODS
+    ):
+        raise PermissionError("Private and dunder attributes are not available in the sandbox")
+    return getattr(obj, name, *default)
+
+
+def _reject_private_attributes(code: str) -> None:
+    """Dunder/private attribute hops (``fn.__globals__``) reach the real framework."""
+    import ast
+
+    for node in ast.walk(ast.parse(code)):
+        if isinstance(node, ast.Attribute) and (
+            (node.attr.startswith("_") and node.attr != "_dict")
+            or node.attr in _FORMAT_NAMES
+            or node.attr in _IO_METHODS
+        ):
+            raise PermissionError(f"Attribute '{node.attr}' is not available in the sandbox")
+        if isinstance(node, ast.ImportFrom) and any(a.name in _FORMAT_NAMES for a in node.names):
+            raise PermissionError("string formatting helpers are not available in the sandbox")
+        if isinstance(node, ast.Constant) and isinstance(node.value, str) and (
+            "__" in node.value or node.value in _FORMAT_NAMES
+        ):
+            raise PermissionError("Dunder names in strings are not available in the sandbox")
+
+
+def _user_code_traceback(exc) -> str:
+    """Exception type, message and user-code lines only (no server paths)."""
+    lines = [
+        f'  line {frame.lineno}: {(frame.line or "").strip()}'
+        for frame in traceback.extract_tb(exc.__traceback__)
+        if frame.filename == "<string>"
+    ]
+    return "\n".join([*lines, f"{type(exc).__name__}: {exc}"])
+
+
 def main():
     """Read JSON request from stdin, execute code, write JSON result to stdout."""
     result = {"success": False, "output": "", "error": "", "variables": {}, "execution_info": {}}
@@ -465,8 +605,12 @@ def main():
                     json.dump(result, sys.stdout)
                     return
 
+            _scrub_conf_secrets(frappe)
+
             # Apply resource limits immediately before exec (disposable process).
             _apply_limits(limits)
+
+            _reject_private_attributes(code)
 
             # Execute user code
             output = ""
@@ -557,7 +701,7 @@ def main():
                 "error_type": "runtime",
                 "output": "",
                 "variables": {},
-                "traceback": traceback.format_exc(),
+                "traceback": _user_code_traceback(e),
             }
 
         finally:

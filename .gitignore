@@ -8,3 +8,6 @@ node_modules/
 *.swp
 *.swo
 .DS_Store
+
+# dev dependency tree must never be served via /assets
+pibiassistant/public/node_modules

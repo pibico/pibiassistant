@@ -3,12 +3,13 @@ import os
 import re
 
 import frappe
+import frappe.sessions
+import frappe.utils
 
-from pibiassistant.utils.asset_versions import module_import_map
-
-
+from pibiassistant.pibiassistant_chat.api._helpers import _aida_mode
 from pibiassistant.pibiassistant_chat.gate import is_chat_enabled
 from pibiassistant.pibiassistant_chat.utils.security_headers import apply_spa_headers
+from pibiassistant.utils.asset_versions import module_import_map
 
 no_cache = 1
 
@@ -63,14 +64,6 @@ def get_context_for_dev():
     return get_boot()
 
 
-def _is_aida_mode():
-    """True when the native AIDA API is configured, i.e. PA Cloud features are unavailable."""
-    try:
-        return bool(frappe.get_doc("PA Core Settings").get_password("aida_api_key"))
-    except Exception:
-        return False
-
-
 def get_boot():
     """
     Get boot data for the frontend
@@ -90,7 +83,9 @@ def get_boot():
         "aida_messages": get_messages(lang),
         "theme": theme,
         "socketio_port": frappe.conf.get("socketio_port") or 9000,
-        "aida_mode": _is_aida_mode(),
+        "aida_mode": _aida_mode(),
+        "aida_tz": _system_timezone(),
+        "can_use": _can_use_aida(),
     }
 
     # Get user's full name for display
@@ -101,6 +96,24 @@ def get_boot():
     bootinfo["user_image"] = user_info.get("user_image") or ""
 
     return bootinfo
+
+
+def _system_timezone():
+    try:
+        return frappe.utils.get_system_timezone()
+    except Exception:
+        return "UTC"
+
+
+def _can_use_aida():
+    """Same verdict the chat endpoints enforce, so the SPA can show a no-access screen up front."""
+    try:
+        from pibiassistant.pibiassistant_chat.api.settings.access import can_use_pao
+
+        return bool(can_use_pao().get("can_use"))
+    except Exception:
+        frappe.log_error(title="AIDA boot can_use check failed")
+        return True
 
 
 _LANG_RE = re.compile(r"^[A-Za-z]{2,3}(?:[-_][A-Za-z0-9]{2,8})?$")
@@ -115,8 +128,39 @@ def _read_csv(path):
     return out
 
 
+_SPA_LITERAL_RE = re.compile(r"""\b__\(\s*(?:"((?:[^"\\\n]|\\.)*)"|'((?:[^'\\\n]|\\.)*)')""")
+_JS_ESCAPES = {"n": "\n", "t": "\t", "r": "\r"}
+# Keys the SPA passes to __() through a variable (js/lib/greeting.js partOfDay).
+_SPA_DYNAMIC_KEYS = ("Good morning", "Good afternoon", "Good evening")
+
+
+def _unescape_js(text):
+    return re.sub(r"\\(.)", lambda m: _JS_ESCAPES.get(m.group(1), m.group(1)), text)
+
+
+def _spa_keys():
+    """Source strings the SPA can look up: __("...") literals under public/aida/js plus the dynamic ones."""
+    root = frappe.get_app_path("pibiassistant", "public", "aida", "js")
+    paths = []
+    for folder, _dirs, names in os.walk(root):
+        paths.extend(os.path.join(folder, n) for n in names if n.endswith(".js"))
+    paths.sort()
+    key = "aida_spa_keys:" + str(max((int(os.path.getmtime(p)) for p in paths), default=0)) + f":{len(paths)}"
+    cache = frappe.cache()
+    keys = cache.get_value(key)
+    if keys is None:
+        found = set(_SPA_DYNAMIC_KEYS)
+        for path in paths:
+            with open(path, encoding="utf-8") as fh:
+                for dq, sq in _SPA_LITERAL_RE.findall(fh.read()):
+                    found.add(_unescape_js(dq or sq))
+        keys = sorted(found)
+        cache.set_value(key, keys)
+    return set(keys)
+
+
 def get_messages(lang):
-    """{English source: translation} for `lang`, base language first (es-AR -> es)."""
+    """{English source: translation} for `lang` limited to what the SPA uses, base language first (es-AR -> es)."""
     lang = str(lang or "en").replace("_", "-")
     if not _LANG_RE.match(lang) or lang.split("-")[0].lower() == "en":
         return {}
@@ -129,13 +173,14 @@ def get_messages(lang):
                 files.append(path)
     if not files:
         return {}
-    key = "aida_messages:" + lang + ":" + ":".join(str(int(os.path.getmtime(p))) for p in files)
+    key = "aida_messages_spa:" + lang + ":" + ":".join(str(int(os.path.getmtime(p))) for p in files)
     cache = frappe.cache()
     messages = cache.get_value(key)
     if messages is None:
         messages = {}
+        wanted = _spa_keys()
         for path in files:
-            messages.update(_read_csv(path))
+            messages.update({k: v for k, v in _read_csv(path).items() if k in wanted})
         cache.set_value(key, messages)
     return messages
 

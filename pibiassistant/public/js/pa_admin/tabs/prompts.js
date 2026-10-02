@@ -1,4 +1,4 @@
-import { qs, on, delegate, setHtml, debounce } from '../dom.js';
+import { qs, on, delegate, setHtml, debounce, escapeHtml as esc } from '../dom.js';
 import { call, log } from '../api.js';
 import { state } from '../state.js';
 import { skeletonCards } from '../utils.js';
@@ -7,7 +7,6 @@ import {
 	emptyStateHtml, sharedChipsHtml, renderList, loadList, toggleStatus, togglePanel,
 } from './items.js';
 
-const esc = (s) => frappe.utils.escape_html(String(s ?? ''));
 
 function config(ctx) {
 	const root = ctx.root;

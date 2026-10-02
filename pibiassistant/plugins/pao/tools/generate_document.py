@@ -28,7 +28,7 @@ from typing import Any, ClassVar
 
 import frappe
 from frappe import _
-from frappe.utils import now_datetime
+from frappe.utils import format_datetime, now_datetime
 
 from pibiassistant.core.base_tool import BaseTool
 from pibiassistant.plugins.pao.tools.rich_blocks import (
@@ -171,6 +171,8 @@ class GenerateDocument(BaseTool):
                 title=_("Generate Document Error"),
                 message=f"Error generating PDF: {e!s}",
             )
+            if isinstance(e, KeyError) and e.args == ("src",):
+                return {"success": False, "error": _("An image in the content has an unsupported source. Use https:// or /files/ image URLs.")}
             return {"success": False, "error": str(e)}
 
     # AIDA-M9: tags allowed in the PDF body. Covers CommonMark output from
@@ -234,7 +236,7 @@ class GenerateDocument(BaseTool):
             import re as _re
 
             return _re.sub(r"<[^>]*>", "", html)
-        return bleach.clean(
+        cleaned = bleach.clean(
             html,
             tags=self._ALLOWED_TAGS,
             attributes=self._ALLOWED_ATTRS,
@@ -242,6 +244,15 @@ class GenerateDocument(BaseTool):
             strip=True,
             strip_comments=True,
         )
+        # An image whose src had a disallowed scheme loses the attribute; a bare <img> makes get_pdf raise KeyError.
+        return self._IMG_WITHOUT_SRC.sub(self._img_alt_text, cleaned)
+
+    _IMG_WITHOUT_SRC: ClassVar[re.Pattern] = re.compile(r"<img\b(?![^>]*\bsrc\s*=)[^>]*>", re.IGNORECASE)
+
+    @staticmethod
+    def _img_alt_text(match: re.Match) -> str:
+        alt = re.search(r'\balt\s*=\s*"([^"]*)"', match.group(0))
+        return alt.group(1) if alt else ""
 
     def _sanitize_filename(self, filename: str) -> str:
         """Remove unsafe characters from filename, preserving readability."""
@@ -279,7 +290,7 @@ class GenerateDocument(BaseTool):
         with open(template_path) as f:  # nosemgrep: frappe-security-file-traversal
             template_string = f.read()
 
-        generated_date = now_datetime().strftime("%B %d, %Y at %I:%M %p")
+        generated_date = format_datetime(now_datetime())
 
         context = {
             "body": body,
@@ -333,7 +344,9 @@ class GenerateDocument(BaseTool):
             "images": None,
             "encoding": "UTF-8",
         }
-        return frappe.utils.pdf.get_pdf(html, options=pdf_options)
+        from frappe.utils.pdf import get_pdf
+
+        return get_pdf(html, options=pdf_options)
 
     def _format_file_size(self, size_bytes: int) -> str:
         """Format bytes into human-readable size."""

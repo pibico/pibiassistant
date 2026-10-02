@@ -23,6 +23,9 @@ from frappe.utils import now
 class PAAuditLog(Document):
     """PA Audit Log DocType controller"""
 
+    def autoname(self):
+        self.name = f"ASST-AUDIT-{frappe.utils.nowdate()}-{frappe.generate_hash(length=10)}"
+
     def before_insert(self):
         """Set default values before inserting"""
         if not self.timestamp:
@@ -40,15 +43,6 @@ class PAAuditLog(Document):
 
         if not self.timestamp:
             self.timestamp = now()
-
-    def get_formatted_execution_time(self):
-        """Get formatted execution time"""
-        if self.execution_time:
-            if self.execution_time < 1:
-                return f"{self.execution_time * 1000:.0f}ms"
-            else:
-                return f"{self.execution_time:.2f}s"
-        return "N/A"
 
 
 @frappe.whitelist()

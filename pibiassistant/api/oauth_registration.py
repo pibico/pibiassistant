@@ -28,6 +28,7 @@ from werkzeug.exceptions import NotFound
 
 from pibiassistant.utils.oauth_compat import (
     create_oauth_client,
+    del_none_values,
     get_oauth_settings,
     validate_dynamic_client_metadata,
 )
@@ -168,15 +169,9 @@ def register_client():
     response_data["client_secret_expires_at"] = 0  # Client secrets don't expire
 
     # Remove None values
-    _del_none_values(response_data)
+    del_none_values(response_data)
 
     response.status_code = 201  # Created
     response.data = frappe.as_json(response_data)
     return response
 
-
-def _del_none_values(d: dict):
-    """Remove keys with None values from dictionary."""
-    for k in list(d.keys()):
-        if k in d and d[k] is None:
-            del d[k]

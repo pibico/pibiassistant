@@ -24,7 +24,6 @@ import sys
 import threading
 import time
 import traceback
-from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
@@ -484,47 +483,6 @@ class EnhancedErrorHandler:
         except Exception as e:
             api_logger.error(f"Failed to log to audit trail: {str(e)}")
 
-
-@contextmanager
-def enhanced_execution_context(operation_id: str, tool_name: str, monitor_resources: bool = True):
-    """Context manager for enhanced execution with error handling and resource monitoring"""
-
-    resource_monitor = ResourceMonitor() if monitor_resources else None
-    error_handler = EnhancedErrorHandler()
-
-    try:
-        # Start resource monitoring
-        if resource_monitor:
-            resource_monitor.start_monitoring(operation_id)
-
-        yield {
-            "operation_id": operation_id,
-            "resource_monitor": resource_monitor,
-            "error_handler": error_handler,
-        }
-
-    except Exception as e:
-        # Handle error with enhanced context
-        error_context = error_handler.create_error_context(
-            operation_id=operation_id, tool_name=tool_name, exception=e
-        )
-        error_handler.log_error(error_context)
-
-        # Re-raise the exception with enhanced context
-        raise Exception(f"Enhanced Error [{error_context.error_id}]: {str(e)}") from e
-
-    finally:
-        # Stop resource monitoring and get summary
-        if resource_monitor:
-            monitoring_summary = resource_monitor.stop_monitoring(operation_id)
-
-            # Log resource usage if significant
-            if (
-                monitoring_summary.get("peak_cpu", 0) > 50
-                or monitoring_summary.get("peak_memory", 0) > 500
-                or monitoring_summary.get("duration", 0) > 60
-            ):
-                api_logger.info(f"Resource usage for {operation_id}: {monitoring_summary}")
 
 
 # API endpoints for error and resource monitoring

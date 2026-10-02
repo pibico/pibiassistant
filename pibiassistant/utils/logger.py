@@ -20,7 +20,6 @@ Provides consistent logging across all modules
 """
 
 import logging
-from typing import Optional
 
 import frappe
 
@@ -35,6 +34,8 @@ class AssistantLogger:
     def _setup_logger(self) -> logging.Logger:
         """Setup logger with appropriate configuration"""
         logger = logging.getLogger(self.name)
+        # Children ("pibiassistant.api") would otherwise also hit the parent's handler: duplicate lines.
+        logger.propagate = False
 
         # Avoid duplicate handlers
         if logger.handlers:
@@ -71,7 +72,7 @@ class AssistantLogger:
         self.logger.error(message, *args, **kwargs)
         # Also log to Frappe's error log for visibility
         try:
-            frappe.log_error(message, self.name)
+            frappe.log_error(title=self.name, message=message)
         except Exception:
             pass  # Don't fail if Frappe logging fails
 
@@ -79,7 +80,7 @@ class AssistantLogger:
         """Log critical message"""
         self.logger.critical(message, *args, **kwargs)
         try:
-            frappe.log_error(f"CRITICAL: {message}", self.name)
+            frappe.log_error(title=self.name, message=f"CRITICAL: {message}")
         except Exception:
             pass
 
@@ -90,7 +91,3 @@ api_logger = AssistantLogger("pibiassistant.api")
 tools_logger = AssistantLogger("pibiassistant.tools")
 server_logger = AssistantLogger("pibiassistant.server")
 
-
-def get_logger(name: str) -> AssistantLogger:
-    """Get a logger for a specific module"""
-    return AssistantLogger(f"pibiassistant.{name}")

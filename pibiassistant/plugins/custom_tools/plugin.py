@@ -24,7 +24,6 @@ using the hooks-based discovery system.
 from typing import Any, Dict, List
 
 import frappe
-from frappe import _
 
 from pibiassistant.plugins.base_plugin import BasePlugin
 
@@ -217,90 +216,3 @@ class CustomToolsPlugin(BasePlugin):
 
         except Exception as e:
             frappe.logger("custom_tools_plugin").error(f"Error disabling plugin: {str(e)}")
-
-    def get_external_app_summary(self) -> Dict[str, Any]:
-        """
-        Get summary of external apps and their tools.
-
-        Returns:
-            Summary dictionary with app and tool information
-        """
-        try:
-            from pibiassistant.core.tool_registry import get_tool_registry
-
-            registry = get_tool_registry()
-            all_tools = registry.get_all_tools()
-
-            # Group tools by external apps
-            external_apps = {}
-            for tool_name, tool in all_tools.items():
-                if tool.source_app != "pibiassistant":
-                    app_name = tool.source_app
-                    if app_name not in external_apps:
-                        external_apps[app_name] = {
-                            "app_name": app_name,
-                            "tools": [],
-                            "tool_count": 0,
-                            "categories": set(),
-                        }
-
-                    external_apps[app_name]["tools"].append(
-                        {
-                            "name": tool_name,
-                            "category": tool.category,
-                            "description": tool.description[:100] + "..."
-                            if len(tool.description) > 100
-                            else tool.description,
-                        }
-                    )
-                    external_apps[app_name]["tool_count"] += 1
-                    external_apps[app_name]["categories"].add(tool.category)
-
-            # Convert categories to lists for JSON serialization
-            for app_data in external_apps.values():
-                app_data["categories"] = list(app_data["categories"])
-
-            return {
-                "external_apps": list(external_apps.values()),
-                "total_external_apps": len(external_apps),
-                "total_external_tools": sum(app["tool_count"] for app in external_apps.values()),
-                "discovery_stats": self._discovery_stats,
-            }
-
-        except Exception as e:
-            frappe.logger("custom_tools_plugin").error(f"Failed to get external app summary: {str(e)}")
-            return {"external_apps": [], "total_external_apps": 0, "total_external_tools": 0, "error": str(e)}
-
-    def refresh_external_tools(self) -> Dict[str, Any]:
-        """
-        Manually refresh external tool discovery.
-
-        Returns:
-            Refresh operation results
-        """
-        try:
-            from pibiassistant.core.tool_registry import get_tool_registry
-
-            registry = get_tool_registry()
-            result = registry.refresh_tools(force=True)
-
-            if result.get("success"):
-                # Update our tool list
-                self.get_tools()
-
-                return {
-                    "success": True,
-                    "message": "External tools refreshed successfully",
-                    "external_tools": len(self._external_tools),
-                    "discovery_stats": self._discovery_stats,
-                    "registry_result": result,
-                }
-            else:
-                return {
-                    "success": False,
-                    "error": result.get("error", "Unknown error"),
-                    "registry_result": result,
-                }
-
-        except Exception as e:
-            return {"success": False, "error": str(e)}

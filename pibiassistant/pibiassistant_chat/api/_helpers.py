@@ -10,6 +10,8 @@ import re
 import frappe
 from frappe import _
 
+from pibiassistant.pibiassistant_chat.aida_mode import is_aida_mode
+
 try:
     from pibiassistant.pibiassistant_chat.pa_cloud_client import (
         ARAPIError,
@@ -35,6 +37,15 @@ except ImportError:
     ARTimeoutError = _ARStubBase
 
 
+_SESSION_ID_RE = re.compile(r"[A-Za-z0-9_.:-]{1,100}")
+
+
+def _validate_session_id(session_id) -> None:
+    """Reject non-string / malformed session ids before they reach an ORM filter."""
+    if not isinstance(session_id, str) or not _SESSION_ID_RE.fullmatch(session_id):
+        frappe.throw(_("Invalid session"), frappe.ValidationError)
+
+
 def _require_system_manager():
     """Check if current user is System Manager. Throws if not."""
     if "System Manager" not in frappe.get_roles(frappe.session.user):
@@ -46,18 +57,7 @@ def _billing_unavailable_response():
     return {"billing_available": False, "error": _("Billing is not available on this server.")}
 
 
-def _aida_mode() -> bool:
-    """True when the native AIDA API key is set (PA Cloud is never used)."""
-    try:
-        from frappe.utils.password import get_decrypted_password
-
-        return bool(
-            get_decrypted_password(
-                "PA Core Settings", "PA Core Settings", "aida_api_key", raise_exception=False
-            )
-        )
-    except Exception:
-        return False
+_aida_mode = is_aida_mode
 
 
 def _aida_unavailable() -> dict:
@@ -67,6 +67,16 @@ def _aida_unavailable() -> dict:
         "unavailable": True,
         "error": _("This feature is not available in AIDA mode."),
     }
+
+
+def cloud_client_or_throw():
+    """The PA Cloud client, or a ValidationError when the feature is unavailable (AIDA mode)."""
+    from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
+
+    client = get_pa_cloud_client()
+    if not client:
+        frappe.throw(_("This feature is not available in AIDA mode."), frappe.ValidationError)
+    return client
 
 
 def _aida_guard(default=None):

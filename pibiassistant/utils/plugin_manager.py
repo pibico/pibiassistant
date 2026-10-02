@@ -24,6 +24,7 @@ import inspect
 import json
 import threading
 import traceback
+from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -165,6 +166,17 @@ class PluginDiscovery:
         return None
 
 
+@contextmanager
+def memoize_enabled_plugins():
+    """Read the enabled-plugin set once for the duration of the block (read-only request paths)."""
+    previous = getattr(frappe.local, "pa_enabled_plugins_memo", None)
+    frappe.local.pa_enabled_plugins_memo = {}
+    try:
+        yield
+    finally:
+        frappe.local.pa_enabled_plugins_memo = previous
+
+
 class PluginPersistence:
     """Handles plugin state persistence using PA Plugin Configuration DocType.
 
@@ -176,6 +188,15 @@ class PluginPersistence:
         self.logger = frappe.logger("plugin_persistence")
 
     def load_enabled_plugins(self) -> Set[str]:
+        """Load enabled plugin names, memoised while a ``memoize_enabled_plugins`` scope is open."""
+        memo = getattr(frappe.local, "pa_enabled_plugins_memo", None)
+        if memo is not None:
+            if "value" not in memo:
+                memo["value"] = self._read_enabled_plugins()
+            return set(memo["value"])
+        return self._read_enabled_plugins()
+
+    def _read_enabled_plugins(self) -> Set[str]:
         """Load enabled plugin names from database.
 
         Uses PA Plugin Configuration DocType for atomic reads.
@@ -461,7 +482,7 @@ class PluginManager:
         # doesn't accumulate stale entries across reloads.
         self.skipped_tools = {}
 
-        for plugin_name in self._enabled_plugins:
+        for plugin_name in sorted(self._enabled_plugins):
             plugin_info = self._discovered_plugins.get(plugin_name)
             if plugin_info and plugin_info.state != PluginState.ERROR:
                 try:
@@ -531,11 +552,6 @@ class PluginManager:
 
     # Legacy compatibility properties
     @property
-    def loaded_plugins(self) -> Dict[str, Any]:
-        """Legacy compatibility property"""
-        return {name: None for name in self._enabled_plugins}
-
-    @property
     def plugin_tools(self) -> Dict[str, List[Any]]:
         """Legacy compatibility property"""
         tools_by_plugin = {}
@@ -548,7 +564,7 @@ class PluginManager:
 
 # Global service instance with thread safety
 _plugin_manager: Optional[PluginManager] = None
-_manager_lock = threading.Lock()
+_manager_lock = threading.RLock()
 
 
 def get_plugin_manager() -> PluginManager:

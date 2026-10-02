@@ -26,7 +26,12 @@ from typing import Any
 import frappe
 from frappe import _
 
+from frappe.utils import validate_email_address
+
 from pibiassistant.core.base_tool import BaseTool
+from pibiassistant.plugins.query_errors import log_failure
+
+MAX_RECIPIENTS = 50
 
 
 class SendEmail(BaseTool):
@@ -81,8 +86,12 @@ class SendEmail(BaseTool):
 
     def execute(self, arguments: dict[str, Any]) -> dict[str, Any]:
         """Queue email via frappe.sendmail() using the site's Email Account."""
-        recipients = arguments.get("recipients", [])
-        cc = arguments.get("cc", [])
+        recipients = arguments.get("recipients") or []
+        cc = arguments.get("cc") or []
+        if isinstance(recipients, str):
+            recipients = [recipients]
+        if isinstance(cc, str):
+            cc = [cc]
         subject = arguments.get("subject", "")
         message = arguments.get("message", "")
 
@@ -96,11 +105,25 @@ class SendEmail(BaseTool):
             return {"success": False, "error": _("Message body cannot be empty")}
 
         # Filter out empty strings
-        recipients = [r.strip() for r in recipients if r and r.strip()]
-        cc = [r.strip() for r in cc if r and r.strip()]
+        recipients = [r.strip() for r in recipients if isinstance(r, str) and r.strip()]
+        cc = [r.strip() for r in cc if isinstance(r, str) and r.strip()]
 
         if not recipients:
             return {"success": False, "error": _("No valid recipients after filtering")}
+
+        if len(recipients) + len(cc) > MAX_RECIPIENTS:
+            return {
+                "success": False,
+                "error": _("Too many recipients: the limit is {0} per email.").format(MAX_RECIPIENTS),
+            }
+
+        invalid = [r for r in recipients + cc if not validate_email_address(r, throw=False)]
+        if invalid:
+            return {
+                "success": False,
+                "error": _("Invalid email address(es): {0}").format(", ".join(invalid)),
+                "invalid_recipients": invalid,
+            }
 
         try:
             frappe.sendmail(
@@ -117,8 +140,5 @@ class SendEmail(BaseTool):
                 "subject": subject,
             }
         except Exception as e:
-            frappe.log_error(
-                title=_("Send Email Tool Error"),
-                message=f"Failed to queue email: {e!s}",
-            )
-            return {"success": False, "error": str(e)}
+            log_failure("Send Email Tool Error", e)
+            return {"success": False, "error": str(e)[:2000]}

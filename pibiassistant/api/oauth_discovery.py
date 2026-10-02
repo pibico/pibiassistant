@@ -26,6 +26,8 @@ Extends Frappe's built-in OAuth endpoints with:
 import frappe
 from frappe.oauth import get_server_url
 
+from pibiassistant.utils.oauth_compat import del_none_values, parse_scopes
+
 
 def _get_public_base_url() -> str:
     """
@@ -106,6 +108,10 @@ def openid_configuration():
 
     # Add jwks_uri (required by MCP Inspector)
     metadata["jwks_uri"] = f"{frappe_url}/api/method/pibiassistant.api.oauth_discovery.jwks"
+
+    # Only the authorization code flow is served; Frappe also advertises implicit/hybrid types.
+    metadata["response_types_supported"] = ["code"]
+    metadata.pop("id_token_signing_alg_values_supported", None)
 
     # Add PKCE support (required by MCP Inspector)
     metadata["code_challenge_methods_supported"] = ["S256"]
@@ -262,8 +268,9 @@ def authorization_server_metadata():
     )
     metadata["userinfo_endpoint"] = f"{frappe_url}/api/method/frappe.integrations.oauth2.openid_profile"
 
-    # Add/override custom service documentation
-    metadata["service_documentation"] = "https://github.com/paborana/pibiassistant"
+    metadata["service_documentation"] = (
+        settings.get("resource_documentation") or "https://github.com/pibico/pibiassistant"
+    )
 
     # Add client_secret_post as an additional auth method (Frappe V16 only has client_secret_basic)
     if "client_secret_post" not in metadata.get("token_endpoint_auth_methods_supported", []):
@@ -278,21 +285,9 @@ def authorization_server_metadata():
             f"{frappe_url}/api/method/pibiassistant.api.oauth_registration.register_client"
         )
 
-    scopes_supported_value = settings.get("scopes_supported")
-    if scopes_supported_value and isinstance(scopes_supported_value, str):
-        # Clean and parse scopes - handle both single scopes and newline-separated lists
-        scopes = []
-        for line in scopes_supported_value.split("\n"):
-            line = line.strip()
-            if line:
-                # Further split by whitespace to handle space-separated scopes
-                for scope in line.split():
-                    scope = scope.strip()
-                    if scope and scope not in scopes:  # Avoid duplicates
-                        scopes.append(scope)
-
-        if scopes:
-            metadata["scopes_supported"] = scopes
+    scopes = parse_scopes(settings.get("scopes_supported"))
+    if scopes:
+        metadata["scopes_supported"] = scopes
 
     return metadata
 
@@ -344,38 +339,19 @@ def protected_resource_metadata():
         "authorization_servers": authorization_servers,
         "bearer_methods_supported": ["header"],
         "resource_name": settings.get("resource_name") or "pibiAssistant",
-        "resource_documentation": settings.get("resource_documentation"),
+        "resource_documentation": settings.get("resource_documentation")
+        or "https://github.com/pibico/pibiassistant",
         "resource_policy_uri": settings.get("resource_policy_uri"),
         "resource_tos_uri": settings.get("resource_tos_uri"),
     }
 
     # Add supported scopes if configured
-    scopes_supported_value = settings.get("scopes_supported")
-    if scopes_supported_value and isinstance(scopes_supported_value, str):
-        # Clean and parse scopes - handle both single scopes and newline-separated lists
-        scopes = []
-        # Split by newlines and also by spaces (to handle "openid profile" format)
-        for line in scopes_supported_value.split("\n"):
-            line = line.strip()
-            if line:
-                # Further split by whitespace to handle space-separated scopes
-                for scope in line.split():
-                    scope = scope.strip()
-                    if scope and scope not in scopes:  # Avoid duplicates
-                        scopes.append(scope)
-
-        if scopes:
-            metadata["scopes_supported"] = scopes
-            frappe.logger().debug(f"Protected Resource Metadata: Added scopes_supported = {scopes}")
+    scopes = parse_scopes(settings.get("scopes_supported"))
+    if scopes:
+        metadata["scopes_supported"] = scopes
 
     # Remove None values
-    _del_none_values(metadata)
+    del_none_values(metadata)
 
     return metadata
 
-
-def _del_none_values(d: dict):
-    """Remove keys with None values from dictionary."""
-    for k in list(d.keys()):
-        if k in d and d[k] is None:
-            del d[k]

@@ -93,28 +93,12 @@ self.inputSchema = {
 
 ## Templates and Examples
 
-### Using Templates
+### Starting Points
 
-Ready-to-use templates are available:
+There are no copy-and-edit template files. Start from an existing tool and its test:
 
-1. **Tool Template**: `/docs/templates/tool_template.py`
-   - Complete tool structure
-   - Error handling patterns
-   - Permission checks
-   - Response formatting
-
-2. **Test Template**: `/docs/templates/test_template.py`
-   - Unit test patterns
-   - Integration tests
-   - Mock strategies
-   - Performance tests
-
-**Usage**:
-```bash
-# Copy and customize
-cp docs/templates/tool_template.py your_app/assistant_tools/my_tool.py
-cp docs/templates/test_template.py your_app/tests/test_my_tool.py
-```
+1. **Tool**: `pibiassistant/plugins/core/tools/get_document.py` shows the tool structure, permission checks and response formatting.
+2. **Test**: `pibiassistant/tests/test_document_tools.py` shows the unit test patterns and mock strategies.
 
 ## Testing Guidelines
 
@@ -301,8 +285,8 @@ If migrating existing tools:
 
 ### Examples
 
-- **Core Tools**: `/pibiassistant/core/document_tools.py`
-- **Plugin Tools**: `/plugins/data_science/tools/`
+- **Core Tools**: `/pibiassistant/plugins/core/tools/`
+- **Plugin Tools**: `/pibiassistant/plugins/data_science/tools/`
 - **External Apps**: See hooks documentation
 
 ## Getting Help

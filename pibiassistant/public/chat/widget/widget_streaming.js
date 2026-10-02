@@ -1,6 +1,18 @@
 // pibiAssistant - AIDA Widget Streaming Module
 // Handles Socket.IO streaming, processing indicators, and tool indicators for the AIDA widget
 
+/** Opening tag, question text and optional description shared by every question card. */
+function pao_question_head(tool_id_attr, reason, with_description) {
+	const esc = (v) => PAOCore.escape_html(v);
+	const description =
+		with_description && reason.description
+			? `<div class="pao-interaction-description">${esc(reason.description)}</div>`
+			: "";
+	return `<div class="pao-interaction-card pao-interaction-question" data-tool-id="${tool_id_attr}">
+					<div class="pao-interaction-question-text">${esc(reason.question || "")}</div>
+					${description}`;
+}
+
 /**
  * Widget Streaming Module
  * Responsible for real-time streaming, processing indicators, and tool indicators
@@ -40,12 +52,6 @@ window.PAOWidgetStreaming = {
 	subscribe_session(session_id) {
 		if (session_id && frappe.realtime && frappe.realtime.task_subscribe) {
 			frappe.realtime.task_subscribe(session_id);
-		}
-	},
-
-	unsubscribe_session(session_id) {
-		if (session_id && frappe.realtime && frappe.realtime.task_unsubscribe) {
-			frappe.realtime.task_unsubscribe(session_id);
 		}
 	},
 
@@ -95,6 +101,11 @@ window.PAOWidgetStreaming = {
 						widget.current_message_id = data.message_id;
 						this.note_seen_message(widget, data.message_id);
 					}
+					// Stop pressed before the turn existed: the first cancel found nothing to stop.
+					if (widget._stopping) widget.request_cancel();
+					if (widget._lateAbort && widget._lateAbort !== true && data.message_id !== widget._lateAbort) {
+						widget._lateAbort = null;
+					}
 					widget._activePlan = null;
 					if (data.resumed) {
 						// Reuse the existing streaming message from the interrupted stream
@@ -118,12 +129,6 @@ window.PAOWidgetStreaming = {
 				case "model_selected":
 					if (data.selected) {
 						PAOLogger.debug("Auto mode selected model:", data.selected);
-					}
-					// The live receipt for the turn in flight; the chip is drawn
-					// when the message lands. widget.js hardcodes model_id "auto",
-					// so this fires on every widget turn.
-					if (data.routing) {
-						widget._pending_routing = data.routing;
 					}
 					break;
 
@@ -195,6 +200,14 @@ window.PAOWidgetStreaming = {
 					this.clear_timeouts();
 					this.handle_stream_error(widget, data);
 					break;
+
+				case "stream_aborted": {
+					const late = widget._lateAbort;
+					widget._lateAbort = null;
+					if (late && (late === true || !data.message_id || data.message_id === late)) break;
+					this.finalize_aborted(widget, data);
+					break;
+				}
 			}
 		});
 
@@ -337,13 +350,28 @@ window.PAOWidgetStreaming = {
 
 		this._hasConnected = !!frappe.realtime.socket.connected;
 
-		frappe.realtime.on("connect", () => this._on_socket_connect(widget));
-		frappe.realtime.on("disconnect", () => this._on_socket_disconnect(widget));
+		this._connectHandler = () => this._on_socket_connect(widget);
+		this._disconnectHandler = () => this._on_socket_disconnect(widget);
+		frappe.realtime.on("connect", this._connectHandler);
+		frappe.realtime.on("disconnect", this._disconnectHandler);
 
 		this._visibilityHandler = () => this._on_tab_visible(widget);
 		document.addEventListener("visibilitychange", this._visibilityHandler);
 
 		this._recoveryBound = true;
+	},
+
+	teardown_recovery() {
+		if (!this._recoveryBound) return;
+		try {
+			frappe.realtime.off("connect", this._connectHandler);
+			frappe.realtime.off("disconnect", this._disconnectHandler);
+		} catch (e) {
+			/* socket already gone */
+		}
+		document.removeEventListener("visibilitychange", this._visibilityHandler);
+		this._connectHandler = this._disconnectHandler = this._visibilityHandler = null;
+		this._recoveryBound = false;
 	},
 
 	_on_socket_connect(widget) {
@@ -464,6 +492,7 @@ window.PAOWidgetStreaming = {
 	_fetch_session_messages(session_id) {
 		return new Promise((resolve, reject) => {
 			frappe.call({
+				silent: true,
 				method: "pibiassistant.pibiassistant_chat.api.chat.sessions.get_session_history",
 				type: "GET",
 				args: { session_id: session_id },
@@ -648,11 +677,7 @@ window.PAOWidgetStreaming = {
 		if (!$card.length) return;
 		$card
 			.addClass("pao-interaction-decided pao-interaction-resolved-elsewhere")
-			.css({ opacity: 0.5 })
-			.html(
-				`<div style="padding:8px 12px;color:#6b7280;font-style:italic;
-            font-size:13px;">${__("Resolved in another tab")}</div>`
-			);
+			.html(`<div class="pao-interaction-note">${__("Resolved in another tab")}</div>`);
 		this._release_composer(widget);
 		this.clear_approval_attention(widget);
 	},
@@ -666,6 +691,7 @@ window.PAOWidgetStreaming = {
 	hydrate_pending_interrupt(widget) {
 		if (!widget.session_id) return;
 		frappe.call({
+			silent: true,
 			method: "pibiassistant.pibiassistant_chat.api.chat.get_pending_interrupt",
 			args: { session_id: widget.session_id },
 			type: "GET",
@@ -722,7 +748,8 @@ window.PAOWidgetStreaming = {
 		const toolId = data.tool_id;
 		if (toolId) {
 			const existing = widget.$widget
-				.find(`.pao-interaction-card[data-tool-id='${toolId}']`)
+				.find(".pao-interaction-card")
+				.filter((_, el) => el.getAttribute("data-tool-id") === String(toolId))
 				.not(".pao-interaction-decided");
 			if (existing.length) {
 				return;
@@ -730,7 +757,7 @@ window.PAOWidgetStreaming = {
 		}
 
 		// HTML-escape once; reused in every card root's data-tool-id attribute.
-		const safeToolIdAttr = data.tool_id ? frappe.utils.escape_html(data.tool_id) : "";
+		const safeToolIdAttr = data.tool_id ? PAOCore.escape_html(data.tool_id) : "";
 
 		// Show text content if any was streamed before the interrupt
 		const $streamingMsg = widget.$widget.find(".pao-message-streaming");
@@ -749,32 +776,41 @@ window.PAOWidgetStreaming = {
 		let cardHtml = "";
 
 		if (interactionType === "approval") {
+			const esc = (v) => PAOCore.escape_html(v);
 			const toolName = data.tool_name || "";
 			const titleMap = {
-				create_document: "Create Document",
-				update_document: "Update Document",
-				delete_document: "Delete Document",
-				submit_document: "Submit Document",
+				create_document: __("Create Document"),
+				update_document: __("Update Document"),
+				delete_document: __("Delete Document"),
+				submit_document: __("Submit Document"),
 			};
 			const title = titleMap[toolName] || toolName.replace(/_/g, " ");
 			const action = reason.action || title;
 			const input = data.input || {};
+			const fmt = (v) => {
+				if (v !== null && typeof v === "object") {
+					let json = "";
+					try {
+						json = JSON.stringify(v, null, 2);
+					} catch (e) {
+						json = String(v);
+					}
+					if (json.length > 2000) json = json.slice(0, 2000) + "…";
+					return `<details class="pao-interaction-nested"><summary>${esc(__("Details"))}</summary><pre>${esc(json)}</pre></details>`;
+				}
+				return `<b>${esc(v)}</b>`;
+			};
 			const detailsHtml = Object.entries(input)
-				.filter(([, v]) => typeof v !== "object")
-				.slice(0, 5)
 				.map(
 					([k, v]) =>
-						`<span class="pao-interaction-detail">${k.replace(
-							/_/g,
-							" "
-						)}: <b>${v}</b></span>`
+						`<span class="pao-interaction-detail">${esc(k.replace(/_/g, " "))}: ${fmt(v)}</span>`
 				)
 				.join(" · ");
 
 			cardHtml = `
 				<div class="pao-interaction-card pao-interaction-approval" data-tool-id="${safeToolIdAttr}">
 					<div class="pao-interaction-header">
-						<span class="pao-interaction-title">${__("Approval Required")}: ${action}</span>
+						<span class="pao-interaction-title">${esc(__("Approval Required"))}: ${esc(action)}</span>
 					</div>
 					${detailsHtml ? `<div class="pao-interaction-details">${detailsHtml}</div>` : ""}
 					<div class="pao-interaction-actions">
@@ -794,39 +830,19 @@ window.PAOWidgetStreaming = {
 			const pillsHtml = options
 				.map(
 					(opt) =>
-						`<button class="pao-pill" data-value="${frappe.utils.escape_html(
+						`<button class="pao-pill" data-value="${PAOCore.escape_html(
 							opt
-						)}">${frappe.utils.escape_html(opt)}</button>`
+						)}">${PAOCore.escape_html(opt)}</button>`
 				)
 				.join("");
 
 			cardHtml = `
-				<div class="pao-interaction-card pao-interaction-question" data-tool-id="${safeToolIdAttr}">
-					<div class="pao-interaction-question-text">${frappe.utils.escape_html(
-						reason.question || ""
-					)}</div>
-					${
-						reason.description
-							? `<div class="pao-interaction-description">${frappe.utils.escape_html(
-									reason.description
-							  )}</div>`
-							: ""
-					}
+				${pao_question_head(safeToolIdAttr, reason, true)}
 					<div class="pao-interaction-pills">${pillsHtml}</div>
 				</div>`;
 		} else if (interactionType === "confirm") {
 			cardHtml = `
-				<div class="pao-interaction-card pao-interaction-question" data-tool-id="${safeToolIdAttr}">
-					<div class="pao-interaction-question-text">${frappe.utils.escape_html(
-						reason.question || ""
-					)}</div>
-					${
-						reason.description
-							? `<div class="pao-interaction-description">${frappe.utils.escape_html(
-									reason.description
-							  )}</div>`
-							: ""
-					}
+				${pao_question_head(safeToolIdAttr, reason, true)}
 					<div class="pao-interaction-actions">
 						<button class="pao-interaction-btn pao-btn-reject" data-response="no">${__("No")}</button>
 						<button class="pao-interaction-btn pao-btn-approve" data-response="yes">${__("Yes")}</button>
@@ -838,17 +854,14 @@ window.PAOWidgetStreaming = {
 				.map(
 					(opt) =>
 						`<label class="pao-multi-option">
-					<input type="checkbox" value="${frappe.utils.escape_html(opt)}" />
-					<span>${frappe.utils.escape_html(opt)}</span>
+					<input type="checkbox" value="${PAOCore.escape_html(opt)}" />
+					<span>${PAOCore.escape_html(opt)}</span>
 				</label>`
 				)
 				.join("");
 
 			cardHtml = `
-				<div class="pao-interaction-card pao-interaction-question" data-tool-id="${safeToolIdAttr}">
-					<div class="pao-interaction-question-text">${frappe.utils.escape_html(
-						reason.question || ""
-					)}</div>
+				${pao_question_head(safeToolIdAttr, reason, false)}
 					<div class="pao-interaction-multi">${checksHtml}</div>
 					<button class="pao-interaction-btn pao-btn-approve pao-multi-submit" disabled>${__(
 						"Submit"
@@ -856,12 +869,9 @@ window.PAOWidgetStreaming = {
 				</div>`;
 		} else if (interactionType === "text_input") {
 			cardHtml = `
-				<div class="pao-interaction-card pao-interaction-question" data-tool-id="${safeToolIdAttr}">
-					<div class="pao-interaction-question-text">${frappe.utils.escape_html(
-						reason.question || ""
-					)}</div>
+				${pao_question_head(safeToolIdAttr, reason, false)}
 					<div class="pao-interaction-text-input">
-						<input type="text" class="pao-text-field" placeholder="${frappe.utils.escape_html(
+						<input type="text" class="pao-text-field" placeholder="${PAOCore.escape_html(
 							reason.placeholder || __("Type your answer...")
 						)}" />
 						<button class="pao-interaction-btn pao-btn-approve pao-text-submit" disabled>${__(
@@ -934,7 +944,7 @@ window.PAOWidgetStreaming = {
 			frappe.show_alert(
 				{
 					message: toolName
-						? __("Approval needed: {0}", [toolName])
+						? __("Approval needed: {0}", [PAOCore.escape_html(toolName)])
 						: __("The assistant needs your approval"),
 					indicator: "orange",
 				},
@@ -962,7 +972,7 @@ window.PAOWidgetStreaming = {
 		let showing = false;
 		this._titleFlashTimer = setInterval(() => {
 			showing = !showing;
-			document.title = showing ? __("● Approval needed") : this._titleFlashOriginal;
+			document.title = showing ? "● " + __("Approval needed") : this._titleFlashOriginal;
 		}, 1200);
 	},
 
@@ -978,7 +988,7 @@ window.PAOWidgetStreaming = {
 	_release_composer(widget) {
 		if (!widget || !widget.$widget) return;
 		widget.$widget.find(".pao-input-area textarea").prop("disabled", false);
-		widget.$widget.find(".pao-send-btn").prop("disabled", false);
+		widget.sync_send_button();
 	},
 
 	/**
@@ -1129,6 +1139,7 @@ window.PAOWidgetStreaming = {
 
 		const self = this;
 		frappe.call({
+			silent: true,
 			method: "pibiassistant.pibiassistant_chat.api.chat.messages.resume_interrupt",
 			args: {
 				session_id: widget.session_id,
@@ -1143,7 +1154,7 @@ window.PAOWidgetStreaming = {
 				pending.forEach((entry) => {
 					const icon = entry.decision.isPositive ? '<i class="ph ph-check" aria-hidden="true"></i>' : '<i class="ph ph-x" aria-hidden="true"></i>';
 					entry.$card.replaceWith(
-						`<div class="pao-interaction-resolved">${icon} ${frappe.utils.escape_html(
+						`<div class="pao-interaction-resolved">${icon} ${PAOCore.escape_html(
 							entry.decision.displayResponse
 						)}</div>`
 					);
@@ -1305,12 +1316,31 @@ window.PAOWidgetStreaming = {
 
 			rawText += chunk;
 			$content.data("raw-markdown", rawText);
+			this.schedule_stream_render(widget);
+		}
+	},
+
+	/** Reparse the answer at most once per frame; chunks only append to raw-markdown. */
+	schedule_stream_render(widget) {
+		if (widget._streamRaf) return;
+		const raf = window.requestAnimationFrame || ((fn) => setTimeout(fn, 16));
+		widget._streamRaf = raf(() => {
+			widget._streamRaf = null;
+			const $content = widget.$widget.find(".pao-message-streaming .pao-message-text");
+			const rawText = $content.data("raw-markdown");
+			if (!$content.length || rawText == null) return;
 			$content.html(
 				PAOCore.format_message(rawText, "assistant") +
 					'<span class="pao-streaming-cursor">▋</span>'
 			);
 			widget.scroll_to_bottom();
-		}
+		});
+	},
+
+	cancel_stream_render(widget) {
+		if (!widget._streamRaf) return;
+		(window.cancelAnimationFrame || clearTimeout)(widget._streamRaf);
+		widget._streamRaf = null;
 	},
 
 	/**
@@ -1323,7 +1353,7 @@ window.PAOWidgetStreaming = {
 	/** Small footer under an answer: model, tokens in/out, speed and time. */
 	build_message_meta(meta) {
 		const parts = [];
-		if (meta && meta.model_id) parts.push(frappe.utils.escape_html(meta.model_id));
+		if (meta && meta.model_id) parts.push(PAOCore.escape_html(meta.model_id));
 		const tin = meta && meta.prompt_tokens;
 		const tout = meta && meta.completion_tokens;
 		if (tin != null || tout != null) {
@@ -1337,7 +1367,9 @@ window.PAOWidgetStreaming = {
 	},
 
 	finalize_streaming_message(widget, fullResponse, tokensUsed, quotaRemaining, meta) {
+		this.cancel_stream_render(widget);
 		widget._isStreaming = false;
+		widget._lateAbort = null;
 		this.stop_processing_indicator(widget);
 		this.pulse_robot_mood(widget, "delighted");
 
@@ -1362,24 +1394,47 @@ window.PAOWidgetStreaming = {
 
 			$streamingMsg.removeClass("pao-message-streaming");
 
-			// The live turn's landing point — a THIRD place that kept only
-			// {role, content}. It goes through the same field list as the two
-			// history readers, and draws the chip now rather than leaving it to
-			// appear only when the user comes back to the conversation.
-			const landed = widget._toWidgetMessage({
-				role: "assistant",
-				content: fullResponse,
-				routing: widget._pending_routing,
-			});
-			widget.messages.push(landed);
-			widget.render_routing_chip(landed, $streamingMsg);
+			widget.messages.push(widget._toWidgetMessage({ role: "assistant", content: fullResponse }));
 		}
 
-		// One receipt per turn — never let it leak into the next one.
-		widget._pending_routing = null;
-
 		// Re-enable send button
-		widget.$widget.find(".pao-send-btn").prop("disabled", false);
+		widget.sync_send_button();
+	},
+
+	/**
+	 * Close the turn the user stopped: keep what was already streamed, drop the
+	 * server's "(Stopped by user)" marker (the footer says it) and free the composer.
+	 */
+	finalize_aborted(widget, data) {
+		this.cancel_stream_render(widget);
+		clearTimeout(widget._stopFallback);
+		widget._stopping = false;
+		this.clear_timeouts();
+		this.stop_processing_indicator(widget);
+		widget.$widget.find(".pao-thinking-indicator, .pao-tool-indicator").remove();
+
+		const $streamingMsg = widget.$widget.find(".pao-message-streaming");
+		const $content = $streamingMsg.find(".pao-message-text");
+		const text = String($content.data("raw-markdown") || (data && data.partial_response) || "")
+			.replace(/\s*_\(Stopped by user\)_\s*$/, "")
+			.trim();
+		if ($streamingMsg.length) {
+			$streamingMsg.find(".pao-processing-indicator").hide();
+			$content.removeData("raw-markdown").show();
+			$content.html(text ? PAOCore.format_message(text, "assistant") : "");
+			$streamingMsg
+				.removeClass("pao-message-streaming")
+				.addClass("pao-message-aborted")
+				.find(".pao-message-content")
+				.append(
+					`<div class="pao-message-time pao-message-meta pao-message-stopped">${__("Response stopped.")}</div>`
+				);
+			if (text) widget.messages.push({ role: "assistant", content: text });
+		}
+		widget._isStreaming = false;
+		widget.$widget.find(".pao-input-area textarea").prop("disabled", false);
+		widget.sync_send_button();
+		widget.$widget.find(".pao-input").trigger("focus");
 	},
 
 	/**
@@ -1388,6 +1443,7 @@ window.PAOWidgetStreaming = {
 	 * @param {Object} data - Error data
 	 */
 	handle_stream_error(widget, data) {
+		this.cancel_stream_render(widget);
 		widget._isStreaming = false;
 		this.stop_processing_indicator(widget);
 		this.pulse_robot_mood(widget, "concerned", 2500);
@@ -1397,7 +1453,7 @@ window.PAOWidgetStreaming = {
 
 		widget.$widget.find(".pao-thinking-indicator").remove();
 		widget.$widget.find(".pao-tool-indicator").remove();
-		widget.$widget.find(".pao-send-btn").prop("disabled", false);
+		widget.sync_send_button();
 
 		if (data.action_required === "re_authorize") {
 			window.PAOPanel.open({
@@ -1431,7 +1487,7 @@ window.PAOWidgetStreaming = {
 		if (widget._activePlan) {
 			const $slot = this._running_subactivity_slot(widget);
 			if ($slot && $slot.length) {
-				$slot.html('<span class="pao-plan-sub-spinner" style="animation: pao-pulse 1.5s ease-in-out infinite;"><i class="ph ph-chat-dots" aria-hidden="true"></i></span> ' + window.PAOPlanStrip._escape(__("Thinking...")));
+				$slot.html('<span class="pao-plan-sub-spinner is-thinking"><i class="ph ph-chat-dots" aria-hidden="true"></i></span> ' + window.PAOPlanStrip._escape(__("Thinking...")));
 				return;
 			}
 		}
@@ -1440,18 +1496,8 @@ window.PAOWidgetStreaming = {
 			let $indicator = $streamingMsg.find(".pao-thinking-indicator");
 			if ($indicator.length === 0) {
 				$indicator = $(`
-					<div class="pao-thinking-indicator" style="
-						font-size: 12px;
-						color: var(--pao-text-muted, #9ca3af);
-						padding: 4px 8px;
-						margin-bottom: 8px;
-						background: var(--pao-bg-secondary, #f9fafb);
-						border-radius: 4px;
-						display: flex;
-						align-items: center;
-						gap: 6px;
-					">
-						<span class="pao-thinking-spinner" style="animation: pao-pulse 1.5s ease-in-out infinite;"><i class="ph ph-chat-dots" aria-hidden="true"></i></span>
+					<div class="pao-thinking-indicator">
+						<span class="pao-thinking-spinner"><i class="ph ph-chat-dots" aria-hidden="true"></i></span>
 						<span class="pao-thinking-text">${__("Thinking...")}</span>
 					</div>
 				`);
@@ -1487,7 +1533,7 @@ window.PAOWidgetStreaming = {
 			const $slot = this._running_subactivity_slot(widget);
 			if ($slot && $slot.length) {
 				$slot.attr("data-active-tool-id", tool_id || "");
-				$slot.html('<span class="pao-plan-sub-spinner" style="display:inline-block; animation: pao-spin 1s linear infinite;"><i class="ph ph-gear" aria-hidden="true"></i></span> ' + window.PAOPlanStrip._escape(`${__("Executing")}: ${tool_name}`));
+				$slot.html('<span class="pao-plan-sub-spinner is-executing"><i class="ph ph-gear" aria-hidden="true"></i></span> ' + window.PAOPlanStrip._escape(`${__("Executing")}: ${tool_name}`));
 				return;
 			}
 		}
@@ -1496,18 +1542,8 @@ window.PAOWidgetStreaming = {
 			let $indicator = $streamingMsg.find(".pao-tool-indicator");
 			if ($indicator.length === 0) {
 				$indicator = $(`
-					<div class="pao-tool-indicator" style="
-						font-size: 12px;
-						color: var(--pao-text-muted, #9ca3af);
-						padding: 4px 8px;
-						margin-top: 8px;
-						background: var(--pao-bg-secondary, #f9fafb);
-						border-radius: 4px;
-						display: inline-flex;
-						align-items: center;
-						gap: 6px;
-					">
-						<span class="pao-tool-spinner" style="animation: pao-spin 1s linear infinite;"><i class="ph ph-gear" aria-hidden="true"></i></span>
+					<div class="pao-tool-indicator">
+						<span class="pao-tool-spinner"><i class="ph ph-gear" aria-hidden="true"></i></span>
 						<span class="pao-tool-name"></span>
 					</div>
 				`);

@@ -92,48 +92,6 @@ def get_plugin_enabled_status(plugin_name: str) -> dict:
         }
 
 
-def toggle_plugin_state(plugin_name: str, enabled: bool) -> dict:
-    """
-    Enable or disable a plugin.
-
-    Args:
-        plugin_name: Name of the plugin
-        enabled: True to enable, False to disable
-
-    Returns:
-        Dict with success status
-    """
-    try:
-        enabled_int = 1 if enabled else 0
-
-        if frappe.db.exists("PA Plugin Configuration", plugin_name):
-            doc = frappe.get_doc("PA Plugin Configuration", plugin_name)
-            doc.enabled = enabled_int
-            doc.last_toggled_at = frappe.utils.now()
-            doc.save(ignore_permissions=True)
-        else:
-            # Create new configuration
-            doc = frappe.new_doc("PA Plugin Configuration")
-            doc.plugin_name = plugin_name
-            doc.enabled = enabled_int
-            doc.discovered_at = frappe.utils.now()
-            doc.last_toggled_at = frappe.utils.now()
-            doc.insert(ignore_permissions=True)
-
-        frappe.db.commit()
-
-        action = "enabled" if enabled else "disabled"
-        return {
-            "success": True,
-            "plugin_name": plugin_name,
-            "enabled": bool(enabled_int),
-            "message": _(f"Plugin '{plugin_name}' {action} successfully"),
-        }
-    except Exception as e:
-        frappe.log_error(title=_("Plugin Toggle Error"), message=str(e))
-        return {"success": False, "message": str(e)}
-
-
 @frappe.whitelist(methods=["GET"])
 def get_all_plugin_configurations() -> dict:
     """

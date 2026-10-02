@@ -94,6 +94,12 @@ def get_pa_cloud_client() -> AssistantRuntimeClient | None:
         >>> if client:
         ...     models = client.list_available_models()
     """
+    from pibiassistant.pibiassistant_chat.aida_mode import is_aida_mode
+
+    # AIDA mode: PA Cloud is gone, so a stale "Registered" row must never build a client.
+    if is_aida_mode():
+        return None
+
     settings = frappe.get_single("PA Chat Settings")
 
     if settings.registration_status != "Registered":

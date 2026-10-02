@@ -49,16 +49,8 @@ export function clear(el) {
   return el;
 }
 
-export function qs(sel, root = document) {
-  return root.querySelector(sel);
-}
-
-export function qsa(sel, root = document) {
-  return Array.from(root.querySelectorAll(sel));
-}
-
 export function focusables(root) {
-  return qsa(FOCUSABLE, root).filter((el) => !el.hidden && el.getClientRects().length > 0);
+  return Array.from(root.querySelectorAll(FOCUSABLE)).filter((el) => !el.hidden && el.getClientRects().length > 0);
 }
 
 export function trapFocus(root) {

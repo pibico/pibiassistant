@@ -11,9 +11,10 @@ authoritative AR membership (``_is_pao_member``). A real Pending member with no
 assistant Frappe role got ``can_use=False`` → lock screen, even though calling
 ``can_use_pao`` directly returned ``can_use=True``.
 
-A 3rd stale copy lived in ``voice._user_can_use_pao`` (same role tuple).
+A 3rd stale copy lived in ``voice._user_can_use_pao`` (same role tuple); it is
+gone and ``voice.transcribe`` now calls ``can_use_pao`` directly.
 
-These tests pin both ``_build_access`` and ``voice._user_can_use_pao`` to the
+These tests pin both ``_build_access`` and ``voice.transcribe`` to the
 authoritative gate so the boot path and the standalone endpoint can never
 diverge again.
 """
@@ -60,45 +61,46 @@ class TestInitializeSpaAccess(BaseAssistantTest):
         self.assertEqual(result, sentinel, "_build_access must return can_use_pao's verdict verbatim")
 
     def test_voice_gate_uses_membership_not_role(self):
-        """voice._user_can_use_pao must use authoritative membership, not a
-        Frappe role. A member is allowed; a non-member is denied even with
-        System Manager (USE follows the seat, not the role)."""
-        from pibiassistant.pibiassistant_chat.api.voice import _user_can_use_pao
+        """voice.transcribe must defer to the single authoritative gate
+        (can_use_pao), never to its own Frappe-role check: a user the gate
+        admits passes it, a user the gate denies is stopped with PermissionError
+        even when they hold System Manager."""
+        from types import SimpleNamespace
 
-        member = self._make_non_admin_user("voice.member@example.com")
+        from pibiassistant.pibiassistant_chat.api.voice import transcribe
+
+        gate_path = "pibiassistant.pibiassistant_chat.api.settings.can_use_pao"
+
+        def _gate_verdict(verdict):
+            # Past the gate the next check is the missing audio part (ValidationError);
+            # a denied user stops earlier with PermissionError.
+            try:
+                with (
+                    patch(gate_path, return_value=verdict),
+                    patch.object(frappe.local, "request", SimpleNamespace(files={}), create=True),
+                ):
+                    transcribe.__wrapped__()
+            except frappe.PermissionError:
+                return False
+            except frappe.ValidationError:
+                return True
+            raise AssertionError("transcribe returned without an audio file")
+
         admin = self._make_non_admin_user("voice.admin@example.com")
         admin_doc = frappe.get_doc("User", admin)
         admin_doc.append("roles", {"role": "System Manager"})
         admin_doc.save(ignore_permissions=True)
 
         try:
-            frappe.set_user(member)
-            with patch(
-                "pibiassistant.pibiassistant_chat.api.settings.access._is_pao_member",
-                return_value=True,
-            ):
-                self.assertTrue(
-                    _user_can_use_pao(),
-                    "a AIDA member must be allowed to use voice",
-                )
-            with patch(
-                "pibiassistant.pibiassistant_chat.api.settings.access._is_pao_member",
-                return_value=False,
-            ):
-                self.assertFalse(
-                    _user_can_use_pao(),
-                    "a non-member must be denied voice",
-                )
+            frappe.set_user(self._make_non_admin_user("voice.member@example.com"))
+            self.assertTrue(_gate_verdict({"can_use": True}), "an admitted member must be allowed voice")
+            self.assertFalse(_gate_verdict({"can_use": False}), "a denied user must be denied voice")
 
             frappe.set_user(admin)
-            with patch(
-                "pibiassistant.pibiassistant_chat.api.settings.access._is_pao_member",
-                return_value=False,
-            ):
-                self.assertFalse(
-                    _user_can_use_pao(),
-                    "a System Manager who is not a member must be denied voice",
-                )
+            self.assertFalse(
+                _gate_verdict({"can_use": False}),
+                "a System Manager the gate denies must be denied voice",
+            )
         finally:
             frappe.set_user("Administrator")
 
@@ -153,7 +155,7 @@ class TestInitializeSpaAccess(BaseAssistantTest):
         ), patch(
             "pibiassistant.pibiassistant_chat.pa_cloud_client.get_pa_cloud_client",
             return_value=fake_client,
-        ):
+        ), patch("pibiassistant.pibiassistant_chat.api.init._aida_mode", return_value=False):
             result = init_mod.initialize_spa()
 
         expected = _ar_user_id("Administrator")

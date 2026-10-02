@@ -80,30 +80,54 @@ function readTable(lines, i) {
   };
 }
 
-function readList(lines, i) {
+const MAX_LIST_DEPTH = 6;
+const indentOf = (line) => /^ */.exec(line)[0].length;
+
+function readList(lines, i, depth = 0) {
   const first = ITEM.exec(lines[i]);
+  const base = first[1].length;
   const ordered = /\d/.test(first[2]);
   const items = [];
+  const subs = [];
+  let sub = [];
+  const flush = () => {
+    if (!sub.length) return;
+    const cut = indentOf(sub[0]);
+    const body = sub.map((l) => l.slice(Math.min(cut, indentOf(l))));
+    subs[subs.length - 1] = readList(body, 0, depth + 1).block;
+    sub = [];
+  };
   let j = i;
   while (j < lines.length) {
     const m = ITEM.exec(lines[j]);
-    if (m) {
-      if (/\d/.test(m[2]) !== ordered && !m[1]) break;
+    const indent = m ? m[1].length : indentOf(lines[j]);
+    if (m && indent > base && depth < MAX_LIST_DEPTH) {
+      sub.push(lines[j++]);
+    } else if (m && indent > base) {
+      items[items.length - 1] += "\n" + lines[j++].trim();
+    } else if (m) {
+      if (/\d/.test(m[2]) !== ordered && indent === base) break;
+      flush();
       items.push(m[3]);
+      subs.push(null);
       j++;
     } else if (lines[j].trim() === "") {
       let k = j + 1;
       while (k < lines.length && lines[k].trim() === "") k++;
       const nextItem = k < lines.length && ITEM.exec(lines[k]);
-      if (!nextItem || /\d/.test(nextItem[2]) !== ordered) break;
+      if (!nextItem || (nextItem[1].length <= base && /\d/.test(nextItem[2]) !== ordered)) break;
+      if (sub.length) sub.push(...lines.slice(j, k));
       j = k;
+    } else if (sub.length && indent > base) {
+      sub.push(lines[j++]);
     } else if (/^\s{2,}\S/.test(lines[j]) && !startsBlock(lines[j].trim(), lines[j + 1])) {
       items[items.length - 1] += "\n" + lines[j].trim();
       j++;
     } else break;
   }
+  flush();
   const start = ordered ? parseInt(first[2], 10) : 1;
-  return { block: { type: "list", ordered, start, items: items.map((t) => parseInline(t)) }, next: j };
+  return { block: { type: "list", ordered, start, items: items.map((t) => parseInline(t)), subs }, next: j };
 }
 
 function readQuote(lines, i, depth) {
@@ -225,7 +249,7 @@ function blockNode(b) {
       return h("blockquote", null, b.children.map(blockNode));
     case "list": {
       const attrs = b.ordered && b.start !== 1 ? { start: b.start } : null;
-      return h(b.ordered ? "ol" : "ul", attrs, b.items.map((it) => h("li", null, inlines(it))));
+      return h(b.ordered ? "ol" : "ul", attrs, b.items.map((it, i) => h("li", null, inlines(it), b.subs[i] ? blockNode(b.subs[i]) : null)));
     }
     case "code":
       return h(

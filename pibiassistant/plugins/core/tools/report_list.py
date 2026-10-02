@@ -41,7 +41,7 @@ class ReportList(BaseTool):
     def __init__(self):
         super().__init__()
         self.name = "report_list"
-        self.description = "Discover and search available Frappe business reports across all modules. Use this tool to find the appropriate report for business questions before attempting custom data analysis. Returns a list of available reports with descriptions, modules, and types. Available reports include Sales Analytics, Territory Analysis, Customer Reports, P&L Statement, Balance Sheet, Receivables/Payables, Inventory Reports, Item Movement, Stock Valuation, Payroll, Attendance, and Leave Reports. Always search for existing reports first before building custom queries or analysis."
+        self.description = "Discover and search available Frappe business reports across all modules. Use this tool to find the appropriate report for business questions before attempting custom data analysis. Returns a list of available reports with descriptions, modules, and types. Available reports include Sales Analytics, Territory Analysis, Customer Reports, P&L Statement, Balance Sheet, Receivables/Payables, Inventory Reports, Item Movement, Stock Valuation, Payroll, Attendance, and Leave Reports. For payables use Accounts Payable, for account balances Trial Balance or General Ledger, for stock value Stock Balance or Stock Ledger, then run them with generate_report. Always search for existing reports first before building custom queries or analysis."
         self.requires_permission = None  # Permission checked dynamically per report
 
         self.inputSchema = {

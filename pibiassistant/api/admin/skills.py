@@ -38,7 +38,7 @@ def get_skills_list() -> dict:
             "published": published,
         }
     except Exception as e:
-        frappe.log_error(f"Failed to get skills list: {str(e)}")
+        frappe.log_error(title="Failed to get skills list", message=f"Failed to get skills list: {str(e)}")
         return {"success": False, "error": str(e), "skills": [], "total": 0, "published": 0}
 
 
@@ -69,5 +69,5 @@ def toggle_skill_status(name: str, publish: bool):
         }
     except Exception as e:
         frappe.db.rollback()
-        frappe.log_error(f"Failed to toggle skill '{name}': {str(e)}")
+        frappe.log_error(title="Failed to toggle skill", message=f"Failed to toggle skill '{name}': {str(e)}")
         return {"success": False, "message": _("Error: {0}").format(str(e))}

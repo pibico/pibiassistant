@@ -57,7 +57,7 @@ dependencies = [
     "python-magic>=0.4.27",
     "beautifulsoup4>=4.12,<5",  # Span Frappe v15 (~=4.12.2) and v16 (~=4.13.5) without forcing a downgrade
 
-    # Exact pin, not a floor. FAC and the SDK ship as a coupled pair: FAC calls
+    # Exact pin, not a floor. pibiAssistant and the SDK ship as a coupled pair: pibiAssistant calls
     # methods that only exist from a given release onward, and a floor lets pip
     # resolve to an older published version that lacks them — which surfaces as
     # AttributeError at runtime, in production, rather than at install time.

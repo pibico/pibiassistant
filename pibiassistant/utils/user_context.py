@@ -21,9 +21,10 @@ Provides utilities for managing user context during code execution
 
 import copy
 from contextlib import contextmanager
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import frappe
+from frappe import _
 
 
 @contextmanager
@@ -80,14 +81,16 @@ def secure_user_context(username: Optional[str] = None, require_system_manager: 
             user_roles = frappe.get_roles(current_user)
             if "System Manager" not in user_roles:
                 raise frappe.PermissionError(
-                    f"🚫 Security: User '{current_user}' lacks System Manager role required for code execution. "
-                    f"Current roles: {', '.join(user_roles)}"
+                    _(
+                        "Security: User '{0}' lacks System Manager role required for code execution. "
+                        "Current roles: {1}"
+                    ).format(current_user, ", ".join(user_roles))
                 )
 
         # Additional security validation
         user_doc = frappe.get_doc("User", current_user)
         if not user_doc.enabled:
-            raise frappe.PermissionError(f"🚫 Security: User '{current_user}' is disabled")
+            raise frappe.PermissionError(_("Security: User '{0}' is disabled").format(current_user))
 
         # Log context switch for audit trail
         if context_changed:
@@ -123,112 +126,6 @@ def secure_user_context(username: Optional[str] = None, require_system_manager: 
         except Exception as restore_error:
             # Log restoration errors but don't re-raise to avoid masking original errors
             frappe.logger().error(f"Failed to restore user context: {str(restore_error)}")
-
-
-def validate_user_permissions(username: str, required_roles: list = None) -> Dict[str, Any]:
-    """
-    Validate user permissions and return detailed permission information
-
-    Args:
-        username (str): Username to validate
-        required_roles (list, optional): List of required roles
-
-    Returns:
-        dict: Permission validation results
-    """
-    if required_roles is None:
-        required_roles = ["System Manager"]
-
-    try:
-        # Check if user exists
-        if not frappe.db.exists("User", username):
-            return {
-                "valid": False,
-                "error": f"User '{username}' does not exist",
-                "user_roles": [],
-                "missing_roles": required_roles,
-            }
-
-        # Get user document
-        user_doc = frappe.get_doc("User", username)
-
-        # Check if user is enabled
-        if not user_doc.enabled:
-            return {
-                "valid": False,
-                "error": f"User '{username}' is disabled",
-                "user_roles": [],
-                "missing_roles": required_roles,
-            }
-
-        # Get user roles
-        user_roles = frappe.get_roles(username)
-
-        # Check required roles
-        missing_roles = [role for role in required_roles if role not in user_roles]
-
-        return {
-            "valid": len(missing_roles) == 0,
-            "error": f"Missing required roles: {', '.join(missing_roles)}" if missing_roles else None,
-            "user_roles": user_roles,
-            "missing_roles": missing_roles,
-            "user_enabled": user_doc.enabled,
-            "user_email": user_doc.email,
-        }
-
-    except Exception as e:
-        return {
-            "valid": False,
-            "error": f"Permission validation failed: {str(e)}",
-            "user_roles": [],
-            "missing_roles": required_roles,
-        }
-
-
-def get_execution_user_info(username: str = None) -> Dict[str, Any]:
-    """
-    Get comprehensive user information for code execution context
-
-    Args:
-        username (str, optional): Username to get info for (defaults to current user)
-
-    Returns:
-        dict: User information including roles, permissions, and context
-    """
-    target_user = username or frappe.session.user
-
-    try:
-        # Get basic user info
-        user_doc = frappe.get_doc("User", target_user)
-        user_roles = frappe.get_roles(target_user)
-
-        # Check System Manager access
-        has_system_manager = "System Manager" in user_roles
-
-        # Get permission summary
-        permission_info = validate_user_permissions(target_user)
-
-        return {
-            "username": target_user,
-            "email": user_doc.email,
-            "full_name": user_doc.full_name or target_user,
-            "enabled": user_doc.enabled,
-            "roles": user_roles,
-            "has_system_manager": has_system_manager,
-            "can_execute_code": permission_info["valid"],
-            "permission_errors": permission_info.get("error"),
-            "session_user": frappe.session.user,
-            "is_current_user": target_user == frappe.session.user,
-        }
-
-    except Exception as e:
-        return {
-            "username": target_user,
-            "error": f"Failed to get user info: {str(e)}",
-            "can_execute_code": False,
-            "session_user": frappe.session.user,
-            "is_current_user": target_user == frappe.session.user,
-        }
 
 
 @contextmanager
@@ -278,29 +175,3 @@ def audit_code_execution(code_snippet: str = "", user_context: str = None):
             f"User: {audit_info['user']}, Error: {str(e)}"
         )
         raise
-
-
-def test_user_context_security():
-    """Test function to verify user context management"""
-    current_user = frappe.session.user
-    print(f"Testing user context security for user: {current_user}")
-
-    # Test current user context
-    try:
-        with secure_user_context() as exec_user:
-            print(f"✅ Current user context: {exec_user}")
-            user_info = get_execution_user_info()
-            print(f"✅ User info retrieved: {user_info['full_name']} ({user_info['username']})")
-    except Exception as e:
-        print(f"❌ Current user context failed: {e}")
-
-    # Test permission validation
-    perm_info = validate_user_permissions(current_user)
-    print(f"✅ Permission validation: Valid={perm_info['valid']}, Roles={perm_info['user_roles']}")
-
-    print("User context security test completed.")
-
-
-if __name__ == "__main__":
-    # Run tests if executed directly
-    test_user_context_security()

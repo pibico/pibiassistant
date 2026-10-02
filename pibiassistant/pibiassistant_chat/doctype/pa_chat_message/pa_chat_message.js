@@ -33,7 +33,6 @@ frappe.ui.form.on("PA Chat Message", {
 		// Format content display for better readability
 		if (frm.doc.content) {
 			frm.fields_dict.content.$wrapper.find("textarea").css({
-				"font-family": "monospace",
 				"white-space": "pre-wrap",
 			});
 		}

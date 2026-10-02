@@ -9,9 +9,9 @@ body:
         Thanks for taking the time to report this bug! Please fill out the details below so we can investigate and fix it.
 
   - type: input
-    id: fac-version
+    id: pibiassistant-version
     attributes:
-      label: FAC Version
+      label: pibiAssistant Version
       description: "Which version of pibiAssistant are you using? (Check in `pyproject.toml` or run `bench version`)"
       placeholder: "e.g., 2.3.2"
     validations:

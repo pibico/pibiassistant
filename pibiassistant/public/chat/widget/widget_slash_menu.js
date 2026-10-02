@@ -31,9 +31,9 @@ window.PAOWidgetSlashMenu = {
 			<div class="pao-slash-menu" role="listbox" style="display:none;">
 				<div class="pao-slash-body"></div>
 				<div class="pao-slash-footer">
-					<span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
-					<span><kbd>⏎</kbd> select</span>
-					<span><kbd>esc</kbd> close</span>
+					<span><kbd>↑</kbd><kbd>↓</kbd> ${__("navigate")}</span>
+					<span><kbd>⏎</kbd> ${__("select")}</span>
+					<span><kbd>esc</kbd> ${__("close")}</span>
 				</div>
 			</div>
 		`);
@@ -76,6 +76,13 @@ window.PAOWidgetSlashMenu = {
 			state.open = true;
 			this.render(widget, $menu.find(".pao-slash-body"), query, state);
 			$menu.show();
+			if (!widget._templatesCache) {
+				this.prefetch(widget).then(() => {
+					if (state.open) {
+						this.render(widget, $menu.find(".pao-slash-body"), this.extractQuery($input.val() || "") || "", state);
+					}
+				});
+			}
 		});
 
 		// --- Keydown handler (capture phase so it pre-empts Enter-send) ---
@@ -83,6 +90,7 @@ window.PAOWidgetSlashMenu = {
 			"keydown",
 			(e) => {
 				if (!state.open) return;
+				if (e.isComposing || e.keyCode === 229) return;
 				if (e.key === "ArrowDown") {
 					e.preventDefault();
 					move(1);
@@ -123,10 +131,12 @@ window.PAOWidgetSlashMenu = {
 	 * @param {Object} widget
 	 */
 	async prefetch(widget) {
+		if (widget._templatesCache) return;
 		if (widget._templatesFetching) return widget._templatesFetching;
 		widget._templatesFetching = (async () => {
 			try {
 				const response = await frappe.call({
+					silent: true,
 					method: "pibiassistant.pibiassistant_chat.api.prompts.get_prompt_templates",
 					type: "GET",
 				});
@@ -282,11 +292,6 @@ window.PAOWidgetSlashMenu = {
 	},
 
 	escapeHtml(s) {
-		return String(s)
-			.replace(/&/g, "&amp;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;")
-			.replace(/"/g, "&quot;")
-			.replace(/'/g, "&#39;");
+		return PAOCore.escape_html(s);
 	},
 };

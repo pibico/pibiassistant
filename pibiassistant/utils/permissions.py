@@ -14,35 +14,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import json
-
 import frappe
-from frappe import _, get_doc, has_permission
+from frappe import get_doc
 
 PA_ADMIN_ROLES = ("System Manager", "PA Admin")
 PA_ACCESS_ROLES = PA_ADMIN_ROLES + ("PA User",)
 
-
-def check_tool_permissions(tool_name: str, user: str) -> bool:
-    """Check if the user has permissions to access the specified tool."""
-    tool = get_doc("assistant Tool Registry", tool_name)
-
-    if not tool.enabled:
-        return False
-
-    required_permissions = json.loads(tool.required_permissions or "[]")
-
-    for perm in required_permissions:
-        if isinstance(perm, dict):
-            doctype = perm.get("doctype")
-            permission_type = perm.get("permission", "read")
-            if not has_permission(doctype, permission_type, user=user):
-                return False
-        elif isinstance(perm, str):
-            if perm not in get_roles(user):
-                return False
-
-    return True
 
 
 def get_roles(user: str) -> list:
@@ -190,3 +167,41 @@ def get_skill_permission_query_conditions(user=None):
         """)
 
     return "(" + " OR ".join(conditions) + ")"
+
+
+def user_can_access_shared_doc(doc, user: str = None) -> bool:
+    """Visibility rule shared by PA Skill and Prompt Template: owner, System Manager,
+    Public/Shared (to one of the user's roles) when Published, or a published system record."""
+    user = user or frappe.session.user
+
+    if doc.owner_user == user:
+        return True
+
+    roles = set(frappe.get_roles(user))
+    if "System Manager" in roles:
+        return True
+
+    published = doc.status == "Published"
+    if doc.visibility == "Public" and published:
+        return True
+
+    if doc.visibility == "Shared" and published and roles & {r.role for r in doc.shared_with_roles}:
+        return True
+
+    return bool(doc.is_system and published)
+
+
+_USAGE_DOCTYPES = ("PA Skill", "Prompt Template")
+
+
+def increment_usage(doctype: str, name: str) -> None:
+    """Bump use_count/last_used for a PA Skill or Prompt Template without a full document save."""
+    if doctype not in _USAGE_DOCTYPES:
+        raise ValueError(f"Usage counter not supported for {doctype}")
+    try:
+        frappe.db.sql(
+            f"UPDATE `tab{doctype}` SET use_count = use_count + 1, last_used = NOW() WHERE name = %s",
+            (name,),
+        )
+    except Exception as e:
+        frappe.logger("usage_counter").warning(f"Failed to increment usage for {doctype} {name}: {e}")

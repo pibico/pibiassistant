@@ -135,7 +135,7 @@ def _get_default_oauth_settings():
             "show_protected_resource_metadata": True,
             "show_social_login_key_as_authorization_server": False,
             "resource_name": "pibiAssistant",
-            "resource_documentation": "https://github.com/paborana/pibiassistant",
+            "resource_documentation": "https://github.com/pibico/pibiassistant",
             "resource_policy_uri": "",
             "resource_tos_uri": "",
             "scopes_supported": "",
@@ -152,6 +152,45 @@ def _has_http_localhost_uris(client_metadata):
         if parsed.scheme == "http" and parsed.hostname in ("localhost", "127.0.0.1", "::1"):
             return True
     return False
+
+
+def _registration_response(doc, redirect_uris, client_metadata):
+    """RFC 7591 registration response for a freshly created OAuth Client."""
+    response = {
+        "client_id": doc.client_id,
+        "client_secret": doc.get_password("client_secret"),
+        "client_name": doc.app_name,
+        "redirect_uris": redirect_uris,
+        "grant_types": ["authorization_code", "refresh_token"],
+        "response_types": ["code"],
+        "token_endpoint_auth_method": client_metadata.token_endpoint_auth_method or "client_secret_basic",
+    }
+    for field in ("client_uri", "logo_uri", "tos_uri", "policy_uri"):
+        value = getattr(client_metadata, field)
+        if value:
+            response[field] = str(value)
+    for field in ("scope", "contacts", "software_id", "software_version"):
+        value = getattr(client_metadata, field)
+        if value:
+            response[field] = value
+    return response
+
+
+def del_none_values(d: dict):
+    """Remove keys with None values from dictionary."""
+    for k in list(d.keys()):
+        if d[k] is None:
+            del d[k]
+
+
+def parse_scopes(value):
+    """Unique scopes, in order, from a newline- or space-separated settings string."""
+    scopes = []
+    if value and isinstance(value, str):
+        for scope in value.split():
+            if scope not in scopes:
+                scopes.append(scope)
+    return scopes
 
 
 def create_oauth_client(client_metadata):
@@ -179,37 +218,7 @@ def create_oauth_client(client_metadata):
         doc.redirect_uris = " ".join(redirect_uris)
         doc.save(ignore_permissions=True)
 
-        # v16 returns an OAuthClient document, convert to dict for RFC 7591 response
-        redirect_uris = [str(uri) for uri in client_metadata.redirect_uris]
-        response = {
-            "client_id": doc.client_id,
-            "client_secret": doc.get_password("client_secret"),
-            "client_name": doc.app_name,
-            "redirect_uris": redirect_uris,
-            "grant_types": ["authorization_code", "refresh_token"],
-            "response_types": ["code"],
-            "token_endpoint_auth_method": client_metadata.token_endpoint_auth_method or "client_secret_basic",
-        }
-
-        # Add optional metadata fields if provided
-        if client_metadata.client_uri:
-            response["client_uri"] = str(client_metadata.client_uri)
-        if client_metadata.logo_uri:
-            response["logo_uri"] = str(client_metadata.logo_uri)
-        if client_metadata.scope:
-            response["scope"] = client_metadata.scope
-        if client_metadata.contacts:
-            response["contacts"] = client_metadata.contacts
-        if client_metadata.tos_uri:
-            response["tos_uri"] = str(client_metadata.tos_uri)
-        if client_metadata.policy_uri:
-            response["policy_uri"] = str(client_metadata.policy_uri)
-        if client_metadata.software_id:
-            response["software_id"] = client_metadata.software_id
-        if client_metadata.software_version:
-            response["software_version"] = client_metadata.software_version
-
-        return response
+        return _registration_response(doc, [str(uri) for uri in client_metadata.redirect_uris], client_metadata)
     else:
         from typing import cast
 
@@ -238,38 +247,9 @@ def create_oauth_client(client_metadata):
         # Insert and get credentials
         doc.insert(ignore_permissions=True)
 
-        # Build response - always include client_secret
-        # Even if token_endpoint_auth_method is "none", the client should receive
-        # the secret. They may choose not to use it for authentication, but should have it.
-        response = {
-            "client_id": doc.client_id,
-            "client_secret": doc.get_password("client_secret"),
-            "client_name": doc.app_name,
-            "redirect_uris": redirect_uris,
-            "grant_types": ["authorization_code", "refresh_token"],
-            "response_types": ["code"],
-            "token_endpoint_auth_method": client_metadata.token_endpoint_auth_method or "client_secret_basic",
-        }
-
-        # Add optional metadata fields if provided
-        if client_metadata.client_uri:
-            response["client_uri"] = str(client_metadata.client_uri)
-        if client_metadata.logo_uri:
-            response["logo_uri"] = str(client_metadata.logo_uri)
-        if client_metadata.scope:
-            response["scope"] = client_metadata.scope
-        if client_metadata.contacts:
-            response["contacts"] = client_metadata.contacts
-        if client_metadata.tos_uri:
-            response["tos_uri"] = str(client_metadata.tos_uri)
-        if client_metadata.policy_uri:
-            response["policy_uri"] = str(client_metadata.policy_uri)
-        if client_metadata.software_id:
-            response["software_id"] = client_metadata.software_id
-        if client_metadata.software_version:
-            response["software_version"] = client_metadata.software_version
-
-        return response
+        # Always include client_secret, even for token_endpoint_auth_method "none":
+        # the client may choose not to use it for authentication, but should have it.
+        return _registration_response(doc, redirect_uris, client_metadata)
 
 
 def validate_dynamic_client_metadata(client_metadata):

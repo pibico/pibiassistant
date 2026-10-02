@@ -119,3 +119,35 @@
 .pa-ps .pa-ps__open:hover { background: var(--pibico-steel-pale); color: var(--pibico-steel-dark); }
 @media (pointer: coarse) { .pa-ps .pa-ps__open { min-height: 44px; } }
 @media (max-width: 575px) { .pa-ps .pa-ps__open { margin-left: 0; } }
+
+.pa-ps-test-ok, .pa-ps-test-fail { vertical-align: -0.125em; }
+.pa-ps-test-ok { color: #2F6490; }
+.pa-ps-test-fail { color: #B33A2B; }
+[data-theme="dark"] .pa-ps-test-ok { color: #6AABE0; }
+[data-theme="dark"] .pa-ps-test-fail { color: #F0A89E; }
+
+.pa-chat-banner {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    margin: 10px 20px; padding: 3px 12px; min-height: 44px;
+    background: #E8E8EA; color: #1A1A2E; border: 0; border-radius: 12px;
+    box-shadow: 0 0 12px rgba(70, 130, 180, 0.15), 0 0 4px rgba(70, 130, 180, 0.08);
+    font-family: 'Raleway', Arial, sans-serif; font-size: 14px; line-height: 1.2;
+}
+.pa-chat-banner__icon { font-size: 20px; color: #365F8A; flex: none; }
+.pa-chat-banner__text { flex: 1 1 200px; min-width: 0; }
+.pa-chat-banner__actions { display: flex; gap: 8px; align-items: center; }
+.pa-chat-banner__btn {
+    font-family: 'Poppins', Arial, sans-serif; font-size: 13px; font-weight: 600; line-height: 1.2;
+    min-height: 32px; padding: 4px 14px; border: 0; border-radius: 12px; cursor: pointer;
+    display: inline-flex; align-items: center; text-decoration: none;
+}
+.pa-chat-banner__btn--primary { background: #365F8A; color: #fff; }
+.pa-chat-banner__btn--primary:hover { color: #fff; filter: brightness(1.1); text-decoration: none; }
+.pa-chat-banner__btn--ghost { background: transparent; color: #1A1A2E; }
+.pa-chat-banner__btn--ghost:hover { background: rgba(26, 26, 46, 0.08); }
+.pa-chat-banner__btn:focus-visible { outline: 2px solid #4682B4; outline-offset: 2px; }
+@media (pointer: coarse) { .pa-chat-banner__btn { min-height: 44px; min-width: 44px; justify-content: center; } }
+[data-theme="dark"] .pa-chat-banner { background: #26263A; color: #E8E8EA; box-shadow: 0 0 12px rgba(106, 171, 224, 0.18); }
+[data-theme="dark"] .pa-chat-banner__icon { color: #6AABE0; }
+[data-theme="dark"] .pa-chat-banner__btn--ghost { color: #E8E8EA; }
+[data-theme="dark"] .pa-chat-banner__btn--ghost:hover { background: rgba(232, 232, 234, 0.12); }

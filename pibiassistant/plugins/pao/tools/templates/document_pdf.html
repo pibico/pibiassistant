@@ -17,14 +17,14 @@
 		content: counter(page) " / " counter(pages);
 		font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
 		font-size: 8pt;
-		color: #999;
+		color: #6E6E76;
 	}
 
 	@bottom-left {
 		content: "{{ (title or '') | replace('"', '') }}";
 		font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
 		font-size: 8pt;
-		color: #999;
+		color: #6E6E76;
 	}
 }
 
@@ -149,7 +149,6 @@ pre code { background: none; padding: 0; border: none; border-radius: 0; }
 blockquote {
 	margin: 12px 0;
 	padding: 8px 14px;
-	border-left: 3px solid #9ca3af;
 	color: #4b5563;
 	background: #f9fafb;
 	font-style: italic;
@@ -225,8 +224,8 @@ em { font-style: italic; }
 	gap: 12px;
 	margin: 14px 0;
 	padding: 12px 14px;
-	border-left: 4px solid #3b82f6;
 	border-radius: 4px;
+	background: #eff6ff;
 	page-break-inside: avoid;
 }
 
@@ -358,7 +357,7 @@ em { font-style: italic; }
 	padding-top: 8px;
 	border-top: 1px solid #e5e7eb;
 	font-size: 8pt;
-	color: #999;
+	color: #6E6E76;
 	text-align: right;
 }
 
@@ -384,7 +383,7 @@ img {
 	{{ body }}
 
 	{% if generated_date %}
-	<div class="doc-footer">Generated on {{ generated_date }}</div>
+	<div class="doc-footer">{{ _("Generated on {0}").format(generated_date) }}</div>
 	{% endif %}
 </div>
 </body>

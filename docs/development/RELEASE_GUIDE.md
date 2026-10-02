@@ -52,9 +52,8 @@ All commit messages must follow the [Conventional Commits](https://www.conventio
 Releases are fully automated via `semantic-release` (same toolchain as Frappe and ERPNext).
 
 1. Merge feature/bug/improvement PRs into `develop`
-2. Write the change log file (see "Change Log Files" section below)
-3. Raise a PR from `develop` to `main` and **rebase-merge** it — `main` requires linear history, and the merge method has consequences; see "Merging develop into main" below
-4. **Automatic**: semantic-release runs on push to `main` and:
+2. Raise a PR from `develop` to `main` and **rebase-merge** it — `main` requires linear history, and the merge method has consequences; see "Merging develop into main" below
+3. **Automatic**: semantic-release runs on push to `main` and:
    - Detects version bump from commit messages
    - Updates `pyproject.toml` and `pibiassistant/__init__.py`
    - Commits, tags, and pushes
@@ -133,27 +132,9 @@ though the title were the commit message, because it becomes one:
 fix: apply return_variables as a filter in run_python_code
 ```
 
-## Change Log Files
+## Release Notes
 
-Frappe reads `pibiassistant/change_log/v2/vX_Y_Z.md` files to show the "What's New" dialog in the UI after users upgrade. These are written manually before merging to main (same as Frappe and ERPNext).
-
-**File path**: `pibiassistant/change_log/v{major}/v{major}_{minor}_{patch}.md`
-
-**Format**:
-```markdown
-## Version X.Y.Z
-
-### Features
-- **Feature name** — short description
-
-### Fixes
-- **Fix name** — short description
-
-### Improvements
-- **Improvement name** — short description
-```
-
-For hotfixes, include the change log file in the hotfix branch before merging to main.
+There are no hand-written change log files. `@semantic-release/release-notes-generator` builds the notes from the conventional commit subjects (see "Commit subjects are the release notes") and `@semantic-release/github` publishes them with the release.
 
 ## Pre-release (Beta) Flow
 

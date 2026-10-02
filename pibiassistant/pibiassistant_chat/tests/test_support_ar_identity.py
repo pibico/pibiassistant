@@ -39,7 +39,8 @@ class TestAdministratorReachesARAsAnEmail(unittest.TestCase):
     def setUp(self):
         self.client = MagicMock()
         for p in (
-            patch.object(support, "_get_client", return_value=self.client),
+            patch.object(support, "cloud_client_or_throw", return_value=self.client),
+            patch("pibiassistant.pibiassistant_chat.api._helpers._aida_mode", return_value=False),
             patch.object(frappe, "session", frappe._dict(user=ADMIN_DOCNAME)),
             patch("frappe.db.get_value", return_value=ADMIN_EMAIL),
         ):

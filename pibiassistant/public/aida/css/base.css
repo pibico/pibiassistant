@@ -37,6 +37,7 @@ select {
 
 button {
   font-family: var(--aida-font-button);
+  cursor: pointer;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -46,10 +47,6 @@ h1, h2, h3, h4, h5, h6 {
 
 code, pre, kbd, samp {
   font-family: var(--aida-font-mono);
-}
-
-button {
-  cursor: pointer;
 }
 
 img,
@@ -141,6 +138,19 @@ body.aida-lock {
 .aida-num {
   font-variant-numeric: tabular-nums;
 }
+
+.aida-noaccess {
+  max-width: 28rem;
+  margin: var(--aida-s-8) auto;
+  padding: var(--aida-s-4);
+  background: var(--aida-surface);
+  border-radius: 12px;
+  box-shadow: var(--aida-shadow-md);
+}
+.aida-noaccess h1 { margin: 0 0 var(--aida-s-2); font: 600 1.25rem/1.2 var(--aida-font-heading); color: var(--aida-text); }
+.aida-noaccess p { margin: 0 0 var(--aida-s-4); color: var(--aida-text-secondary); }
+.aida-noaccess__actions { display: flex; flex-wrap: wrap; gap: var(--aida-s-2); }
+.aida-noaccess .aida-btn { min-height: var(--aida-hit); text-decoration: none; }
 
 .aida-fatal {
   margin: var(--aida-s-8) var(--aida-s-4);

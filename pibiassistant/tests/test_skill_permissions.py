@@ -430,10 +430,10 @@ class TestSkillPermissions(BaseAssistantTest):
             manager.read_skill_content("test-skill-read-private-draft")
 
     # =========================================================================
-    # get_skill_by_tool() access scoping + precedence (issue #239)
+    # get_tool_skill_map() access scoping + precedence (issue #239)
     # =========================================================================
 
-    def test_get_skill_by_tool_excludes_other_users_private_skill(self):
+    def test_tool_skill_map_excludes_other_users_private_skill(self):
         """Used to pick one arbitrary Published row, so a Private skill could mask a
         visible one on the same tool."""
         self._insert_as_admin(
@@ -452,11 +452,11 @@ class TestSkillPermissions(BaseAssistantTest):
         )
 
         manager = SkillManager()
-        found = manager.get_skill_by_tool("by_tool_masking", user=self.OTHER_NON_ADMIN_USER)
+        found = manager.get_tool_skill_map(user=self.OTHER_NON_ADMIN_USER).get("by_tool_masking")
         self.assertIsNotNone(found)
         self.assertEqual(found["skill_id"], "test-skill-by-tool-public")
 
-    def test_get_skill_by_tool_returns_none_when_nothing_accessible(self):
+    def test_tool_skill_map_returns_none_when_nothing_accessible(self):
         self._insert_as_admin(
             "test-skill-by-tool-hidden",
             self.NON_ADMIN_USER,
@@ -466,9 +466,9 @@ class TestSkillPermissions(BaseAssistantTest):
         )
 
         manager = SkillManager()
-        self.assertIsNone(manager.get_skill_by_tool("by_tool_hidden", user=self.OTHER_NON_ADMIN_USER))
+        self.assertNotIn("by_tool_hidden", manager.get_tool_skill_map(user=self.OTHER_NON_ADMIN_USER))
 
-    def test_get_skill_by_tool_agrees_with_tool_skill_map(self):
+    def test_tool_skill_map_system_skill_wins(self):
         """The two resolvers must never disagree about which skill owns a tool."""
         self._insert_as_admin(
             "test-skill-by-tool-user",
@@ -487,7 +487,5 @@ class TestSkillPermissions(BaseAssistantTest):
         )
 
         manager = SkillManager()
-        found = manager.get_skill_by_tool("by_tool_precedence", user="Administrator")
         mapped = manager.get_tool_skill_map(user="Administrator")["by_tool_precedence"]
-        self.assertEqual(found["skill_id"], "test-skill-by-tool-system")
-        self.assertEqual(found["skill_id"], mapped["skill_id"])
+        self.assertEqual(mapped["skill_id"], "test-skill-by-tool-system")

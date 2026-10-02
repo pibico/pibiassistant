@@ -5,7 +5,7 @@ import * as api from "../lib/api.js";
 import { icon } from "./icons.js";
 import { show } from "./toast.js";
 
-export const ACCEPT = ".pdf,.txt,.md,.png,.jpg,.jpeg,.gif,.webp,.csv,.json,.xml";
+const ACCEPT = ".pdf,.txt,.md,.png,.jpg,.jpeg,.gif,.webp,.csv,.json,.xml";
 export const MAX_FILES = 5;
 export const MAX_BYTES = 50 * 1024 * 1024;
 const EXTENSIONS = new Set(ACCEPT.split(","));

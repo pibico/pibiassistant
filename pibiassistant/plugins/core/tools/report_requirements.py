@@ -23,9 +23,9 @@ import re
 from typing import Any, Dict
 
 import frappe
-from frappe import _
 
 from pibiassistant.core.base_tool import BaseTool
+from pibiassistant.plugins.query_errors import log_failure
 
 # Fieldtypes whose `options` is a set of accepted values rather than a target
 # DocType. Everything else (Link, MultiSelectList) points at a DocType instead.
@@ -241,11 +241,9 @@ class ReportRequirements(BaseTool):
             return result
 
         except Exception as e:
-            frappe.log_error(
-                title=_("Report Requirements Error"), message=f"Error analyzing report requirements: {str(e)}"
-            )
+            log_failure("Report Requirements Error", e)
 
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e)[:2000]}
 
     def _build_requirements_from_parsed_filters(self, parsed_filters: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -937,7 +935,7 @@ class ReportRequirements(BaseTool):
         except Exception as e:
             diag["error"] = f"{type(e).__name__}: {str(e)}"
             self._last_discovery_diagnostics = diag
-            frappe.log_error(f"Error parsing Script Report filters for {report_name}: {str(e)}")
+            log_failure("Report Filter Parse Error", Exception(f"{report_name}: {e}"))
             return None
 
     def _parse_js_filter_array(self, filters_text: str) -> Dict[str, Any]:

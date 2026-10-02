@@ -57,7 +57,7 @@ class TestDocumentTools(BaseAssistantTest):
 
     def test_create_document_basic(self):
         """Test basic document creation"""
-        if not self.registry.has_tool("create_document"):
+        if not self.registry.get_tool("create_document"):
             self.skipTest("create_document tool not available")
 
         # Test with minimal valid data
@@ -81,7 +81,7 @@ class TestDocumentTools(BaseAssistantTest):
 
     def test_get_document_basic(self):
         """Test basic document retrieval"""
-        if not self.registry.has_tool("get_document"):
+        if not self.registry.get_tool("get_document"):
             self.skipTest("get_document tool not available")
 
         # Try to get Administrator user (should always exist)
@@ -100,7 +100,7 @@ class TestDocumentTools(BaseAssistantTest):
 
     def test_list_documents_via_execute_tool(self):
         """Test document listing"""
-        if not self.registry.has_tool("list_documents"):
+        if not self.registry.get_tool("list_documents"):
             self.skipTest("list_documents tool not available")
 
         arguments = {"doctype": "User", "limit": 5, "fields": ["name", "full_name"]}
@@ -152,7 +152,7 @@ class TestDocumentTools(BaseAssistantTest):
             stack.enter_context(
                 patch(
                     "pibiassistant.plugins.core.tools.list_documents.frappe.get_meta",
-                    return_value=MagicMock(is_submittable=0),
+                    return_value=MagicMock(is_submittable=0, issingle=0, istable=0),
                 )
             )
             get_all = stack.enter_context(
@@ -205,11 +205,11 @@ class TestDocumentTools(BaseAssistantTest):
 
     def test_update_document_basic(self):
         """Test basic document update"""
-        if not self.registry.has_tool("update_document"):
+        if not self.registry.get_tool("update_document"):
             self.skipTest("update_document tool not available")
 
         # Create a test document first
-        if self.registry.has_tool("create_document"):
+        if self.registry.get_tool("create_document"):
             create_args = {"doctype": self.test_doctype, "data": {"description": "Test ToDo for update"}}
             create_result = self.registry.execute_tool("create_document", create_args)
 
@@ -251,7 +251,7 @@ class TestDocumentTools(BaseAssistantTest):
 
     def test_create_document_with_submit(self):
         """Test document creation with submission"""
-        if not self.registry.has_tool("create_document"):
+        if not self.registry.get_tool("create_document"):
             self.skipTest("create_document tool not available")
 
         # Use a simple doctype for testing
@@ -269,7 +269,7 @@ class TestDocumentTools(BaseAssistantTest):
 
     def test_create_document_no_permission(self):
         """Test document creation without permission"""
-        if not self.registry.has_tool("create_document"):
+        if not self.registry.get_tool("create_document"):
             self.skipTest("create_document tool not available")
 
         # Try to create document in a restricted doctype
@@ -294,7 +294,7 @@ class TestDocumentTools(BaseAssistantTest):
 
     def test_get_document_no_permission(self):
         """Test document retrieval without permission"""
-        if not self.registry.has_tool("get_document"):
+        if not self.registry.get_tool("get_document"):
             self.skipTest("get_document tool not available")
 
         # This test might not be meaningful if Guest can read basic doctypes
@@ -310,7 +310,7 @@ class TestDocumentTools(BaseAssistantTest):
 
     def test_get_document_nonexistent(self):
         """Test getting a nonexistent document"""
-        if not self.registry.has_tool("get_document"):
+        if not self.registry.get_tool("get_document"):
             self.skipTest("get_document tool not available")
 
         arguments = {"doctype": self.test_doctype, "name": "NONEXISTENT-DOC-12345"}
@@ -327,7 +327,7 @@ class TestDocumentTools(BaseAssistantTest):
 
     def test_update_document_no_permission(self):
         """Test document update without permission"""
-        if not self.registry.has_tool("update_document"):
+        if not self.registry.get_tool("update_document"):
             self.skipTest("update_document tool not available")
 
         arguments = {
@@ -520,7 +520,7 @@ class TestDocumentToolsIntegration(BaseAssistantTest):
     def test_document_lifecycle(self):
         """Test complete document lifecycle"""
         if not all(
-            self.registry.has_tool(tool) for tool in ["create_document", "get_document", "update_document"]
+            self.registry.get_tool(tool) for tool in ["create_document", "get_document", "update_document"]
         ):
             self.skipTest("Required document tools not available")
 
@@ -566,7 +566,7 @@ class TestDocumentToolsIntegration(BaseAssistantTest):
         ]
 
         for tool_name, args in invalid_tests:
-            if self.registry.has_tool(tool_name):
+            if self.registry.get_tool(tool_name):
                 try:
                     result = self.registry.execute_tool(tool_name, args)
                     # Should return error dict, not crash

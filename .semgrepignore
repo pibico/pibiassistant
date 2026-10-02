@@ -25,7 +25,7 @@
 # Removing a file from this list is the right move the moment its "All"
 # grant stops being owner-scoped.
 
-frappe_assistant_core/chat/doctype/fac_chat_message/fac_chat_message.json
-frappe_assistant_core/chat/doctype/fac_chat_usage_log/fac_chat_usage_log.json
-frappe_assistant_core/chat/doctype/fac_chat_user_preferences/fac_chat_user_preferences.json
-frappe_assistant_core/chat/doctype/fac_chat_banner_dismissal/fac_chat_banner_dismissal.json
+pibiassistant/pibiassistant_chat/doctype/pa_chat_message/pa_chat_message.json
+pibiassistant/pibiassistant_chat/doctype/pa_chat_usage_log/pa_chat_usage_log.json
+pibiassistant/pibiassistant_chat/doctype/pa_chat_user_preferences/pa_chat_user_preferences.json
+pibiassistant/pibiassistant_chat/doctype/pa_chat_banner_dismissal/pa_chat_banner_dismissal.json

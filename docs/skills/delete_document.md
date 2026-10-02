@@ -31,11 +31,11 @@ The `delete_document` tool permanently removes a Frappe document. This action is
 1. **Always confirm with the user** — deletion is permanent.
 2. **Check dependencies first** — documents linked to others fail without `force: true`.
 3. **Use `force` with extreme caution** — leaves orphaned references.
-4. **Cancel before deleting** — submitted documents (`docstatus=1`) must be cancelled first.
+4. **Submitted documents are not deleted here** — no tool can cancel them; tell the user to cancel from the form first (for invoices, offer a credit note with the `credit-note-es` skill).
 
 ## Edge Cases
 
 - **Linked documents** — can't delete an Item with Sales Invoices referencing it unless `force: true`.
-- **Submitted documents** — must be cancelled (`docstatus=2`) before deletion.
+- **Submitted documents** — must be cancelled (`docstatus=2`) by the user from the form before deletion; no tool does that.
 - **System records** — some records (Administrator user, default roles) cannot be deleted.
 - **Permission required** — user needs "delete" permission on the DocType.

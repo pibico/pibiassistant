@@ -5,10 +5,10 @@
 > stock, flujos de trabajo y apps personalizadas — dentro de los permisos de
 > ERPNext, con cada llamada registrada.
 
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://github.com/paborana/pibiassistant)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://github.com/pibico/pibiassistant)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green)](LICENSE)
 [![MCP](https://img.shields.io/badge/MCP-2025--06--18-orange)](https://modelcontextprotocol.io)
-[![Tools](https://img.shields.io/badge/tools-24-brightgreen)](#tools-at-a-glance)
+[![Tools](https://img.shields.io/badge/tools-34-brightgreen)](#tools-at-a-glance)
 
 ---
 
@@ -47,7 +47,7 @@ tus datos de Frappe/ERPNext. Tú eliges el LLM y pagas tu propia factura.
 
 ```bash
 cd frappe-bench
-bench get-app https://github.com/paborana/pibiassistant
+bench get-app https://github.com/pibico/pibiassistant
 bench --site <tu-sitio> install-app pibiassistant
 ```
 
@@ -66,17 +66,21 @@ compilar la interfaz de chat.
 
 ## Qué obtienes
 
-Expone **24 herramientas** para las operaciones diarias:
+Expone **34 herramientas** para las operaciones diarias:
 
 | Categoría | Herramientas |
 |---|---|
 | Documentos | `get_document`, `list_documents`, `create_document`, `update_document`, `delete_document`, `submit_document` |
 | Búsqueda | `search_documents`, `search`, `fetch` |
+| Totales | `aggregate_documents` |
 | Reportes | `report_list`, `report_requirements`, `generate_report` |
 | Aprobaciones | `get_pending_approvals`, `run_workflow` |
 | Schema | `get_doctype_info` |
 | Analítica | `run_python_code`, `run_database_query`, `analyze_business_data` |
-| Archivos | `extract_file_content` |
+| Archivos | `extract_file_content`, `attach_file`, `create_upload_link`, `generate_document` |
+| Correo | `send_email` |
+| Skills | `get_skill` |
+| Navegador | `browser_get_page_context`, `browser_get_form_data`, `browser_navigate_to`, `browser_wait_for_page`, `browser_take_screenshot`, `browser_capture_diagnostics` |
 | Dashboards | `create_dashboard`, `create_dashboard_chart`, `list_user_dashboards` |
 
 ---
@@ -116,7 +120,7 @@ vía el hook `assistant_skills`.
 
 OAuth 2.0 con PKCE — el LLM nunca ve la contraseña del usuario. Cada
 llamada está limitada a los roles y permisos del usuario en Frappe/ERPNext.
-Cada operación se registra en `Assistant Audit Log`.
+Cada operación se registra en `PA Audit Log`.
 
 ---
 

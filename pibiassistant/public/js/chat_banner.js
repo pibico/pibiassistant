@@ -16,12 +16,15 @@ frappe.provide("pibiassistant.pibiassistant_chat");
 
 pibiassistant.pibiassistant_chat._render_banner = function () {
 	const banner_html = `
-		<div class="pa-chat-banner alert alert-info" style="margin: 10px 20px; display: flex; align-items: center; gap: 12px;">
-			<div style="flex: 1;">
-				<strong>${__("New: AIDA Chat")}</strong> — ${__("an AI chat assistant inside Frappe.")}
+		<div class="pa-chat-banner" role="region" aria-label="AIDA">
+			<i class="ph ph-robot pa-chat-banner__icon" aria-hidden="true"></i>
+			<div class="pa-chat-banner__text">
+				<strong>${__("New: AIDA by pibiCo")}</strong> — ${__("an AI chat assistant inside Frappe.")}
 			</div>
-			<a href="/app/pa-admin" class="btn btn-primary btn-xs">${__("Enable it")}</a>
-			<button type="button" class="btn btn-default btn-xs pa-chat-banner-dismiss">${__("Dismiss")}</button>
+			<div class="pa-chat-banner__actions">
+				<a href="/app/pa-admin" class="pa-chat-banner__btn pa-chat-banner__btn--primary">${__("Enable it")}</a>
+				<button type="button" class="pa-chat-banner__btn pa-chat-banner__btn--ghost pa-chat-banner-dismiss">${__("Dismiss")}</button>
+			</div>
 		</div>
 	`;
 

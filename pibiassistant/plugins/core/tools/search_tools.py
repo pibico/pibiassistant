@@ -30,8 +30,13 @@ re-validated through ``frappe.get_list`` before being returned (issue #189).
 
 from typing import Any, Dict, List, Optional, Tuple
 
+import re
+
 import frappe
 from frappe import _
+
+from pibiassistant.plugins.query_errors import client_error_message, log_failure
+from pibiassistant.plugins.row_permissions import drop_unreadable_rows
 
 # DocTypes scanned by the fallback global search, used only when the
 # __global_search index has nothing for the query.
@@ -74,6 +79,10 @@ RETURNABLE_FIELDTYPES = {"Data", "Small Text", "Select", "Link", "Read Only"}
 # Cap on fields joined into one OR query, to keep the SQL sane on wide DocTypes.
 MAX_SEARCH_FIELDS = 5
 
+# Identifying fields people search by (NIF, supplier invoice no., PO, contact data)
+# that are rarely nominated in search_fields. Appended on top of the cap above.
+IDENTITY_FIELDS = ("tax_id", "bill_no", "po_no", "email_id", "mobile_no")
+
 # Default page length for link-value resolution, matching Frappe's own.
 DEFAULT_LINK_LIMIT = 10
 
@@ -104,13 +113,30 @@ def resolve_search_fields(meta) -> List[str]:
             resolved.append(fieldname)
 
     if resolved:
-        return resolved[:MAX_SEARCH_FIELDS]
+        resolved = resolved[:MAX_SEARCH_FIELDS]
+    else:
+        resolved = [
+            field.fieldname
+            for field in meta.fields
+            if field.fieldtype in SEARCHABLE_FIELDTYPES and not field.hidden
+        ][:MAX_SEARCH_FIELDS]
 
-    return [
-        field.fieldname
-        for field in meta.fields
-        if field.fieldtype in SEARCHABLE_FIELDTYPES and not field.hidden
-    ][:MAX_SEARCH_FIELDS]
+    for fieldname in IDENTITY_FIELDS:
+        field = meta.get_field(fieldname)
+        if field and field.fieldtype in SEARCHABLE_FIELDTYPES and fieldname not in resolved:
+            resolved.append(fieldname)
+
+    return resolved
+
+
+def escape_like(value: str) -> str:
+    """Escape LIKE metacharacters so '%' and '_' in a query match literally."""
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def normalise_tax_id(value: str) -> str:
+    """Strip separators from a tax id so 'B-87.625 489' matches stored 'B87625489'."""
+    return re.sub(r"[\s.\-/]", "", value).upper()
 
 
 def returnable_fields(meta, search_fields: List[str]) -> List[str]:
@@ -280,7 +306,7 @@ class SearchTools:
 
                 rows = frappe.get_list(
                     candidate,
-                    filters={"name": ["like", f"%{query}%"]},
+                    filters={"name": ["like", f"%{escape_like(query)}%"]},
                     fields=["name"],
                     limit=FALLBACK_ROWS_PER_DOCTYPE,
                     ignore_permissions=False,
@@ -297,7 +323,11 @@ class SearchTools:
 
     @staticmethod
     def search_doctype(
-        doctype: str, query: str, limit: int = 20, filters: Optional[Dict[str, Any]] = None
+        doctype: str,
+        query: str,
+        limit: int = 20,
+        filters: Optional[Dict[str, Any]] = None,
+        start: int = 0,
     ) -> Dict[str, Any]:
         """Text search within one DocType, across its declared search fields."""
         try:
@@ -324,8 +354,12 @@ class SearchTools:
             # should be OR'd in.
             or_filters = None
             if query:
-                or_filters = [[doctype, field, "like", f"%{query}%"] for field in search_fields]
-                or_filters.append([doctype, "name", "like", f"%{query}%"])
+                pattern = f"%{escape_like(query)}%"
+                or_filters = [[doctype, field, "like", pattern] for field in search_fields]
+                or_filters.append([doctype, "name", "like", pattern])
+                tax_id = normalise_tax_id(query)
+                if "tax_id" in search_fields and tax_id and tax_id != query:
+                    or_filters.append([doctype, "tax_id", "like", f"%{escape_like(tax_id)}%"])
 
             results = frappe.get_list(
                 doctype,
@@ -333,11 +367,14 @@ class SearchTools:
                 or_filters=or_filters,
                 fields=returnable_fields(meta, search_fields),
                 limit=limit,
+                start=start,
                 order_by="modified desc",
                 ignore_permissions=False,
             )
 
-            return {
+            fetched = len(results)
+            results = drop_unreadable_rows(doctype, results)
+            payload = {
                 "success": True,
                 "doctype": doctype,
                 "query": query,
@@ -347,10 +384,17 @@ class SearchTools:
                 "search_fields": search_fields,
                 "filters_applied": filters or {},
             }
+            if fetched >= limit:
+                payload["has_more"] = True
+                payload["next_start"] = start + fetched
+            return payload
 
         except Exception as e:
-            frappe.log_error(title=_("DocType Search Error"), message=f"Error searching {doctype}: {str(e)}")
-            return {"success": False, "error": str(e)}
+            friendly = client_error_message(e)
+            if friendly:
+                return {"success": False, "error": friendly}
+            log_failure("DocType Search Error", e)
+            return {"success": False, "error": str(e)[:2000]}
 
     @staticmethod
     def search_link(

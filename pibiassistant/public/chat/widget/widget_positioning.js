@@ -64,7 +64,6 @@ window.PAOWidgetPositioning = {
 		let resetTimer = null;
 
 		widget._hasDragged = false;
-		btn.setAttribute("aria-label", __("Move AIDA (Alt+arrows)"));
 		this._size(widget);
 
 		btn.addEventListener("pointerdown", (e) => {
@@ -388,6 +387,11 @@ window.PAOWidgetPositioning = {
 		};
 		$(window).on("resize", run);
 		window.addEventListener("orientationchange", run);
+		(widget._cleanups = widget._cleanups || []).push(() => {
+			clearTimeout(timer);
+			$(window).off("resize", run);
+			window.removeEventListener("orientationchange", run);
+		});
 	},
 
 	reposition_on_resize(widget) {

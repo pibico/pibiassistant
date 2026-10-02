@@ -67,3 +67,11 @@ class TestQuotaCacheCredits(unittest.TestCase):
             _update_subscription_cache(2.5)
 
         mock_inc.assert_called_once_with(2.5)
+
+
+class TestMobileStreamSharesQuotaUpdater(unittest.TestCase):
+    def test_mobile_stream_uses_the_chat_helper(self):
+        from pibiassistant.pibiassistant_chat.api import mobile_stream
+        from pibiassistant.pibiassistant_chat.api.chat import helpers
+
+        assert mobile_stream._update_subscription_cache is helpers._update_subscription_cache

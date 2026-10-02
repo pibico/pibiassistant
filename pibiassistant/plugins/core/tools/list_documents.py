@@ -19,12 +19,16 @@ Document Listing Tool for Core Plugin.
 Lists and searches Frappe documents with filtering capabilities.
 """
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import frappe
 from frappe import _
 
 from pibiassistant.core.base_tool import BaseTool
+from pibiassistant.plugins.core.field_guard import restricted_fields_for_doctype
+from pibiassistant.plugins.limits import clamp_int, clamp_limit
+from pibiassistant.plugins.row_permissions import drop_unreadable_rows, has_row_permission_hook
+from pibiassistant.plugins.query_errors import client_error_message, log_failure, single_doctype_message
 
 # Operators Frappe accepts as the first element of a list-style filter value.
 # Anything else in that position means the list is a set of values, not [op, value].
@@ -253,6 +257,78 @@ def resolve_unmatched_link_filters(doctype: str, filters: Any) -> Dict[str, Dict
     return unresolved
 
 
+def child_table_parent(doctype: str, filters: Any):
+    """Parent DocType named by a parenttype filter, which lets Frappe read all fields of a child table."""
+    try:
+        if not frappe.get_meta(doctype).istable:
+            return None
+    except Exception:
+        return None
+    if isinstance(filters, dict):
+        value = filters.get("parenttype")
+        if isinstance(value, (list, tuple)) and len(value) == 2 and value[0] == "=":
+            value = value[1]
+        if isinstance(value, str) and value:
+            return value
+    return None
+
+
+def omitted_fields(requested: List[Any], rows: List[Any]) -> List[str]:
+    """Plain requested fieldnames that a non-empty result does not carry."""
+    if not rows or not isinstance(rows[0], dict):
+        return []
+    present = set(rows[0])
+    return [
+        field
+        for field in requested
+        if isinstance(field, str) and field.isidentifier() and field not in present
+    ]
+
+
+NUMERIC_FIELDTYPES = {"Check", "Int", "Float", "Currency", "Percent", "Long Int", "Rating"}
+
+
+def filter_conditions(filters: Any) -> List[tuple]:
+    """(fieldname, operator, value) triples from the dict and list filter forms."""
+    triples = []
+    if isinstance(filters, dict):
+        for fieldname, value in filters.items():
+            if isinstance(value, (list, tuple)) and value and isinstance(value[0], str) and value[0].lower() in FILTER_OPERATORS:
+                triples.append((fieldname, value[0].lower(), value[1] if len(value) > 1 else None))
+            else:
+                triples.append((fieldname, "=", value))
+    elif isinstance(filters, (list, tuple)):
+        conditions = [filters] if filters and isinstance(filters[0], str) else filters
+        for condition in conditions:
+            if not isinstance(condition, (list, tuple)):
+                continue
+            if len(condition) >= 4:
+                triples.append((condition[1], str(condition[2]).lower(), condition[3]))
+            elif len(condition) == 3:
+                triples.append((condition[0], str(condition[1]).lower(), condition[2]))
+    return triples
+
+
+def invalid_filter_message(doctype: str, filters: Any) -> Optional[str]:
+    """Reason a filter would be silently coerced by the database instead of applied, or None."""
+    try:
+        meta = frappe.get_meta(doctype)
+    except Exception:
+        return None
+    for fieldname, operator, value in filter_conditions(filters):
+        if operator == "between" and not (isinstance(value, (list, tuple)) and len(value) == 2):
+            return _("Filter on '{0}': 'between' needs a list of exactly two values, e.g. ['between', ['2026-01-01', '2026-01-31']].").format(fieldname)
+        if operator in ("in", "not in") and not isinstance(value, (list, tuple, str)):
+            return _("Filter on '{0}': '{1}' needs a list of values.").format(fieldname, operator)
+        field = meta.get_field(fieldname) if isinstance(fieldname, str) else None
+        if field and field.fieldtype in NUMERIC_FIELDTYPES and operator in ("=", "!=", ">", "<", ">=", "<=") and value is not None:
+            try:
+                float(value)
+            except (TypeError, ValueError):
+                return _("Filter on '{0}': '{1}' is not a number; {2} fields take numeric values (Check fields take 0 or 1).").format(fieldname, value, field.fieldtype)
+    return None
+
+
 class DocumentList(BaseTool):
     """
     Tool for listing and searching Frappe documents.
@@ -293,6 +369,11 @@ class DocumentList(BaseTool):
                     "maximum": 1000,
                     "description": "Maximum number of records to return. Default is 20, maximum is 1000.",
                 },
+                "start": {
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Rows to skip, for paging. When the result has has_more=true, pass its next_start here to get the next page.",
+                },
                 "order_by": {
                     "type": "string",
                     "description": "Order results by field, e.g. 'creation desc', 'name asc'. Omit to use the DocType's own default ordering (usually modified desc).",
@@ -305,13 +386,22 @@ class DocumentList(BaseTool):
         """List documents with filters"""
         doctype = arguments.get("doctype")
         filters = arguments.get("filters", {})
-        fields = arguments.get("fields", ["name", "creation", "modified"])
-        limit = arguments.get("limit", 20)
+        fields = arguments.get("fields")
+        if not isinstance(fields, list) or not fields:
+            fields = ["name", "creation", "modified"]
+        limit = clamp_limit(arguments.get("limit"), 20, 1000)
+        start = clamp_int(arguments.get("start"), 0, 0, 1_000_000)
         # Use Frappe's sentinel so it applies its own intelligent default ordering.
         # Also guard against empty string from API clients.
         order_by = arguments.get("order_by") or "KEEP_DEFAULT_ORDERING"
 
-        # Get current user context
+        single_message = single_doctype_message(doctype)
+        if single_message:
+            return {"success": False, "error": single_message, "doctype": doctype}
+
+        invalid = invalid_filter_message(doctype, filters)
+        if invalid:
+            return {"success": False, "error": invalid, "doctype": doctype}
 
         current_user = frappe.session.user
 
@@ -345,20 +435,11 @@ class DocumentList(BaseTool):
         # draft records never reach a consumer that is summing monetary fields.
         filters, docstatus_defaulted = apply_default_docstatus(doctype, filters)
 
+        requested_fields = list(fields)
         try:
             # Filter sensitive fields from requested fields for PA Users
-            from pibiassistant.core.security_config import ADMIN_ONLY_FIELDS, SENSITIVE_FIELDS
-
             if user_role == "PA User":
-                # Get restricted fields
-                restricted_fields = set()
-                restricted_fields.update(SENSITIVE_FIELDS.get("all_doctypes", []))
-                restricted_fields.update(SENSITIVE_FIELDS.get(doctype, []))
-                restricted_fields.update(ADMIN_ONLY_FIELDS.get("all_doctypes", []))
-
-                doctype_admin_fields = ADMIN_ONLY_FIELDS.get(doctype, [])
-                if doctype_admin_fields != "*":
-                    restricted_fields.update(doctype_admin_fields)
+                restricted_fields = restricted_fields_for_doctype(doctype, user_role)
 
                 # Filter out restricted fields from requested fields
                 filtered_fields = [field for field in fields if field not in restricted_fields]
@@ -366,15 +447,25 @@ class DocumentList(BaseTool):
                     filtered_fields = ["name"]  # Always allow name field
                 fields = filtered_fields
 
+            query_fields = fields
+            if has_row_permission_hook(doctype) and "name" not in fields and "*" not in fields:
+                query_fields = ["name", *fields]
+
             # Get documents with Frappe's permission-aware list API.
             documents = frappe.get_list(
                 doctype,
                 filters=filters,
-                fields=fields,
+                fields=query_fields,
                 limit=limit,
+                start=start,
                 order_by=order_by,
                 ignore_permissions=False,  # Ensure permission checking
+                parent_doctype=child_table_parent(doctype, filters),
             )
+
+            fetched = len(documents)
+            documents = drop_unreadable_rows(doctype, documents)
+            hidden = fetched - len(documents)
 
             # Filter sensitive fields from document data
             filtered_documents = []
@@ -413,13 +504,23 @@ class DocumentList(BaseTool):
                 "doctype": doctype,
                 "data": filtered_documents,
                 "count": len(filtered_documents),
-                "total_count": total_count,
-                "has_more": (total_count > limit)
-                if total_count is not None
-                else len(filtered_documents) >= limit,
+                "total_count": total_count - hidden if total_count is not None else None,
+                "has_more": (total_count > start + fetched) if total_count is not None else fetched >= limit,
                 "filters_applied": filters,
                 "message": message,
             }
+
+            if result["has_more"]:
+                result["next_start"] = start + fetched
+
+            omitted = omitted_fields(requested_fields, documents)
+            if omitted:
+                result["omitted_fields"] = omitted
+                result["message"] += ". " + _(
+                    "Some requested fields were not returned (unknown, restricted or not readable by this user): {0}."
+                ).format(", ".join(omitted))
+                if "parent" in omitted and child_table_parent(doctype, None) is None and frappe.get_meta(doctype).istable:
+                    result["message"] += " " + _("For child tables, add a parenttype filter (e.g. {'parenttype': 'Sales Invoice'}) to read parent.")
 
             # A zero-row result may mean the filter value itself never existed.
             # Additive metadata only — the query still succeeded.
@@ -437,9 +538,12 @@ class DocumentList(BaseTool):
             return result
 
         except Exception as e:
-            frappe.log_error(title=_("Document List Error"), message=f"Error listing {doctype}: {str(e)}")
+            friendly = client_error_message(e)
+            if friendly:
+                return {"success": False, "error": friendly, "doctype": doctype}
+            log_failure("Document List Error", e)
 
-            return {"success": False, "error": str(e), "doctype": doctype}
+            return {"success": False, "error": str(e)[:2000], "doctype": doctype}
 
 
 # Make sure class name matches file name for discovery

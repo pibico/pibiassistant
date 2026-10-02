@@ -15,6 +15,19 @@ from pibiassistant.pibiassistant_chat.api.chat.relay import (
 )
 
 
+_turn_lock = patch("pibiassistant.pibiassistant_chat.api.chat.messages.acquire_turn_waiting", return_value=True)
+
+
+def setUpModule():
+    # In AIDA mode send/resume/continue take a Redis turn lock the patched relay never releases,
+    # which made every later test in the run fail with "still answering".
+    _turn_lock.start()
+
+
+def tearDownModule():
+    _turn_lock.stop()
+
+
 class TestFlagCoercion(unittest.TestCase):
     def test_widget_form_encoded_strings_become_booleans(self):
         """The Desk widget posts form-encoded, so booleans arrive as "true"/"false"."""

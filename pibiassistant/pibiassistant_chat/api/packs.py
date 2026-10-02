@@ -11,7 +11,7 @@ SDK and hit the signed endpoints in
 """
 
 import frappe
-from pibiassistant.pibiassistant_chat.api._helpers import _aida_unavailable
+from ._helpers import cloud_client_or_throw as _client_or_throw
 from frappe import _
 
 try:
@@ -21,14 +21,6 @@ except ImportError:
 
 from ._helpers import _marketplace_enabled, _not_registered_error, _require_system_manager, _safe_error
 from .auth import _ar_user_id
-
-
-def _client_or_throw():
-    """Return a configured SDK client or throw a registration-required error."""
-    client = get_pa_cloud_client()
-    if client is None:
-        return _aida_unavailable()
-    return client
 
 
 @frappe.whitelist(methods=["GET"])

@@ -14,7 +14,7 @@ function host() {
   return el;
 }
 
-export function show({ message, type = "info", timeout = 4000, action } = {}) {
+export function show({ message, type = "info", timeout = type === "error" ? 8000 : 4000, action } = {}) {
   let timer = null;
   const dismiss = () => {
     clearTimeout(timer);
@@ -23,7 +23,7 @@ export function show({ message, type = "info", timeout = 4000, action } = {}) {
     el.remove();
   };
   const entry = { dismiss };
-  const el = h("div", { class: ["aida-toast", `is-${type}`], role: "status" },
+  const el = h("div", { class: ["aida-toast", `is-${type}`], role: type === "error" ? "alert" : "status" },
     h("span", { class: "aida-toast__text" }, message),
     action && h("button", {
       type: "button", class: "aida-link-btn",
@@ -38,8 +38,4 @@ export function show({ message, type = "info", timeout = 4000, action } = {}) {
   while (live.length > MAX_VISIBLE) live[0].dismiss();
   if (timeout > 0) timer = setTimeout(dismiss, timeout);
   return { dismiss };
-}
-
-export function dismissAll() {
-  [...live].forEach((t) => t.dismiss());
 }

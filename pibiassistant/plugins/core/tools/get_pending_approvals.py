@@ -26,6 +26,7 @@ from frappe import _
 from frappe.query_builder import DocType
 
 from pibiassistant.core.base_tool import BaseTool
+from pibiassistant.plugins.limits import clamp_limit
 
 MAX_TRANSITION_DOCS = 20
 
@@ -79,8 +80,11 @@ class GetPendingApprovals(BaseTool):
     def execute(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Find open Workflow Actions assigned to the current user."""
         doctype_filter = arguments.get("doctype")
-        limit = min(arguments.get("limit", 50), 200)
+        limit = clamp_limit(arguments.get("limit"), 50, 200)
         include_actions = arguments.get("include_actions", True)
+
+        if doctype_filter and not frappe.db.exists("DocType", doctype_filter):
+            return {"success": False, "error": _("DocType {0} not found").format(doctype_filter)}
 
         user = frappe.session.user
         roles = frappe.get_roles(user)

@@ -18,6 +18,7 @@ import frappe
 from frappe import _
 
 from pibiassistant.utils.logger import api_logger
+from pibiassistant.utils.permissions import increment_usage, user_can_access_shared_doc
 
 _SKILL_URI_PREFIX = "pa://skills/"
 _SKILL_ID_RE = re.compile(r"^[a-z0-9_-]+$")
@@ -143,61 +144,13 @@ class SkillManager:
         if skill_doc.status != "Published" and not is_owner:
             frappe.throw(_("You don't have permission to access this skill"), frappe.PermissionError)
 
-        if not self._user_can_access_skill(skill_doc):
+        if not user_can_access_shared_doc(skill_doc):
             frappe.throw(_("You don't have permission to access this skill"), frappe.PermissionError)
 
         # TODO: batch usage-counter writes if traffic grows.
-        self.increment_usage(skill_name)
+        increment_usage("PA Skill", skill_name)
 
         return skill_doc.content
-
-    def get_skill_by_tool(self, tool_name: str, user: str = None) -> Optional[Dict[str, Any]]:
-        """
-        Find the Published skill linked to ``tool_name`` that ``user`` can see.
-
-        Scoped and ordered through the same helpers as ``get_tool_skill_map`` so the
-        two can never disagree about which skill owns a tool. The previous
-        implementation picked one arbitrary Published row with no visibility filter
-        and no ordering, so another user's Private skill on the same tool could mask
-        an accessible one — see security issue #239.
-        """
-        user = user or frappe.session.user
-        candidates = [
-            s
-            for s in self.get_user_accessible_skills(user)
-            if s.get("status") == "Published" and s.get("linked_tool") == tool_name
-        ]
-        if not candidates:
-            return None
-
-        # No further access check: get_user_accessible_skills is the authority here,
-        # and _user_can_access_skill reads frappe.session.user, which would give the
-        # wrong answer whenever ``user`` is somebody else.
-        skill_doc = frappe.get_doc("PA Skill", self._sort_by_precedence(candidates)[0]["name"])
-
-        return {
-            "name": skill_doc.name,
-            "skill_id": skill_doc.skill_id,
-            "title": skill_doc.title,
-            "description": skill_doc.description,
-            "content": skill_doc.content,
-            "skill_type": skill_doc.skill_type,
-            "linked_tool": skill_doc.linked_tool,
-        }
-
-    def increment_usage(self, skill_name: str):
-        """Increment usage counter for analytics."""
-        try:
-            frappe.db.sql(
-                """
-                UPDATE `tabPA Skill`
-                SET use_count = use_count + 1, last_used = NOW()
-                WHERE name = %s
-                """,
-                (skill_name,),
-            )
-        except Exception as e:
-            frappe.logger("skill_manager").warning(f"Failed to increment usage for {skill_name}: {e}")
 
     @staticmethod
     def _sort_by_precedence(skills: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -213,30 +166,6 @@ class SkillManager:
         ordered.sort(key=lambda s: str(s.get("modified") or ""), reverse=True)
         ordered.sort(key=lambda s: 0 if s.get("is_system") else 1)
         return ordered
-
-    def _user_can_access_skill(self, skill_doc) -> bool:
-        """Check if current user can access the skill."""
-        user = frappe.session.user
-
-        if skill_doc.owner_user == user:
-            return True
-
-        if "System Manager" in frappe.get_roles(user):
-            return True
-
-        if skill_doc.visibility == "Public" and skill_doc.status == "Published":
-            return True
-
-        if skill_doc.visibility == "Shared" and skill_doc.status == "Published":
-            user_roles = set(frappe.get_roles(user))
-            shared_roles = {r.role for r in skill_doc.shared_with_roles}
-            if user_roles & shared_roles:
-                return True
-
-        if skill_doc.is_system and skill_doc.status == "Published":
-            return True
-
-        return False
 
     def get_tool_skill_map(self, user: str = None) -> Dict[str, Dict[str, str]]:
         """
@@ -291,7 +220,10 @@ def handle_resources_list(request_id: Optional[Any] = None) -> Dict[str, Any]:
 
 def handle_resources_read(params: Dict[str, Any], request_id: Optional[Any] = None) -> Dict[str, Any]:
     """Handle resources/read request - return skill content by URI."""
-    uri = params.get("uri", "")
+    uri = params.get("uri")
+
+    if not isinstance(uri, str):
+        raise ValueError("uri must be a string")
 
     if not uri.startswith(_SKILL_URI_PREFIX):
         raise ValueError(f"Unknown resource URI scheme: {uri}")

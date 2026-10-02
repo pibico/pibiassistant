@@ -169,7 +169,7 @@ graph TD
 
 ## 📞 Support
 
-- **Main Project**: [Frappe_Assistant_Core](https://github.com/paborana/pibiassistant)
+- **Main Project**: [pibiAssistant](https://github.com/paborana/pibiassistant)
 - **Issues**: [GitHub Issues](https://github.com/paborana/pibiassistant/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/paborana/pibiassistant/discussions)
 - **Documentation**: [Project Docs](https://github.com/paborana/pibiassistant/blob/main/docs/)

@@ -18,7 +18,8 @@ window.PAOWidgetTooltips = {
 		widget.tooltip_shown_count = 0;
 
 		// Show first tooltip after 3 seconds
-		setTimeout(() => {
+		clearTimeout(widget.tooltip_timeout);
+		widget.tooltip_timeout = setTimeout(() => {
 			this.show_tooltip(widget);
 		}, 3000);
 
@@ -35,7 +36,7 @@ window.PAOWidgetTooltips = {
 	 * @param {Object} widget - Widget instance
 	 */
 	show_tooltip(widget) {
-		if (widget.is_open) return;
+		if (widget.is_open || !widget.$widget) return;
 
 		// Cycle already complete — stay silent regardless of caller. The interval
 		// is cleared on auto-stop, but this guards any stray/future direct call.
@@ -126,6 +127,8 @@ window.PAOWidgetTooltips = {
 	 * @param {Object} widget - Widget instance
 	 */
 	stop_tooltip_animation(widget) {
+		clearTimeout(widget.tooltip_timeout);
+		widget.tooltip_timeout = null;
 		if (widget.tooltip_interval) {
 			clearInterval(widget.tooltip_interval);
 			widget.tooltip_interval = null;

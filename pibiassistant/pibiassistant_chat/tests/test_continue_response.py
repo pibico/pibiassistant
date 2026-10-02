@@ -16,6 +16,19 @@ import unittest
 from unittest.mock import patch
 
 
+_turn_lock = patch("pibiassistant.pibiassistant_chat.api.chat.messages.acquire_turn_waiting", return_value=True)
+
+
+def setUpModule():
+    # In AIDA mode send/resume/continue take a Redis turn lock the patched relay never releases,
+    # which made every later test in the run fail with "still answering".
+    _turn_lock.start()
+
+
+def tearDownModule():
+    _turn_lock.stop()
+
+
 class TestContinueResponseValidation(unittest.TestCase):
     def test_missing_message_id_throws(self):
         import frappe

@@ -23,9 +23,6 @@
 
   /* Gradients */
   --pibico-grad-primary: linear-gradient(135deg, #4682B4 0%, #365F8A 100%);
-  --pibico-grad-accent: linear-gradient(135deg, #B33A2B 0%, #D4604F 100%);
-  --pibico-grad-surface: linear-gradient(180deg, #FFFFFF 0%, #E8E8EA 100%);
-  --pibico-grad-banner: linear-gradient(135deg, #4682B4 0%, #B33A2B 100%);
 
   /* Typography */
   --pibico-font-heading: 'Figtree', 'Poppins', Arial, sans-serif;

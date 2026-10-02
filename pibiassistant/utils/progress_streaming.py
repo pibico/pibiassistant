@@ -400,28 +400,6 @@ def cancel_operation(operation_id: str) -> Dict[str, Any]:
 
 
 # Decorator for automatic progress tracking
-def track_progress(operation_type: str):
-    """Decorator to automatically track progress for functions"""
-
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-            with ProgressContext(operation_type) as tracker:
-                # Store tracker in thread-local storage for access within function
-                import threading
-
-                threading.current_thread().progress_tracker = tracker
-
-                try:
-                    result = func(*args, **kwargs)
-                    return result
-                finally:
-                    if hasattr(threading.current_thread(), "progress_tracker"):
-                        delattr(threading.current_thread(), "progress_tracker")
-
-        return wrapper
-
-    return decorator
-
 
 def get_current_progress_tracker() -> Optional[ProgressTracker]:
     """Get the current thread's progress tracker"""

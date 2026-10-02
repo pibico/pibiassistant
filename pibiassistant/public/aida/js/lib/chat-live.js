@@ -1,6 +1,7 @@
 import * as socket from "./socket.js";
 import { store } from "./store.js";
 import { __ } from "./i18n.js";
+import { defaultMessage } from "./format.js";
 
 const SLOW_MS = 90000;
 const DEAD_MS = 180000;
@@ -16,26 +17,7 @@ let pollTimer = null;
 export const genericError = () => __("AIDA couldn't finish this answer. Please try again.");
 
 export function newMessage(fields) {
-  return {
-    key: "m_" + ++counter,
-    role: "user",
-    content: "",
-    ts: Date.now(),
-    messageId: null,
-    status: "done",
-    errorText: null,
-    retryable: false,
-    truncated: false,
-    model: null,
-    promptTokens: null,
-    completionTokens: null,
-    durationMs: null,
-    files: [],
-    tools: [],
-    approvals: [],
-    source: "live",
-    ...fields,
-  };
+  return defaultMessage("m_" + ++counter, { role: "user", ts: Date.now(), source: "live", ...fields });
 }
 
 export function setStreaming(patch) {

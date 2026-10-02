@@ -122,8 +122,7 @@ window.PAOWidgetRichBlocks = {
 	// --- HTML Escaping ---
 
 	_escapeHtml(text) {
-		const map = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
-		return String(text).replace(/[&<>"']/g, (m) => map[m]);
+		return PAOCore.escape_html(text);
 	},
 
 	// --- Markdown Helper ---
@@ -410,32 +409,9 @@ window.PAOWidgetRichBlocks = {
 
 		mermaid(body, _attrs, self) {
 			if (!body) return null;
-
-			// Extract diagram type from first line
+			// Diagram type is the first token of the source
 			const firstWord = body.trim().split(/[\s\n{]/)[0] || "diagram";
-
-			return (
-				'<div class="pao-rb-placeholder pao-rb-placeholder-mermaid">' +
-				'<div class="pao-rb-placeholder-header">' +
-				'<span class="pao-rb-placeholder-icon">' +
-				self._icons.diagram +
-				"</span>" +
-				'<div class="pao-rb-placeholder-info">' +
-				'<div class="pao-rb-placeholder-label">' + self._escapeHtml(__("Mermaid Diagram")) + "</div>" +
-				'<div class="pao-rb-placeholder-type">' +
-				self._escapeHtml(firstWord) +
-				"</div>" +
-				"</div>" +
-				'<button class="pao-rb-view-full" type="button">' + self._escapeHtml(__("View in full assistant")) + "</button>" +
-				"</div>" +
-				'<details class="pao-rb-placeholder-code">' +
-				"<summary>" + self._escapeHtml(__("Show source")) + "</summary>" +
-				"<pre><code>" +
-				self._escapeHtml(body) +
-				"</code></pre>" +
-				"</details>" +
-				"</div>"
-			);
+			return self._placeholderCard("mermaid", self._icons.diagram, __("Mermaid Diagram"), self._escapeHtml(firstWord), body);
 		},
 
 		chart(body, _attrs, self) {
@@ -456,29 +432,33 @@ window.PAOWidgetRichBlocks = {
 				? self._escapeHtml(chartType) + " — " + self._escapeHtml(chartTitle)
 				: self._escapeHtml(chartType);
 
-			return (
-				'<div class="pao-rb-placeholder pao-rb-placeholder-chart">' +
-				'<div class="pao-rb-placeholder-header">' +
-				'<span class="pao-rb-placeholder-icon">' +
-				self._icons.chart +
-				"</span>" +
-				'<div class="pao-rb-placeholder-info">' +
-				'<div class="pao-rb-placeholder-label">' + self._escapeHtml(__("Chart")) + "</div>" +
-				'<div class="pao-rb-placeholder-type">' +
-				typeLabel +
-				"</div>" +
-				"</div>" +
-				'<button class="pao-rb-view-full" type="button">' + self._escapeHtml(__("View in full assistant")) + "</button>" +
-				"</div>" +
-				'<details class="pao-rb-placeholder-code">' +
-				"<summary>" + self._escapeHtml(__("Show source")) + "</summary>" +
-				"<pre><code>" +
-				self._escapeHtml(body) +
-				"</code></pre>" +
-				"</details>" +
-				"</div>"
-			);
+			return self._placeholderCard("chart", self._icons.chart, __("Chart"), typeLabel, body);
 		},
+	},
+
+	_placeholderCard(kind, icon, label, typeHtml, body) {
+		return (
+			'<div class="pao-rb-placeholder pao-rb-placeholder-' + kind + '">' +
+			'<div class="pao-rb-placeholder-header">' +
+			'<span class="pao-rb-placeholder-icon">' +
+			icon +
+			"</span>" +
+			'<div class="pao-rb-placeholder-info">' +
+			'<div class="pao-rb-placeholder-label">' + this._escapeHtml(label) + "</div>" +
+			'<div class="pao-rb-placeholder-type">' +
+			typeHtml +
+			"</div>" +
+			"</div>" +
+			'<button class="pao-rb-view-full" type="button">' + this._escapeHtml(__("View in full assistant")) + "</button>" +
+			"</div>" +
+			'<details class="pao-rb-placeholder-code">' +
+			"<summary>" + this._escapeHtml(__("Show source")) + "</summary>" +
+			"<pre><code>" +
+			this._escapeHtml(body) +
+			"</code></pre>" +
+			"</details>" +
+			"</div>"
+		);
 	},
 
 	// --- Public API ---

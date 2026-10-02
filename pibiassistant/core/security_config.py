@@ -21,92 +21,10 @@ This module defines role-based access control, sensitive field filtering,
 and security policies following Frappe Framework standards.
 """
 
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict
 
 import frappe
-
-# Basic Core tools available to ALL users (document permissions will control access)
-BASIC_CORE_TOOLS = [
-    # Essential document operations
-    "document_create",
-    "document_get",
-    "document_update",
-    "document_list",
-    # Search and discovery
-    "search_global",
-    "search_doctype",
-    "search_link",
-    # Basic reporting
-    "report_execute",
-    "report_list",
-    "report_columns",
-    # Basic metadata
-    "metadata_doctype",
-    # Visualizations
-    "create_visualization",
-    # Basic analysis
-    "analyze_frappe_data",
-    # Basic workflow
-    "workflow_status",
-    "workflow_list",
-]
-
-# Role-based tool access matrix
-ROLE_TOOL_ACCESS = {
-    "System Manager": {
-        # System Managers have access to ALL tools
-        "allowed_tools": "*",  # Wildcard for all tools
-        "restricted_tools": [],
-        "description": "Full access to all assistant tools including dangerous operations",
-    },
-    "PA Admin": {
-        "allowed_tools": [
-            # All basic tools (inherited)
-            *BASIC_CORE_TOOLS,
-            # Administrative tools
-            "metadata_permissions",
-            "metadata_workflow",
-            "tool_registry_list",
-            "tool_registry_toggle",
-            "audit_log_view",
-            "workflow_action",
-        ],
-        "restricted_tools": [
-            "execute_python_code",
-            "query_and_analyze",
-        ],
-        "description": "Administrative access without code execution capabilities",
-    },
-    "PA User": {
-        "allowed_tools": BASIC_CORE_TOOLS,
-        "restricted_tools": [
-            "execute_python_code",
-            "query_and_analyze",
-            "metadata_permissions",
-            "metadata_workflow",
-            "tool_registry_list",
-            "tool_registry_toggle",
-            "audit_log_view",
-            "workflow_action",
-        ],
-        "description": "Basic business user access with document-level permissions",
-    },
-    # All other users (any role) get access to basic core tools
-    "Default": {
-        "allowed_tools": BASIC_CORE_TOOLS,
-        "restricted_tools": [
-            "execute_python_code",
-            "query_and_analyze",
-            "metadata_permissions",
-            "metadata_workflow",
-            "tool_registry_list",
-            "tool_registry_toggle",
-            "audit_log_view",
-            "workflow_action",
-        ],
-        "description": "Basic tool access for all users - document permissions control actual access",
-    },
-}
+from frappe import _
 
 # Sensitive fields that should be filtered based on user roles
 SENSITIVE_FIELDS = {
@@ -319,59 +237,6 @@ WRITE_PERM_TYPES = frozenset({"write", "create", "delete", "submit", "cancel", "
 RESTRICTED_DOCTYPES = {"PA User": list(WRITE_PROTECTED_DOCTYPES)}
 
 
-def check_tool_access(user_role: str, tool_name: str) -> bool:
-    """
-    Check if a user role has access to a specific tool.
-
-    Args:
-        user_role: Role name (System Manager, PA Admin, PA User, or any other role)
-        tool_name: Name of the tool to check access for
-
-    Returns:
-        bool: True if access is allowed, False otherwise
-    """
-    # Check if user_role is in our defined access matrix
-    if user_role in ROLE_TOOL_ACCESS:
-        role_config = ROLE_TOOL_ACCESS[user_role]
-    else:
-        # Use Default configuration for all other roles
-        role_config = ROLE_TOOL_ACCESS["Default"]
-
-    # System Manager has access to all tools
-    if role_config["allowed_tools"] == "*":
-        return True
-
-    # Check if tool is explicitly restricted first
-    if tool_name in role_config["restricted_tools"]:
-        return False
-
-    # Check if tool is explicitly allowed
-    if tool_name in role_config["allowed_tools"]:
-        return True
-
-    return False
-
-
-def get_allowed_tools(user_role: str) -> List[str]:
-    """
-    Get list of tools allowed for a specific user role.
-
-    Args:
-        user_role: Role name
-
-    Returns:
-        List of allowed tool names
-    """
-    if user_role not in ROLE_TOOL_ACCESS:
-        return []
-
-    role_config = ROLE_TOOL_ACCESS[user_role]
-
-    if role_config["allowed_tools"] == "*":
-        # Return all available tools for System Manager
-        return ["*"]
-
-    return role_config["allowed_tools"]
 
 
 def filter_sensitive_fields(doc_dict: Dict[str, Any], doctype: str, user_role: str) -> Dict[str, Any]:
@@ -465,6 +330,9 @@ def validate_document_access(
         Dictionary with validation result
     """
     try:
+        if not doctype or not frappe.db.exists("DocType", doctype):
+            return {"success": False, "error": _("DocType '{0}' not found").format(doctype)}
+
         # Get user's primary role (includes Default for non-assistant users)
         primary_role = get_user_primary_role(user)
 
@@ -473,20 +341,28 @@ def validate_document_access(
         if not is_doctype_accessible(doctype, primary_role, perm_type):
             return {
                 "success": False,
-                "error": f"{perm_type.capitalize()} access to {doctype} is blocked over MCP "
-                f"because it defines executable code, schema or permissions",
+                "error": _(
+                    "{0} access to {1} is blocked over MCP because it defines executable code, schema or permissions"
+                ).format(perm_type.capitalize(), doctype),
             }
 
         # Check Frappe DocType-level permissions - this is the primary security control
         if not frappe.has_permission(doctype, perm_type, user=user):
-            return {"success": False, "error": f"Insufficient {perm_type} permissions for {doctype}"}
+            return {
+                "success": False,
+                "error": _("Insufficient {0} permissions for {1}").format(perm_type, doctype),
+            }
 
         # Check document-level permissions (if document exists)
         if name:
-            if not frappe.has_permission(doctype, perm_type, doc=name, user=user):
+            try:
+                allowed = frappe.has_permission(doctype, perm_type, doc=name, user=user)
+            except frappe.DoesNotExistError:
+                return {"success": False, "error": _("{0} {1} not found").format(doctype, name)}
+            if not allowed:
                 return {
                     "success": False,
-                    "error": f"Insufficient {perm_type} permissions for {doctype} {name}",
+                    "error": _("Insufficient {0} permissions for {1} {2}").format(perm_type, doctype, name),
                 }
 
             # Check if document is submitted and operation is write/delete
@@ -504,12 +380,12 @@ def validate_document_access(
                             if non_allowed_fields:
                                 return {
                                     "success": False,
-                                    "error": f"Cannot modify submitted document {doctype} {name}",
+                                    "error": _("Cannot modify submitted document {0} {1}").format(doctype, name),
                                 }
                         elif perm_type == "delete":
                             return {
                                 "success": False,
-                                "error": f"Cannot delete submitted document {doctype} {name}",
+                                "error": _("Cannot delete submitted document {0} {1}").format(doctype, name),
                             }
                 except Exception:
                     pass  # Document might not exist yet for create operations
@@ -517,8 +393,11 @@ def validate_document_access(
         return {"success": True, "role": primary_role}
 
     except Exception as e:
-        frappe.log_error(f"Error in validate_document_access: {str(e)}")
-        return {"success": False, "error": "Permission validation failed"}
+        frappe.log_error(
+            title="Error in validate_document_access",
+            message=f"Error in validate_document_access: {str(e)}",
+        )
+        return {"success": False, "error": _("Permission validation failed")}
 
 
 def get_user_primary_role(user: str) -> str:

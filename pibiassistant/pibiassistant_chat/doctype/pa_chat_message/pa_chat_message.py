@@ -128,12 +128,18 @@ class PAChatMessage(Document):
         )
 
         # Get attachments for each message
-        for msg in messages:
-            msg["attachments"] = frappe.get_all(
+        by_message = {m.name: [] for m in messages}
+        if by_message:
+            files = frappe.get_all(
                 "File",
-                filters={"attached_to_doctype": "PA Chat Message", "attached_to_name": msg.name},
-                fields=["name", "file_name", "file_url", "file_size"],
+                filters={"attached_to_doctype": "PA Chat Message", "attached_to_name": ["in", list(by_message)]},
+                fields=["name", "file_name", "file_url", "file_size", "attached_to_name"],
+                order_by="creation asc",
             )
+            for f in files:
+                by_message[f.pop("attached_to_name")].append(f)
+        for msg in messages:
+            msg["attachments"] = by_message[msg.name]
 
         return {
             "messages": messages,

@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Optional
 
 import frappe
 from frappe import _
-from jinja2 import BaseLoader, TemplateSyntaxError
+from jinja2 import BaseLoader, TemplateError, TemplateSyntaxError
 from jinja2.sandbox import SandboxedEnvironment
 
 from pibiassistant.constants.definitions import (
@@ -33,6 +33,8 @@ from pibiassistant.constants.definitions import (
     LogMessages,
 )
 from pibiassistant.utils.logger import api_logger
+from pibiassistant.utils.permissions import increment_usage, user_can_access_shared_doc
+from pibiassistant.utils.safe_format import safe_format
 
 
 class PromptTemplateManager:
@@ -218,6 +220,7 @@ class PromptTemplateManager:
         arguments = self._apply_defaults(prompt_doc, arguments)
 
         if engine == "Jinja2":
+            arguments = self._coerce_argument_types(prompt_doc, arguments)
             return self._render_jinja(template_content, arguments)
         elif engine == "Format String":
             return self._render_format_string(template_content, arguments)
@@ -236,6 +239,9 @@ class PromptTemplateManager:
             if value is not None:
                 # Type validation
                 self._validate_argument_type(arg_def, value)
+
+                if arg_def.argument_name == "doctype_name" and not frappe.db.exists("DocType", str(value)):
+                    frappe.throw(_("DocType {0} does not exist").format(value), frappe.ValidationError)
 
                 # Pattern validation
                 if arg_def.validation_regex:
@@ -271,7 +277,7 @@ class PromptTemplateManager:
                     )
         elif arg_type == "boolean":
             valid_bools = (True, False, "true", "false", "1", "0", 1, 0)
-            if value not in valid_bools:
+            if (value.strip().lower() if isinstance(value, str) else value) not in valid_bools:
                 frappe.throw(
                     _("Argument {0} must be a boolean").format(arg_def.argument_name), frappe.ValidationError
                 )
@@ -282,6 +288,22 @@ class PromptTemplateManager:
         for arg_def in prompt_doc.arguments:
             if arg_def.argument_name not in result and arg_def.default_value:
                 result[arg_def.argument_name] = arg_def.default_value
+        return result
+
+    @staticmethod
+    def _coerce_argument_types(prompt_doc, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """MCP clients send every argument as a string; '{% if flag %}' needs real booleans/numbers."""
+        result = arguments.copy()
+        for arg_def in prompt_doc.arguments:
+            name = arg_def.argument_name
+            value = result.get(name)
+            if value is None:
+                continue
+            if arg_def.argument_type == "boolean" and isinstance(value, str):
+                result[name] = value.strip().lower() in ("true", "1", "yes")
+            elif arg_def.argument_type == "number" and isinstance(value, str):
+                number = float(value)
+                result[name] = int(number) if number.is_integer() else number
         return result
 
     def _render_jinja(self, template: str, arguments: Dict[str, Any]) -> str:
@@ -295,23 +317,11 @@ class PromptTemplateManager:
     def _render_format_string(self, template: str, arguments: Dict[str, Any]) -> str:
         """Render using Python format strings."""
         try:
-            return template.format(**arguments)
+            return safe_format(template, arguments)
         except KeyError as e:
             frappe.throw(_("Missing argument for format string: {0}").format(str(e)), frappe.ValidationError)
-
-    def increment_usage(self, prompt_name: str):
-        """Increment usage counter for analytics."""
-        try:
-            frappe.db.sql(
-                """
-                UPDATE `tabPrompt Template`
-                SET use_count = use_count + 1, last_used = NOW()
-                WHERE name = %s
-            """,
-                (prompt_name,),
-            )
-        except Exception as e:
-            self.logger.warning(f"Failed to increment usage for {prompt_name}: {e}")
+        except (ValueError, TypeError) as e:
+            frappe.throw(_("Invalid format string: {0}").format(str(e)), frappe.ValidationError)
 
 
 # Global manager instance
@@ -366,9 +376,15 @@ def handle_prompts_get(params: Dict[str, Any], request_id: Optional[Any]) -> Dic
         api_logger.debug(LogMessages.PROMPTS_GET_REQUEST.format(params))
 
         prompt_name = params.get("name")
-        arguments = params.get("arguments", {})
+        arguments = params.get("arguments")
+        if arguments is None:
+            arguments = {}
+        if not isinstance(arguments, dict):
+            return _error_response(
+                ErrorCodes.INVALID_PARAMS, _("Prompt arguments must be an object"), None, request_id
+            )
 
-        if not prompt_name:
+        if not prompt_name or not isinstance(prompt_name, str):
             return _error_response(
                 ErrorCodes.INVALID_PARAMS, ErrorMessages.MISSING_PROMPT_NAME, None, request_id
             )
@@ -410,67 +426,36 @@ def _get_prompt_from_database(
     prompt_id: str, arguments: Dict[str, Any], manager: PromptTemplateManager
 ) -> Optional[Dict[str, Any]]:
     """Get prompt from database and render it."""
+    # Same visibility as prompts/list: Published and Draft for everyone, plus the caller's own Archived.
+    prompt_name = frappe.db.get_value(
+        "Prompt Template", {"prompt_id": prompt_id, "status": ["in", ["Published", "Draft"]]}, "name"
+    ) or frappe.db.get_value(
+        "Prompt Template",
+        {"prompt_id": prompt_id, "status": "Archived", "owner_user": frappe.session.user},
+        "name",
+    )
+
+    if not prompt_name:
+        return None
+
+    prompt_doc = frappe.get_doc("Prompt Template", prompt_name)
+
+    if not user_can_access_shared_doc(prompt_doc):
+        frappe.throw(_("You don't have permission to access this prompt"), frappe.PermissionError)
+
     try:
-        # Find prompt by prompt_id
-        prompt_name = frappe.db.get_value(
-            "Prompt Template", {"prompt_id": prompt_id, "status": ["in", ["Published", "Draft"]]}, "name"
+        rendered_content = manager.render_prompt(prompt_doc, arguments)
+    except (ValueError, IndexError, KeyError, re.error, TemplateError) as e:
+        frappe.throw(
+            _("Could not render prompt {0}: {1}").format(prompt_id, str(e)), frappe.ValidationError
         )
 
-        if not prompt_name:
-            return None
+    increment_usage("Prompt Template", prompt_name)
 
-        prompt_doc = frappe.get_doc("Prompt Template", prompt_name)
-
-        # Check permission
-        if not _user_can_access_prompt(prompt_doc):
-            frappe.throw(_("You don't have permission to access this prompt"), frappe.PermissionError)
-
-        # Render the template
-        rendered_content = manager.render_prompt(prompt_doc, arguments)
-
-        # Increment usage counter
-        manager.increment_usage(prompt_name)
-
-        return {
-            "description": prompt_doc.description,
-            "messages": [{"role": "user", "content": {"type": "text", "text": rendered_content}}],
-        }
-
-    except frappe.DoesNotExistError:
-        return None
-    except (frappe.ValidationError, frappe.PermissionError):
-        raise
-    except Exception as e:
-        api_logger.warning(f"Error fetching prompt from database: {e}")
-        return None
-
-
-def _user_can_access_prompt(prompt_doc) -> bool:
-    """Check if current user can access the prompt."""
-    user = frappe.session.user
-
-    # Owner can always access
-    if prompt_doc.owner_user == user:
-        return True
-
-    # System Manager can access all
-    if "System Manager" in frappe.get_roles(user):
-        return True
-
-    # Check visibility
-    if prompt_doc.visibility == "Public" and prompt_doc.status == "Published":
-        return True
-
-    if prompt_doc.visibility == "Shared" and prompt_doc.status == "Published":
-        user_roles = set(frappe.get_roles(user))
-        shared_roles = {r.role for r in prompt_doc.shared_with_roles}
-        if user_roles & shared_roles:
-            return True
-
-    if prompt_doc.is_system and prompt_doc.status == "Published":
-        return True
-
-    return False
+    return {
+        "description": prompt_doc.description,
+        "messages": [{"role": "user", "content": {"type": "text", "text": rendered_content}}],
+    }
 
 
 def _should_use_database_prompts() -> bool:

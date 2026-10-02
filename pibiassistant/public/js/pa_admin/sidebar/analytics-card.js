@@ -1,4 +1,4 @@
-import { qs, setText, setHtml, empty, show, hide } from '../dom.js';
+import { qs, setText, setHtml, empty, show, hide, escapeHtml } from '../dom.js';
 import { call, log } from '../api.js';
 import { fmtNumber } from '../utils.js';
 
@@ -21,10 +21,10 @@ export function renderSparkline(host, series) {
 		return `${x},${y}`;
 	}).join(' ');
 	const last = series[series.length - 1];
-	const tip = last ? `${last.count} on ${last.day}` : '';
+	const tip = last ? __('{0} on {1}', [last.count, last.day]) : '';
 	setHtml(host, `
 		<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"
-			 class="pa-spark-svg" role="img" aria-label="${frappe.utils.escape_html(tip)}">
+			 class="pa-spark-svg" role="img" aria-label="${escapeHtml(tip)}">
 			<polyline points="${points}" />
 		</svg>
 	`);

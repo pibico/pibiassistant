@@ -256,5 +256,334 @@
     "status": "Published",
     "visibility": "Public",
     "content_file": "build_skill.md"
+  },
+  {
+    "skill_id": "attach-file-usage",
+    "title": "Cómo usar attach_file",
+    "description": "Adjuntar un archivo existente o pequeño a un documento ya creado, por ejemplo el PDF de una factura",
+    "skill_type": "Tool Usage",
+    "linked_tool": "attach_file",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "attach_file.md"
+  },
+  {
+    "skill_id": "create-upload-link-usage",
+    "title": "Cómo usar create_upload_link",
+    "description": "Enlace de subida de un solo uso para archivos que están en el disco del cliente",
+    "skill_type": "Tool Usage",
+    "linked_tool": "create_upload_link",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "create_upload_link.md"
+  },
+  {
+    "skill_id": "send-email-usage",
+    "title": "Cómo usar send_email",
+    "description": "Enviar un correo desde la cuenta del sitio con destinatarios verificados",
+    "skill_type": "Tool Usage",
+    "linked_tool": "send_email",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "send_email.md"
+  },
+  {
+    "skill_id": "aggregate-documents-usage",
+    "title": "Cómo usar aggregate_documents",
+    "description": "Totales, recuentos y medias agrupados sin traer filas",
+    "skill_type": "Tool Usage",
+    "linked_tool": "aggregate_documents",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "aggregate_documents.md"
+  },
+  {
+    "skill_id": "get-pending-approvals-usage",
+    "title": "Cómo usar get_pending_approvals",
+    "description": "Documentos pendientes de aprobación del usuario según Workflow Action",
+    "skill_type": "Tool Usage",
+    "linked_tool": "get_pending_approvals",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "get_pending_approvals.md"
+  },
+  {
+    "skill_id": "browser-tools-usage",
+    "title": "Cómo usar las herramientas de navegador",
+    "description": "Qué herramienta browser_* usar para leer la página, navegar, esperar, capturar y diagnosticar",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "browser_tools.md"
+  },
+  {
+    "skill_id": "purchase-invoice-from-pdf",
+    "title": "Factura de compra a partir de un PDF",
+    "description": "Extraer un PDF de proveedor, localizar al proveedor, crear la Purchase Invoice y adjuntar el original",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "purchase_invoice_from_pdf.md"
+  },
+  {
+    "skill_id": "sales-invoice-create",
+    "title": "Crear una factura de venta",
+    "description": "Cliente, artículos, impuestos y borrador de Sales Invoice sin validar sin permiso",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "sales_invoice_create.md"
+  },
+  {
+    "skill_id": "quotation-to-order",
+    "title": "De presupuesto a pedido de venta",
+    "description": "Convertir un Quotation aprobado en Sales Order sin duplicar",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "quotation_to_order.md"
+  },
+  {
+    "skill_id": "party-by-nif",
+    "title": "Alta de cliente o proveedor por NIF",
+    "description": "Buscar por NIF antes de crear Customer o Supplier con los datos fiscales correctos",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "party_by_nif.md"
+  },
+  {
+    "skill_id": "timesheet-entry",
+    "title": "Partes de horas",
+    "description": "Registrar horas en Timesheet por empleado, proyecto y tarea",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "timesheet_entry.md"
+  },
+  {
+    "skill_id": "stock-levels",
+    "title": "Consulta de stock",
+    "description": "Existencias, valor y artículos bajo mínimo por almacén",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "stock_levels.md"
+  },
+  {
+    "skill_id": "receivables-aging",
+    "title": "Cobros pendientes y antigüedad de saldos",
+    "description": "Saldos pendientes por cliente, facturas vencidas y tramos de antigüedad",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "receivables_aging.md"
+  },
+  {
+    "skill_id": "vat-summary-es",
+    "title": "Resumen de IVA (España)",
+    "description": "IVA repercutido y soportado por periodo como ayuda para el modelo 303",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "vat_summary_es.md"
+  },
+  {
+    "skill_id": "crm-pipeline",
+    "title": "Estado del pipeline comercial",
+    "description": "Oportunidades por etapa, importes y acciones recomendadas",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "crm_pipeline.md"
+  },
+  {
+    "skill_id": "project-status",
+    "title": "Estado de un proyecto",
+    "description": "Avance, tareas atrasadas, horas y coste frente a presupuesto de un Project",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "project_status.md"
+  },
+  {
+    "skill_id": "purchase-order-receipt",
+    "title": "Pedido de compra y recepción de mercancía",
+    "description": "Crear un pedido de compra y registrar su recepción en almacén",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "purchase_order_receipt.md"
+  },
+  {
+    "skill_id": "delivery-note-create",
+    "title": "Albarán de entrega",
+    "description": "Preparar el albarán de entrega a partir de un pedido de venta",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "delivery_note_create.md"
+  },
+  {
+    "skill_id": "payment-entry",
+    "title": "Registrar un cobro o un pago",
+    "description": "Registrar un cobro de cliente o un pago a proveedor contra sus facturas",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "payment_entry.md"
+  },
+  {
+    "skill_id": "supplier-payables",
+    "title": "Pagos pendientes a proveedores",
+    "description": "Saldos, vencimientos y antigüedad de las facturas de compra pendientes",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "supplier_payables.md"
+  },
+  {
+    "skill_id": "expense-claim",
+    "title": "Gastos de empleado",
+    "description": "Crear una solicitud de gastos con sus justificantes",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "expense_claim.md"
+  },
+  {
+    "skill_id": "credit-note-es",
+    "title": "Factura rectificativa o abono",
+    "description": "Emitir un abono (factura rectificativa) sobre una factura de venta o compra",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "credit_note_es.md"
+  },
+  {
+    "skill_id": "lead-opportunity",
+    "title": "Alta de lead y oportunidad",
+    "description": "Registrar un lead evitando duplicados y abrir su oportunidad",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "lead_opportunity.md"
+  },
+  {
+    "skill_id": "bank-reconciliation",
+    "title": "Conciliación bancaria",
+    "description": "Localizar movimientos bancarios sin conciliar y proponer su correspondencia con pagos y facturas",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "bank_reconciliation.md"
+  },
+  {
+    "skill_id": "journal-entry-month-close",
+    "title": "Asiento contable y cierre de mes",
+    "description": "Crear asientos manuales y revisar los pasos previos al cierre mensual",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "journal_entry_month_close.md"
+  },
+  {
+    "skill_id": "item-creation",
+    "title": "Alta de artículo",
+    "description": "Crear un artículo evitando duplicados y con los datos obligatorios del sitio",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "item_creation.md"
+  },
+  {
+    "skill_id": "manufacturing-work-order",
+    "title": "Fabricación: lista de materiales y orden de trabajo",
+    "description": "Comprobar la lista de materiales y crear una orden de trabajo con control de existencias",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "manufacturing_work_order.md"
+  },
+  {
+    "skill_id": "hr-leave-payroll",
+    "title": "RRHH: ausencias y nóminas",
+    "description": "Consultar saldos de vacaciones, registrar solicitudes de ausencia y revisar nóminas",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "hr_leave_payroll.md"
+  },
+  {
+    "skill_id": "issue-followup",
+    "title": "Seguimiento de incidencias",
+    "description": "Revisar incidencias abiertas, su antigüedad y registrar respuestas o cambios de estado",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "issue_followup.md"
+  },
+  {
+    "skill_id": "task-management",
+    "title": "Gestión de tareas",
+    "description": "Crear, asignar y actualizar tareas y revisar las pendientes por persona o proyecto",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "task_management.md"
+  },
+  {
+    "skill_id": "recurring-invoices",
+    "title": "Facturas recurrentes",
+    "description": "Configurar la repetición automática de una factura y revisar las ya programadas",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "recurring_invoices.md"
+  },
+  {
+    "skill_id": "e-invoicing-es",
+    "title": "Facturación electrónica (España)",
+    "description": "Guía para preparar facturas conformes a la facturación electrónica y VeriFactu antes de emitirlas",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "e_invoicing_es.md"
+  },
+  {
+    "skill_id": "sales-analysis-es",
+    "title": "Análisis de ventas",
+    "description": "Mejores clientes y productos, margen y evolución de ventas con informes y agregados",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "sales_analysis.md"
+  },
+  {
+    "skill_id": "financial-statements-es",
+    "title": "Estados financieros",
+    "description": "Cuenta de resultados, balance, sumas y saldos y flujo de caja por ejercicio",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "financial_statements.md"
+  },
+  {
+    "skill_id": "spanish-tax-lines-es",
+    "title": "Impuestos especiales en facturas (España)",
+    "description": "Retención de IRPF, recargo de equivalencia, operaciones intracomunitarias e inversión del sujeto pasivo, con comprobación del total frente al PDF",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "spanish_tax_lines.md"
+  },
+  {
+    "skill_id": "tax-models-es",
+    "title": "Preparación de modelos 303, 347 y 349",
+    "description": "Ayuda para preparar los datos de los modelos 303, 347 y 349 con agregados e informes de solo lectura",
+    "skill_type": "Workflow",
+    "status": "Published",
+    "visibility": "Public",
+    "content_file": "tax_models_es.md"
   }
 ]

@@ -93,13 +93,17 @@ def get_plugin_info(plugin_name: str) -> Dict[str, Any]:
         from pibiassistant.utils.plugin_manager import get_plugin_manager
 
         plugin_manager = get_plugin_manager()
-        plugin_info = plugin_manager.get_plugin_info(plugin_name)
+        plugin_info = next(
+            (p for p in plugin_manager.get_discovered_plugins() if p["name"] == plugin_name), None
+        )
 
         if not plugin_info:
-            frappe.throw(_("Plugin '{0}' not found").format(plugin_name))
+            frappe.throw(_("Plugin '{0}' not found").format(plugin_name), frappe.DoesNotExistError)
 
         return {"success": True, "plugin": plugin_info}
 
+    except frappe.DoesNotExistError:
+        raise
     except Exception as e:
         frappe.log_error(title=_("Plugin Info Error"), message=str(e))
         frappe.throw(_("Failed to get plugin info: {0}").format(str(e)))
@@ -138,9 +142,10 @@ def refresh_tool_registry():
     frappe.only_for("System Manager")
 
     try:
-        from pibiassistant.core.tool_registry import refresh_tool_registry
+        from pibiassistant.core.tool_registry import get_tool_registry
 
-        registry = refresh_tool_registry()
+        registry = get_tool_registry()
+        registry.refresh_tools()
         stats = registry.get_stats()
 
         return {"success": True, "message": _("Tool registry refreshed"), "stats": stats}

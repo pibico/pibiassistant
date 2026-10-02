@@ -20,6 +20,9 @@ from frappe.model.document import Document
 from jinja2 import BaseLoader, TemplateSyntaxError
 from jinja2.sandbox import SandboxedEnvironment
 
+from pibiassistant.plugins.limits import clamp_limit
+from pibiassistant.utils.safe_format import safe_format
+
 
 class PromptTemplate(Document):
     def validate(self):
@@ -64,8 +67,8 @@ class PromptTemplate(Document):
                 # Find all placeholders and test with dummy values
                 placeholders = re.findall(r"\{(\w+)\}", self.template_content)
                 test_args = {p: "test" for p in placeholders}
-                self.template_content.format(**test_args)
-            except (KeyError, ValueError) as e:
+                safe_format(self.template_content, test_args)
+            except (KeyError, ValueError, TypeError) as e:
                 frappe.throw(_("Invalid format string: {0}").format(str(e)))
 
     def validate_arguments_match_template(self):
@@ -257,7 +260,7 @@ def preview_template(template_content: str, rendering_engine: str, arguments: di
             template = env.from_string(template_content)
             return template.render(**arguments)
         elif rendering_engine == "Format String":
-            return template_content.format(**arguments)
+            return safe_format(template_content, arguments)
         else:
             return template_content
     except Exception as e:
@@ -276,6 +279,11 @@ def get_version_history(prompt_name: str) -> List[Dict[str, Any]]:
     Returns:
         List of version history entries
     """
+    # get_list applies the Prompt Template permission query, so other users'
+    # private/draft templates are invisible here (doc-level checks do not).
+    if not frappe.get_list("Prompt Template", filters={"name": prompt_name}, limit=1, pluck="name"):
+        frappe.throw(_("Insufficient permissions"), frappe.PermissionError)
+
     versions = frappe.get_all(
         "Version",
         filters={"ref_doctype": "Prompt Template", "docname": prompt_name},
@@ -371,7 +379,7 @@ def search_prompts(
             "prompt_id": ["like", f"%{query}%"],
         }
 
-    prompts = frappe.get_all(
+    prompts = frappe.get_list(
         "Prompt Template",
         filters=filters,
         or_filters=or_filters,
@@ -386,7 +394,7 @@ def search_prompts(
             "owner_user",
             "visibility",
         ],
-        limit=limit,
+        limit=clamp_limit(limit, 20, 100),
         order_by="use_count desc",
     )
 
@@ -417,12 +425,12 @@ def get_popular_prompts(limit: int = 10) -> List[Dict[str, Any]]:
     Returns:
         List of popular prompts sorted by use_count
     """
-    return frappe.get_all(
+    return frappe.get_list(
         "Prompt Template",
         filters={"status": "Published"},
         fields=["prompt_id", "title", "description", "use_count", "category"],
         order_by="use_count desc",
-        limit=limit,
+        limit=clamp_limit(limit, 10, 100),
     )
 
 
@@ -447,7 +455,7 @@ def get_prompts_by_category(category: str) -> List[Dict[str, Any]]:
     except Exception:
         pass
 
-    return frappe.get_all(
+    return frappe.get_list(
         "Prompt Template",
         filters={"category": ["in", categories], "status": "Published"},
         fields=["prompt_id", "title", "description", "category"],

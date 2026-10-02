@@ -96,7 +96,7 @@ export function on(name, fn) {
   return () => off(name, fn);
 }
 
-export function off(name, fn) {
+function off(name, fn) {
   handlers[name].delete(fn);
 }
 

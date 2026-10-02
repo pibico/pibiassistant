@@ -25,6 +25,7 @@ import frappe
 from frappe import _
 
 from pibiassistant.core.base_tool import BaseTool
+from pibiassistant.plugins.query_errors import log_failure
 
 
 class DocumentSubmit(BaseTool):
@@ -63,6 +64,19 @@ class DocumentSubmit(BaseTool):
         doctype = arguments.get("doctype")
         name = arguments.get("name")
 
+        # Facts about the request come before the permission verdict, so a missing
+        # record or a non-submittable DocType is not reported as a permission problem.
+        if not doctype or not frappe.db.exists("DocType", doctype):
+            return {"success": False, "error": _("DocType '{0}' not found").format(doctype)}
+        if not getattr(frappe.get_meta(doctype), "is_submittable", False):
+            return {
+                "success": False,
+                "error": _("{0} is not a submittable DocType").format(doctype),
+                "suggestion": _("Only submittable DocTypes can be submitted. {0} doesn't support submission.").format(doctype),
+            }
+        if frappe.has_permission(doctype, "read") and not frappe.db.exists(doctype, name):
+            return {"success": False, "error": _("{0} '{1}' not found").format(doctype, name)}
+
         # Import security validation
         from pibiassistant.core.security_config import validate_document_access
 
@@ -79,7 +93,7 @@ class DocumentSubmit(BaseTool):
         try:
             # Check if document exists
             if not frappe.db.exists(doctype, name):
-                result = {"success": False, "error": f"{doctype} '{name}' not found"}
+                result = {"success": False, "error": _("{0} '{1}' not found").format(doctype, name)}
                 return result
 
             # Get document
@@ -91,29 +105,24 @@ class DocumentSubmit(BaseTool):
 
             # Validate document is in draft state
             if current_docstatus != 0:
-                state_description = {1: "submitted", 2: "cancelled"}.get(current_docstatus, "unknown")
+                state_description = {1: _("submitted"), 2: _("cancelled")}.get(current_docstatus, _("unknown"))
 
                 result = {
                     "success": False,
-                    "error": f"Cannot submit {state_description} document {doctype} '{name}'. Only draft documents can be submitted.",
+                    "error": _("Cannot submit {0} document {1} '{2}'. Only draft documents can be submitted.").format(state_description, doctype, name),
                     "docstatus": current_docstatus,
                     "workflow_state": current_workflow_state,
-                    "suggestion": f"Document is already {state_description}. Use document_get to view its current state.",
-                }
-                return result
-
-            # Check if DocType is submittable
-            meta = frappe.get_meta(doctype)
-            if not getattr(meta, "is_submittable", False):
-                result = {
-                    "success": False,
-                    "error": f"{doctype} is not a submittable DocType",
-                    "suggestion": f"Only submittable DocTypes can be submitted. {doctype} doesn't support submission.",
+                    "suggestion": f"Document is already {state_description}. Use get_document to view its current state.",
                 }
                 return result
 
             # Perform submission
-            doc.submit()
+            frappe.db.savepoint("pa_submit")
+            try:
+                doc.submit()
+            except Exception:
+                frappe.db.rollback(save_point="pa_submit")
+                raise
 
             # Get updated document state
             doc.reload()
@@ -137,7 +146,7 @@ class DocumentSubmit(BaseTool):
             if updated_docstatus == 1:
                 result["next_steps"] = [
                     "Document is now submitted and read-only",
-                    "Use document_get to view the submitted document",
+                    "Use get_document to view the submitted document",
                     f"Submit permissions: {'Available' if frappe.has_permission(doctype, 'cancel') else 'Not available'} for cancellation",
                 ]
 
@@ -154,13 +163,11 @@ class DocumentSubmit(BaseTool):
             return result
 
         except Exception as e:
-            frappe.log_error(
-                title=_("Document Submit Error"), message=f"Error submitting {doctype} '{name}': {str(e)}"
-            )
+            log_failure("Document Submit Error", e)
 
             result = {
                 "success": False,
-                "error": str(e),
+                "error": str(e)[:2000],
                 "doctype": doctype,
                 "name": name,
                 "suggestion": "Check if the document has all required fields filled and passes validation.",

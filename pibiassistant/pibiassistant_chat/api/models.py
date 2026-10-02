@@ -26,6 +26,8 @@ def _aida_models():
     from .aida import get_models
 
     result = get_models() or {}
+    if not result.get("providers"):
+        return {"success": False, "models": [], "error": result.get("error") or _("Models are unavailable right now.")}
     models = []
     for provider, info in (result.get("providers") or {}).items():
         if not info.get("available", True):

@@ -12,7 +12,7 @@ model gathers all three signals in one approved call instead of choosing one.
 
 from unittest.mock import patch
 
-from pibiassistant.plugins.pao.plugin import FacoPlugin
+from pibiassistant.plugins.pao.plugin import AidaPlugin
 from pibiassistant.plugins.pao.tools.browser_capture_diagnostics import (
     BrowserCaptureDiagnostics,
 )
@@ -25,7 +25,7 @@ class TestBrowserCaptureDiagnostics(BaseAssistantTest):
         self.tool = BrowserCaptureDiagnostics()
 
     def test_registered_by_the_plugin(self):
-        self.assertIn("browser_capture_diagnostics", FacoPlugin().get_tools())
+        self.assertIn("browser_capture_diagnostics", AidaPlugin().get_tools())
 
     def test_routes_to_the_widget_handler(self):
         self.assertEqual(self.tool.tool_name, "capture_diagnostics")

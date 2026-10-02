@@ -28,6 +28,7 @@ import frappe
 from frappe import _
 
 from pibiassistant.core.base_tool import BaseTool
+from pibiassistant.plugins.query_errors import log_failure
 
 
 class CreateDashboard(BaseTool):
@@ -124,6 +125,13 @@ class CreateDashboard(BaseTool):
                     "error": f"Charts not found: {', '.join(missing_charts)}. Use create_dashboard_chart to create them first.",
                 }
 
+            if dashboard_name and frappe.db.exists("Dashboard", dashboard_name):
+                return {
+                    "success": False,
+                    "error": _("A dashboard named '{0}' already exists. Choose another name.").format(dashboard_name),
+                    "dashboard_name": dashboard_name,
+                }
+
             # Create the dashboard
             dashboard_result = self._create_frappe_dashboard(
                 dashboard_name, chart_links, share_with, auto_refresh, mobile_optimized
@@ -132,12 +140,9 @@ class CreateDashboard(BaseTool):
             return dashboard_result
 
         except Exception as e:
-            frappe.log_error(
-                title=_("Dashboard Creation Error"),
-                message=f"Error creating dashboard {dashboard_name}: {str(e)}",
-            )
+            log_failure("Dashboard Creation Error", e)
 
-            return {"success": False, "error": str(e), "dashboard_name": dashboard_name}
+            return {"success": False, "error": str(e)[:2000], "dashboard_name": dashboard_name}
 
     def _create_frappe_dashboard(
         self,
@@ -162,7 +167,7 @@ class CreateDashboard(BaseTool):
             dashboard_doc.insert()
 
             # Setup permissions
-            self._setup_dashboard_sharing(dashboard_doc.name, share_with)
+            sharing = self._setup_dashboard_sharing(dashboard_doc.name, share_with)
 
             # Extract chart names from links
             chart_names = [link["chart"] for link in chart_links]
@@ -177,7 +182,8 @@ class CreateDashboard(BaseTool):
                 "mobile_optimized": mobile_optimized,
                 "auto_refresh": auto_refresh,
                 "charts": chart_names,
-                "permissions": share_with,
+                "permissions": sharing["users_with_access"],
+                "not_shared": sharing["not_shared"],
             }
 
         except Exception as e:
@@ -186,6 +192,7 @@ class CreateDashboard(BaseTool):
     def _setup_dashboard_sharing(self, dashboard_id: str, share_with: List[str]) -> Dict[str, Any]:
         """Setup dashboard sharing and permissions"""
         users_with_access = []
+        not_shared = []
 
         for user_or_role in share_with:
             try:
@@ -193,14 +200,30 @@ class CreateDashboard(BaseTool):
                     frappe.share.add("Dashboard", dashboard_id, user_or_role, read=1)
                     users_with_access.append(user_or_role)
                 elif frappe.db.exists("Role", user_or_role):
-                    role_users = frappe.get_all("Has Role", filters={"role": user_or_role}, fields=["parent"])
+                    role_users = frappe.get_all(
+                        "Has Role",
+                        filters={"role": user_or_role, "parenttype": "User"},
+                        fields=["parent"],
+                    )
+                    enabled = set(
+                        frappe.get_all(
+                            "User",
+                            filters={"name": ["in", [r.parent for r in role_users]], "enabled": 1},
+                            pluck="name",
+                        )
+                    ) if role_users else set()
                     for role_user in role_users:
-                        frappe.share.add("Dashboard", dashboard_id, role_user.parent, read=1)
-                        users_with_access.append(role_user.parent)
+                        if role_user.parent in enabled:
+                            frappe.share.add("Dashboard", dashboard_id, role_user.parent, read=1)
+                            users_with_access.append(role_user.parent)
+                else:
+                    not_shared.append(user_or_role)
             except Exception as e:
+                not_shared.append(user_or_role)
                 frappe.logger("dashboard_manager").warning(f"Failed to share with {user_or_role}: {str(e)}")
 
         return {
-            "users_with_access": list(set(users_with_access)),
+            "users_with_access": sorted(set(users_with_access)),
             "shared_count": len(set(users_with_access)),
+            "not_shared": not_shared,
         }

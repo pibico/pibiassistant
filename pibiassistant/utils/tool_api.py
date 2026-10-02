@@ -30,7 +30,7 @@ from typing import Any, Dict, List, Optional
 import frappe
 
 
-class FrappeAssistantAPI:
+class SandboxToolAPI:
     """
     Unified API for tool orchestration within run_python_code sandbox.
 
@@ -372,7 +372,7 @@ class FrappeAssistantAPI:
 
     def __repr__(self):
         """Provide helpful documentation when inspected in Python"""
-        return """FrappeAssistantAPI - Secure tool orchestration for run_python_code
+        return """SandboxToolAPI - Secure tool orchestration for run_python_code
 
 Available methods:
 

@@ -49,11 +49,11 @@ _CHART_PALETTE = (
 )
 
 _CALLOUT_STYLES = {
-    "info": {"bg": "#eff6ff", "border": "#3b82f6", "icon": "i"},
-    "tip": {"bg": "#ecfdf5", "border": "#10b981", "icon": "★"},
-    "success": {"bg": "#ecfdf5", "border": "#10b981", "icon": "✓"},
-    "warning": {"bg": "#fffbeb", "border": "#f59e0b", "icon": "!"},
-    "error": {"bg": "#fef2f2", "border": "#ef4444", "icon": "✕"},
+    "info": {"bg": "#eff6ff", "ink": "#1e40af", "icon": "i"},
+    "tip": {"bg": "#ecfdf5", "ink": "#065f46", "icon": "★"},
+    "success": {"bg": "#ecfdf5", "ink": "#065f46", "icon": "✓"},
+    "warning": {"bg": "#fffbeb", "ink": "#92400e", "icon": "!"},
+    "error": {"bg": "#fef2f2", "ink": "#991b1b", "icon": "✕"},
 }
 
 
@@ -162,10 +162,12 @@ def _render_callout(attrs: dict[str, str], body: str) -> str:
     # Body may contain inline markdown; we keep it simple — bold and code
     # only, since callout bodies are short by convention.
     body_html = _inline_markdown(pick("content", "body", "text", "message") or body)
-    title_html = f'<div class="callout-title">{html.escape(title)}</div>' if title else ""
+    title_html = (
+        f'<div class="callout-title" style="color:{style["ink"]}">{html.escape(title)}</div>' if title else ""
+    )
     return (
-        f'<div class="callout" style="background:{style["bg"]};border-left-color:{style["border"]}">'
-        f'<div class="callout-icon" style="color:{style["border"]}">{style["icon"]}</div>'
+        f'<div class="callout" style="background:{style["bg"]}">'
+        f'<div class="callout-icon" style="color:{style["ink"]}">{style["icon"]}</div>'
         f'<div class="callout-body">{title_html}{body_html}</div>'
         f"</div>"
     )

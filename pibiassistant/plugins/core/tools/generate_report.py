@@ -21,10 +21,8 @@ Execute Frappe reports for business data and analytics.
 
 from typing import Any, Dict
 
-import frappe
-from frappe import _
-
 from pibiassistant.core.base_tool import BaseTool
+from pibiassistant.plugins.query_errors import log_failure
 
 
 class GenerateReport(BaseTool):
@@ -42,7 +40,7 @@ class GenerateReport(BaseTool):
         super().__init__()
         self.name = "generate_report"
 
-        self.description = "Execute a Frappe report. IMPORTANT: Always call report_requirements(report_name) FIRST to get mandatory filters and valid options, then call this tool with explicit filters. Missing filters are auto-defaulted (dates, company) which often returns empty data. Supports Script Reports, Query Reports, and Custom Reports. Report Builder reports are not supported. Large/prepared reports are handled automatically with polling."
+        self.description = "Execute a Frappe report. IMPORTANT: Always call report_requirements(report_name) FIRST to get mandatory filters and valid options, then call this tool with explicit filters. Missing filters are auto-defaulted (dates, company) which often returns empty data. Supports Script Reports, Query Reports, and Custom Reports. Report Builder reports are not supported. Large/prepared reports are handled automatically with polling. Checkbox filters such as include_payments default to 0 when omitted."
         self.requires_permission = None  # Permission checked dynamically per report
 
         self.inputSchema = {
@@ -56,12 +54,6 @@ class GenerateReport(BaseTool):
                     "type": "object",
                     "default": {},
                     "description": "Filter key-value pairs. Get valid keys and values from report_requirements first — values are validated against that report's own declared filters, and the same filter name can accept different values in a different report. Dates: YYYY-MM-DD. Link fields (company, customer) must be exact DB names. Select fields must match that report's advertised options exactly.",
-                },
-                "format": {
-                    "type": "string",
-                    "enum": ["json", "csv", "excel"],
-                    "default": "json",
-                    "description": "Output format. Use 'json' for data analysis, 'csv' for exports, 'excel' for spreadsheet files.",
                 },
             },
             "required": ["report_name"],
@@ -77,13 +69,12 @@ class GenerateReport(BaseTool):
             return ReportTools.execute_report(
                 report_name=arguments.get("report_name"),
                 filters=arguments.get("filters", {}),
-                format=arguments.get("format", "json"),
             )
 
         except Exception as e:
-            frappe.log_error(title=_("Generate Report Error"), message=f"Error generating report: {str(e)}")
+            log_failure("Generate Report Error", e)
 
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e)[:2000]}
 
 
 # Make sure class name matches file name for discovery

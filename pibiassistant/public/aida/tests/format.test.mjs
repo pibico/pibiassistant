@@ -14,6 +14,23 @@ test("parseServerTs treats naive strings as local time", () => {
   assert.ok(Math.abs(f.parseServerTs("garbage") - Date.now()) < 1000);
 });
 
+test("parseServerTs converts naive strings from the site time zone", () => {
+  f.setSiteTimezone("Europe/Madrid");
+  try {
+    assert.equal(f.parseServerTs("2026-10-02 15:41:00.123456"), Date.UTC(2026, 9, 2, 13, 41, 0, 123));
+    assert.equal(f.parseServerTs("2026-01-15 15:41:00"), Date.UTC(2026, 0, 15, 14, 41));
+    assert.equal(f.parseServerTs("2026-03-29 03:30:00"), Date.UTC(2026, 2, 29, 1, 30));
+    f.setSiteTimezone("Asia/Tokyo");
+    assert.equal(f.parseServerTs("2026-10-02 15:41:00"), Date.UTC(2026, 9, 2, 6, 41));
+    f.setSiteTimezone("Not/AZone");
+    const d = new Date(f.parseServerTs("2026-10-02 15:41:00"));
+    assert.deepEqual([d.getHours(), d.getMinutes()], [15, 41]);
+    assert.equal(f.parseServerTs("2026-10-01T10:00:00Z"), Date.UTC(2026, 9, 1, 10));
+  } finally {
+    f.setSiteTimezone(null);
+  }
+});
+
 test("formatTime same day vs other day", () => {
   const now = new Date(2026, 9, 1, 12).getTime();
   const same = f.formatTime(new Date(2026, 9, 1, 9, 5).getTime(), now, "en");

@@ -101,8 +101,7 @@ class ChatGPTSearch(BaseTool):
                     result_id = f"{doctype}/{name}"
 
                     # Generate URL for citation
-                    site_url = frappe.utils.get_url()
-                    url = f"{site_url}/app/{frappe.scrub(doctype)}/{name}"
+                    url = frappe.utils.get_url_to_form(doctype, name)
 
                     results.append({"id": result_id, "title": title, "url": url})
 

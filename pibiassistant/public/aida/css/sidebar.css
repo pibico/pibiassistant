@@ -234,6 +234,7 @@
   .aida-sidebar__header { padding-right: var(--aida-s-2); }
 }
 @media (pointer: coarse) {
+  .aida-nav__item, .aida-recent__more { min-height: var(--aida-hit); }
   .aida-sidebar__close { width: var(--aida-hit); height: var(--aida-hit); }
   .aida-sidebar__close::after { display: none; }
 }

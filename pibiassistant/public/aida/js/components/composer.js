@@ -4,6 +4,7 @@ import { store, setUi } from "../lib/store.js";
 import * as chat from "../lib/chat.js";
 import { createAttachments } from "./attachments.js";
 import { createMic } from "./mic.js";
+import { createPromptPicker } from "./prompt-picker.js";
 import { icon } from "./icons.js";
 
 const MAX_CHARS = 20000;
@@ -15,7 +16,7 @@ export function createComposer({ variant = "dock" } = {}) {
   const mic = createMic({ onText: appendDictation });
   const input = h("textarea", {
     class: "aida-composer__input", rows: "1", enterkeyhint: "send",
-    "aria-label": __("Message"), onInput: () => { grow(); refresh(); }, onKeydown, onPaste,
+    "aria-label": __("Message"), onInput: () => { grow(); refresh(); picker.update(input.value); }, onKeydown, onPaste,
   });
   const counter = h("span", { class: "aida-composer__counter aida-num", hidden: true });
   const hint = h("span", { class: "aida-composer__hint" });
@@ -24,7 +25,9 @@ export function createComposer({ variant = "dock" } = {}) {
     onClick: () => attachments.openPicker(),
   }, icon("paperclip", 18));
   const send = h("button", { type: "button", class: "aida-composer__send", onClick: onSendClick }, icon("send", 16));
+  const picker = createPromptPicker({ input, onApply: applyTemplate });
   const el = h("div", { class: ["aida-composer", variant === "hero" ? "aida-composer--hero" : null], role: "group", "aria-label": __("Message") },
+    picker.el,
     attachments.el,
     h("div", { class: "aida-composer__box" },
       input,
@@ -80,6 +83,7 @@ export function createComposer({ variant = "dock" } = {}) {
   }
 
   function onKeydown(e) {
+    if (picker.handleKey(e)) return;
     if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
       e.preventDefault();
       submit();
@@ -107,6 +111,14 @@ export function createComposer({ variant = "dock" } = {}) {
     if (!input.value && d.text) { setText(d.text); }
     if (d.files && d.files.length) attachments.restore(d.files);
   };
+
+  function applyTemplate(text, focus) {
+    setText(text);
+    if (focus) {
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    }
+  }
 
   function setText(text) {
     input.value = text;
@@ -141,6 +153,7 @@ export function createComposer({ variant = "dock" } = {}) {
     clear: () => { setText(""); attachments.clear(); },
     destroy() {
       unsub();
+      picker.destroy();
       micWatch.disconnect();
       mic.destroy();
       document.removeEventListener("keydown", onShortcut);

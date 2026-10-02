@@ -21,6 +21,7 @@ Browser tool to capture a screenshot of the current page.
 from typing import Any
 
 from pibiassistant.plugins.pao.tools import screenshot_vision
+from pibiassistant.plugins.limits import clamp_int
 from pibiassistant.plugins.pao.tools.base_browser_tool import BaseBrowserTool
 
 
@@ -93,7 +94,7 @@ class BrowserTakeScreenshot(BaseBrowserTool):
     def get_tool_params(self, arguments: dict[str, Any]) -> dict[str, Any]:
         params = {
             "full_page": arguments.get("full_page", False),
-            "quality": arguments.get("quality", 80),
+            "quality": clamp_int(arguments.get("quality"), 80, 1, 100),
         }
 
         if "selector" in arguments:

@@ -18,6 +18,7 @@
 Browser tool to navigate to a specific URL or Frappe route.
 """
 
+import re
 import uuid
 from typing import Any
 from urllib.parse import urlparse
@@ -26,6 +27,10 @@ import frappe
 from frappe import _
 
 from pibiassistant.plugins.pao.tools.base_browser_tool import BaseBrowserTool
+
+
+SCHEME_PREFIX = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.\-]*:")
+ILLEGAL_CHARS = re.compile(r"[\x00-\x1f\x7f<>\"`\\]")
 
 
 def _is_safe_navigation_url(url: str) -> bool:
@@ -128,6 +133,14 @@ class BrowserNavigateTo(BaseBrowserTool):
         url = arguments.get("url", "")
         if not url:
             return {"success": False, "error": _("No URL provided")}
+
+        if not isinstance(url, str) or ILLEGAL_CHARS.search(url):
+            return {"success": False, "error": _("The URL contains characters that are not allowed")}
+
+        # A scheme prefix is only acceptable on a full http(s) URL; anything else
+        # ("javascript:x") would otherwise be mistaken for a doctype route below.
+        if SCHEME_PREFIX.match(url) and not re.match(r"^https?://", url, re.IGNORECASE):
+            return {"success": False, "error": _("Only same-site http(s) navigation allowed")}
 
         # Normalize the URL
         target_url = url

@@ -7,6 +7,8 @@
 import frappe
 from frappe import _
 
+from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
+
 from ._helpers import (
     _aida_mode,
     _not_registered_error,
@@ -71,13 +73,6 @@ def _local_analytics(days: int) -> dict:
     }
 
 
-def _get_client():
-    """Get AR client, returning None if not registered."""
-    from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
-
-    return get_pa_cloud_client()
-
-
 def _is_admin() -> bool:
     """Check if the current user has System Manager role."""
     return "System Manager" in frappe.get_roles(frappe.session.user)
@@ -106,7 +101,7 @@ def get_analytics_data(days: int = 30):
         if _aida_mode():
             return _local_analytics(int(days))
 
-        client = _get_client()
+        client = get_pa_cloud_client()
         if not client:
             return {"error": _not_registered_error()}
 

@@ -20,7 +20,11 @@ Browser tool to wait for page to finish loading.
 
 from typing import Any
 
+from pibiassistant.plugins.limits import clamp_int
 from pibiassistant.plugins.pao.tools.base_browser_tool import BaseBrowserTool
+
+# Stay under BROWSER_TOOL_TIMEOUT so the widget answers before the server gives up.
+MAX_WAIT_MS = 25000
 
 
 class BrowserWaitForPage(BaseBrowserTool):
@@ -52,7 +56,7 @@ class BrowserWaitForPage(BaseBrowserTool):
             "properties": {
                 "timeout_ms": {
                     "type": "integer",
-                    "description": "Maximum time to wait in milliseconds.",
+                    "description": "Maximum time to wait in milliseconds (1000 to 25000).",
                     "default": 10000,
                 },
                 "wait_for_text": {
@@ -73,7 +77,7 @@ class BrowserWaitForPage(BaseBrowserTool):
 
     def get_tool_params(self, arguments: dict[str, Any]) -> dict[str, Any]:
         params = {
-            "timeout_ms": arguments.get("timeout_ms", 10000),
+            "timeout_ms": clamp_int(arguments.get("timeout_ms"), 10000, 1000, MAX_WAIT_MS),
         }
 
         if "wait_for_text" in arguments:

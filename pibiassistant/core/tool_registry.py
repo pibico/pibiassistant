@@ -31,6 +31,25 @@ from pibiassistant.core.base_tool import BaseTool
 from pibiassistant.utils.plugin_manager import ToolInfo, get_plugin_manager
 
 
+def get_role_access_by_parent(parents: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+    """Fetch PA Tool Role Access rows for many tool configurations in one query."""
+    result: Dict[str, List[Dict[str, Any]]] = {}
+    if not parents:
+        return result
+    try:
+        rows = frappe.get_all(
+            "PA Tool Role Access",
+            filters={"parent": ["in", list(parents)], "parenttype": "PA Tool Configuration"},
+            fields=["parent", "role", "allow_access"],
+            order_by="parent asc, idx asc",
+        )
+    except Exception:
+        return result  # Table might not exist or no role access configured
+    for row in rows:
+        result.setdefault(row["parent"], []).append({"role": row["role"], "allow_access": row["allow_access"]})
+    return result
+
+
 class ToolRegistry:
     """
     Tool registry that delegates to the plugin manager and applies filtering.
@@ -54,8 +73,9 @@ class ToolRegistry:
         Returns:
             Dict mapping tool_name to configuration dict
         """
-        # Try to get from cache first
-        cached = frappe.cache.get_value(self._cache_key)
+        # expires=True: without it a miss is memoised as None in frappe.local.cache,
+        # so every later call in the request re-queries instead of seeing our set_value.
+        cached = frappe.cache.get_value(self._cache_key, expires=True)
         if cached is not None:
             return cached
 
@@ -80,19 +100,12 @@ class ToolRegistry:
                 ],
             )
 
+            role_access_by_parent = get_role_access_by_parent([c.get("name") for c in tool_configs])
+
             for config in tool_configs:
                 tool_name = config.get("tool_name") or config.get("name")
 
-                # Get role access settings for this tool
-                role_access = []
-                try:
-                    role_access = frappe.get_all(
-                        "PA Tool Role Access",
-                        filters={"parent": config.get("name")},
-                        fields=["role", "allow_access"],
-                    )
-                except Exception:
-                    pass  # Table might not exist or no role access configured
+                role_access = role_access_by_parent.get(config.get("name"), [])
 
                 configs[tool_name] = {
                     "enabled": config.get("enabled", 1),
@@ -302,11 +315,6 @@ class ToolRegistry:
 
         return result
 
-    def has_tool(self, tool_name: str) -> bool:
-        """Check if a tool is available"""
-        tool = self.get_tool(tool_name)
-        return tool is not None
-
     def refresh_tools(self) -> bool:
         """Refresh tool discovery"""
         plugin_manager = get_plugin_manager()
@@ -432,7 +440,7 @@ class ToolRegistry:
         """Check if user has permission to use the tool"""
         try:
             if tool_instance.requires_permission:
-                tool_instance.check_permission()
+                tool_instance.check_permission(user)
             return True
         except Exception as e:
             self.logger.debug(f"Permission check failed for tool {tool_instance.name} and user {user}: {e}")

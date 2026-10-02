@@ -108,14 +108,6 @@ export function hasClass(el, cls) {
     return !!el && el.classList.contains(cls);
 }
 
-export function setAttrs(el, obj) {
-    if (!el) return;
-    Object.entries(obj).forEach(([k, v]) => {
-        if (v === null || v === undefined || v === false) el.removeAttribute(k);
-        else el.setAttribute(k, v === true ? '' : v);
-    });
-}
-
 export function toEl(x) {
     if (x instanceof Element) return x;
     return x?.[0] ?? x?.get?.(0) ?? null;

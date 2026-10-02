@@ -92,7 +92,7 @@ class TestSearchDocumentsRouting(BaseAssistantTest):
             self.tool.execute({"query": "Grant", "doctype": "Customer", "filters": {"disabled": 0}})
 
         doctype_search.assert_called_once_with(
-            doctype="Customer", query="Grant", limit=20, filters={"disabled": 0}
+            doctype="Customer", query="Grant", limit=20, filters={"disabled": 0}, start=0
         )
 
     def test_link_purpose_routes_to_link_search(self):

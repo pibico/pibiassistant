@@ -25,30 +25,19 @@ import frappe
 from frappe import _
 
 from pibiassistant.mcp.server import MCPServer
+from pibiassistant.utils.auth import check_assistant_enabled, validate_api_credentials
 
 
 def _get_mcp_server_name():
     """Get MCP server name from settings or use default."""
     try:
-        settings = frappe.get_single("PA Core Settings")
-        return settings.mcp_server_name or "pibiassistant"
+        return frappe.db.get_single_value("PA Core Settings", "mcp_server_name") or "pibiassistant"
     except Exception:
         return "pibiassistant"
 
 
-# Create MCP server instance with name from settings
-mcp = MCPServer(_get_mcp_server_name())
-
-
-def _check_assistant_enabled(user: str) -> bool:
-    """Check if assistant is enabled for user."""
-    try:
-        assistant_enabled = frappe.db.get_value("User", user, "assistant_enabled")
-        if assistant_enabled is None:
-            return False
-        return bool(int(assistant_enabled)) if assistant_enabled else False
-    except Exception:
-        return False
+# The wrapper reads the live name per request (see MCPServer.name_resolver).
+mcp = MCPServer("pibiassistant", name_resolver=_get_mcp_server_name)
 
 
 def _build_tool_registry():
@@ -77,21 +66,23 @@ def _build_tool_registry():
     try:
         from pibiassistant.core.tool_registry import get_tool_registry
         from pibiassistant.mcp.tool_adapter import build_tool_dict
+        from pibiassistant.utils.plugin_manager import memoize_enabled_plugins
         from pibiassistant.utils.tool_category_detector import category_to_annotations
 
-        # Get available tools (respects enabled/disabled state and permissions)
-        registry = get_tool_registry()
-        available_tools = registry.get_available_tools(user=frappe.session.user)
+        # Every get_tool() re-syncs the enabled-plugin set from the DB; read it once.
+        with memoize_enabled_plugins():
+            registry = get_tool_registry()
+            available_tools = sorted(
+                (t for t in registry.get_available_tools(user=frappe.session.user) if t.get("name")),
+                key=lambda t: t["name"],
+            )
 
-        # Resolve each tool's category once (honors admin overrides stored on
-        # PA Tool Configuration; falls back to auto-detection).
-        categories = _resolve_tool_categories(
-            [t.get("name") for t in available_tools if t.get("name")], registry
-        )
+            # Resolve each tool's category once (honors admin overrides stored on
+            # PA Tool Configuration; falls back to auto-detection).
+            categories = _resolve_tool_categories([t["name"] for t in available_tools], registry)
 
-        for tool_metadata in available_tools:
-            tool_name = tool_metadata.get("name")
-            if tool_name:
+            for tool_metadata in available_tools:
+                tool_name = tool_metadata["name"]
                 tool_instance = registry.get_tool(tool_name)
                 if tool_instance:
                     tool_dict = build_tool_dict(tool_instance)
@@ -158,173 +149,109 @@ def _resolve_tool_categories(tool_names: list, registry) -> dict:
     return categories
 
 
-def _authenticate_mcp_request():
-    """
-    Authenticate MCP requests using OAuth Bearer tokens or API key/secret.
+_AUTH_FAIL_LIMIT = 30
+_AUTH_FAIL_WINDOW_SEC = 60
 
-    Supports two authentication methods:
-    1. OAuth 2.0 Bearer tokens: "Authorization: Bearer <token>"
-    2. API Key/Secret: "Authorization: token <api_key>:<api_secret>"
 
-    Returns:
-        str: Authenticated username
-        None: Authentication failed (returns 401 response directly)
-    """
+def _auth_fail_key():
+    ip = getattr(frappe.local, "request_ip", None) or "unknown"
+    return frappe.cache.make_key(f"pa_mcp_auth_fail:{ip}")
+
+
+def _auth_locked_out() -> bool:
+    try:
+        return int(frappe.cache.get(_auth_fail_key()) or 0) >= _AUTH_FAIL_LIMIT
+    except Exception:
+        return False
+
+
+def _record_auth_failure():
+    try:
+        key = _auth_fail_key()
+        if frappe.cache.incrby(key, 1) == 1:
+            frappe.cache.expire(key, _AUTH_FAIL_WINDOW_SEC)
+    except Exception:
+        frappe.logger().debug("Could not record MCP auth failure", exc_info=True)
+
+
+def _unauthorized(error="unauthorized", description=None, message="Authentication required", status=401):
+    """Build the 401 (or 429) response with the OAuth resource metadata hint."""
     from werkzeug.wrappers import Response
 
     from pibiassistant.api.oauth_discovery import get_public_base_url
 
-    auth_header = frappe.request.headers.get("Authorization", "")
-
-    # Try OAuth Bearer token authentication first
-    if auth_header.startswith("Bearer "):
-        token = auth_header[7:]  # Remove "Bearer " prefix
-        try:
-            # Validate token using Frappe's OAuth Bearer Token doctype
-            bearer_token = frappe.get_doc("OAuth Bearer Token", {"access_token": token})
-
-            # Check if token is active
-            if bearer_token.status != "Active":
-                frappe.logger().error(f"Token is not active. Status: {bearer_token.status}")
-                raise frappe.AuthenticationError("Token is not active")
-
-            # Check if token has expired
-            # Use Frappe's now_datetime() for timezone-aware comparison
-            from frappe.utils import now_datetime
-
-            current_time = now_datetime()
-            if bearer_token.expiration_time < current_time:
-                frappe.logger().error(
-                    f"Token has expired. Expiration: {bearer_token.expiration_time}, Now: {current_time}"
-                )
-                raise frappe.AuthenticationError("Token has expired")
-
-            # Set the user session
-            # nosemgrep: frappe-setuser — user resolved from validated, non-expired OAuth bearer token
-            frappe.set_user(bearer_token.user)
-            frappe.logger().info(f"OAuth token validated successfully for user: {bearer_token.user}")
-            return bearer_token.user
-
-        except frappe.DoesNotExistError:
-            frappe.logger().error("OAuth Bearer Token not found")
-            # Token not found - return 401
-            frappe_url = get_public_base_url()
-            metadata_url = f"{frappe_url}/.well-known/oauth-protected-resource"
-
-            response = Response()
-            response.status_code = 401
-            response.headers["WWW-Authenticate"] = (
-                f'Bearer realm="pibiAssistant", '
-                f'error="invalid_token", '
-                f'error_description="Token not found", '
-                f'resource_metadata="{metadata_url}"'
-            )
-            response.headers["Content-Type"] = "application/json"
-            response.data = frappe.as_json({"error": "invalid_token", "message": "Token not found"})
-            return response
-
-        except Exception as e:
-            # Log the error for debugging
-            frappe.logger().error(f"OAuth token validation error: {type(e).__name__}: {str(e)}")
-            frappe.log_error(title="OAuth Token Validation Error", message=f"{type(e).__name__}: {str(e)}")
-
-            # Return 401 for invalid/expired tokens
-            frappe_url = get_public_base_url()
-            metadata_url = f"{frappe_url}/.well-known/oauth-protected-resource"
-
-            response = Response()
-            response.status_code = 401
-            response.headers["WWW-Authenticate"] = (
-                f'Bearer realm="pibiAssistant", '
-                f'error="invalid_token", '
-                f'error_description="{str(e)}", '
-                f'resource_metadata="{metadata_url}"'
-            )
-            response.headers["Content-Type"] = "application/json"
-            response.data = frappe.as_json({"error": "invalid_token", "message": str(e)})
-            return response
-
-    # Try API Key/Secret authentication (for STDIO clients)
-    elif auth_header.startswith("token "):
-        try:
-            # Extract token from "token api_key:api_secret" format
-            token_part = auth_header[6:]  # Remove "token " prefix
-            if ":" in token_part:
-                api_key, api_secret = token_part.split(":", 1)
-                frappe.logger().debug("Attempting API key authentication")
-
-                # Validate using database lookup
-                user_data = frappe.db.get_value(
-                    "User", {"api_key": api_key, "enabled": 1}, ["name", "api_secret"]
-                )
-
-                if user_data:
-                    user, _ = user_data
-                    # Compare the provided secret with stored secret
-                    from frappe.utils.password import get_decrypted_password
-
-                    decrypted_secret = get_decrypted_password("User", user, "api_secret")
-
-                    if api_secret == decrypted_secret:
-                        # Set user context for this request
-                        # nosemgrep: frappe-setuser — user authenticated via API key:secret comparison above
-                        frappe.set_user(str(user))
-                        frappe.logger().info(f"API key authentication successful for user: {user}")
-                        return str(user)
-                    else:
-                        frappe.logger().warning("API secret mismatch")
-                        raise frappe.AuthenticationError("Invalid API credentials")
-                else:
-                    frappe.logger().warning("API key not found")
-                    raise frappe.AuthenticationError("Invalid API credentials")
-            else:
-                frappe.logger().warning("Invalid API key format - missing colon separator")
-                raise frappe.AuthenticationError("Invalid API key format")
-
-        except frappe.AuthenticationError as e:
-            # Return 401 for invalid API credentials
-            frappe_url = get_public_base_url()
-            metadata_url = f"{frappe_url}/.well-known/oauth-protected-resource"
-
-            response = Response()
-            response.status_code = 401
-            response.headers["WWW-Authenticate"] = (
-                f'Bearer realm="pibiAssistant", ' f'resource_metadata="{metadata_url}"'
-            )
-            response.headers["Content-Type"] = "application/json"
-            response.data = frappe.as_json({"error": "invalid_credentials", "message": str(e)})
-            return response
-
-        except Exception as e:
-            frappe.logger().error(f"API key authentication error: {type(e).__name__}: {str(e)}")
-            frappe.log_error(title="API Key Authentication Error", message=f"{type(e).__name__}: {str(e)}")
-
-            # Return 401 for other errors
-            frappe_url = get_public_base_url()
-            metadata_url = f"{frappe_url}/.well-known/oauth-protected-resource"
-
-            response = Response()
-            response.status_code = 401
-            response.headers["WWW-Authenticate"] = (
-                f'Bearer realm="pibiAssistant", ' f'resource_metadata="{metadata_url}"'
-            )
-            response.headers["Content-Type"] = "application/json"
-            response.data = frappe.as_json({"error": "authentication_error", "message": str(e)})
-            return response
-
-    # No valid authentication method found
-    frappe.logger().warning("No valid authentication method found in request")
-    frappe_url = get_public_base_url()
-    metadata_url = f"{frappe_url}/.well-known/oauth-protected-resource"
+    metadata_url = f"{get_public_base_url()}/.well-known/oauth-protected-resource"
+    challenge = 'Bearer realm="pibiAssistant"'
+    if description:
+        challenge += f', error="{error}", error_description="{description}"'
+    challenge += f', resource_metadata="{metadata_url}"'
 
     response = Response()
-    response.status_code = 401
-    response.headers["WWW-Authenticate"] = (
-        f'Bearer realm="pibiAssistant", ' f'resource_metadata="{metadata_url}"'
-    )
+    response.status_code = status
+    response.headers["WWW-Authenticate"] = challenge
     response.headers["Content-Type"] = "application/json"
-    response.data = frappe.as_json({"error": "unauthorized", "message": "Authentication required"})
+    response.data = frappe.as_json({"error": error, "message": message})
     return response
+
+
+def _authenticate_bearer(token: str):
+    """Return the user for a valid, active, unexpired OAuth bearer token, else a 401 Response."""
+    from frappe.utils import now_datetime
+
+    try:
+        bearer_token = frappe.get_doc("OAuth Bearer Token", {"access_token": token})
+    except frappe.DoesNotExistError:
+        return _unauthorized("invalid_token", "Token not found", "Token not found")
+    except Exception:
+        frappe.logger().error("OAuth token lookup failed", exc_info=True)
+        return _unauthorized("invalid_token", "Invalid token", "Invalid token")
+
+    if bearer_token.status != "Active":
+        return _unauthorized("invalid_token", "Token is not active", "Token is not active")
+    if bearer_token.expiration_time < now_datetime():
+        return _unauthorized("invalid_token", "Token has expired", "Token has expired")
+    if not frappe.db.get_value("User", bearer_token.user, "enabled"):
+        return _unauthorized("invalid_token", "User is disabled", "User is disabled")
+
+    # nosemgrep: frappe-setuser — user resolved from validated, non-expired OAuth bearer token
+    frappe.set_user(bearer_token.user)
+    return bearer_token.user
+
+
+def _authenticate_mcp_request():
+    """
+    Authenticate MCP requests using OAuth Bearer tokens or API key/secret.
+
+    1. OAuth 2.0 Bearer tokens: "Authorization: Bearer <token>"
+    2. API Key/Secret: "Authorization: token <api_key>:<api_secret>"
+
+    Returns the authenticated username, or a 401/429 Response. Failures are
+    counted per client IP and lock the endpoint out for the rest of the window.
+    """
+    if _auth_locked_out():
+        return _unauthorized("rate_limited", message="Too many failed attempts", status=429)
+
+    auth_header = frappe.request.headers.get("Authorization", "")
+
+    if auth_header.startswith("Bearer "):
+        result = _authenticate_bearer(auth_header[7:])
+        if isinstance(result, str):
+            return result
+        _record_auth_failure()
+        return result
+
+    if auth_header.startswith("token "):
+        api_key, _sep, api_secret = auth_header[6:].partition(":")
+        user = validate_api_credentials(api_key, api_secret)
+        if user:
+            # nosemgrep: frappe-setuser — user authenticated via API key:secret comparison above
+            frappe.set_user(str(user))
+            return str(user)
+        _record_auth_failure()
+        return _unauthorized("invalid_credentials", message="Invalid API credentials")
+
+    frappe.logger().warning("No valid authentication method found in request")
+    return _unauthorized()
 
 
 @mcp.register(allow_guest=True, xss_safe=True, methods=["GET", "POST", "HEAD"])
@@ -344,19 +271,10 @@ def handle_mcp():
     """
     from werkzeug.wrappers import Response
 
-    from pibiassistant.api.oauth_discovery import get_public_base_url
-
-    # Handle HEAD request for connectivity check (Claude Web uses this)
+    # HEAD is the connectivity probe Claude Web sends: 401 + WWW-Authenticate advertises auth.
     if frappe.request.method == "HEAD":
-        # Return 401 with WWW-Authenticate header to indicate auth is required
-        frappe_url = get_public_base_url()
-        metadata_url = f"{frappe_url}/.well-known/oauth-protected-resource"
-
-        response = Response()
-        response.status_code = 401
-        response.headers["WWW-Authenticate"] = (
-            f'Bearer realm="pibiAssistant", ' f'resource_metadata="{metadata_url}"'
-        )
+        response = _unauthorized()
+        response.data = b""
         return response
 
     # Authenticate the request (supports both OAuth and API key)
@@ -375,11 +293,11 @@ def handle_mcp():
     frappe.local.ar_session_id = frappe.request.headers.get("X-AR-Session-Id") or None
 
     # Check if user has assistant access enabled
-    if not _check_assistant_enabled(authenticated_user):
+    if not check_assistant_enabled(authenticated_user):
         frappe.throw(
             _("PA access is disabled for user {0}").format(authenticated_user), frappe.PermissionError
         )
 
-    # Build a per-request tool registry (isolated from concurrent requests) and
-    # hand it back to the MCP server wrapper, which passes it into handle().
-    return _build_tool_registry()
+    # Hand the MCP server wrapper a lazy per-request registry: it is only built
+    # for tools/list and tools/call, not for ping/initialize/prompts.
+    return _build_tool_registry

@@ -22,19 +22,11 @@ from frappe import _
 from frappe.utils import cint
 from frappe.utils.caching import redis_cache
 
-from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
 
 from ._attachment_validation import is_ticket_image, validate_ticket_attachment
 from ._rate_limits import rate_limit, session_user_or_ip
-from ._helpers import _aida_guard
+from ._helpers import _aida_guard, cloud_client_or_throw
 from .auth import _ar_user_id
-
-
-def _get_client():
-    client = get_pa_cloud_client()
-    if not client:
-        frappe.throw(_("Support is not available right now."))
-    return client
 
 
 def _ar_user() -> str:
@@ -218,7 +210,7 @@ def create_ticket(
     if not description:
         frappe.throw(_("A description is required"))
 
-    client = _get_client()
+    client = cloud_client_or_throw()
     try:
         return client.create_ticket(
             user_id=_ar_user(),
@@ -253,7 +245,7 @@ def download_ticket_attachment(ticket_id: str | int | None = None, file_url: str
     if not file_url:
         frappe.throw(_("file_url is required"))
 
-    client = _get_client()
+    client = cloud_client_or_throw()
     try:
         content, content_type, filename = client.download_ticket_attachment(
             user_id=_ar_user(),
@@ -301,7 +293,7 @@ def upload_ticket_attachment(
 
     safe_name, canonical_mime = validate_ticket_attachment(content, raw_name, raw_mime)
 
-    client = _get_client()
+    client = cloud_client_or_throw()
     try:
         result = client.upload_ticket_attachment(
             user_id=_ar_user(),
@@ -337,7 +329,7 @@ def submit_feedback(
     reference: the feedback form never asks for one, so sending it would be
     undisclosed collection. Tickets ask, and attach the transcript.
     """
-    client = _get_client()
+    client = cloud_client_or_throw()
     try:
         return client.submit_feedback(
             user_id=_ar_user(),
@@ -355,7 +347,7 @@ def submit_feedback(
 @_aida_guard([])
 def list_my_tickets(status: str | None = None) -> list:
     """List the current user's support tickets."""
-    client = _get_client()
+    client = cloud_client_or_throw()
     try:
         return client.list_tickets(user_id=_ar_user(), status=status or None) or []
     except Exception as e:
@@ -367,7 +359,7 @@ def list_my_tickets(status: str | None = None) -> list:
 @_aida_guard([])
 def list_my_feedback() -> list:
     """List the current user's submitted feedback."""
-    client = _get_client()
+    client = cloud_client_or_throw()
     try:
         return client.list_feedback(user_id=_ar_user()) or []
     except Exception as e:
@@ -381,7 +373,7 @@ def get_ticket_thread(ticket_id: str | int | None = None) -> dict:
     if not ticket_id:
         frappe.throw(_("ticket_id is required"))
 
-    client = _get_client()
+    client = cloud_client_or_throw()
     try:
         return client.get_ticket_thread(user_id=_ar_user(), ticket_id=str(ticket_id))
     except Exception as e:
@@ -401,7 +393,7 @@ def reply_to_ticket(
     if not message or not message.strip():
         frappe.throw(_("A message is required"))
 
-    client = _get_client()
+    client = cloud_client_or_throw()
     try:
         return client.reply_to_ticket(
             user_id=_ar_user(),

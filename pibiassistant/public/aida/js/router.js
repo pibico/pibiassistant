@@ -22,10 +22,6 @@ export function parse(pathname) {
   return { name: "chat", sessionId: null, canonical: CHAT_PATH };
 }
 
-export function current() {
-  return route;
-}
-
 export function onRoute(fn) {
   listeners.add(fn);
   return () => listeners.delete(fn);

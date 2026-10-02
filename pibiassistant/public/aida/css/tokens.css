@@ -13,7 +13,6 @@
   --aida-accent-hover: #365F8A;
   --aida-accent-soft: #D6E8F5;
   --aida-on-accent: #FFFFFF;
-  --aida-gold: #4682B4;
   --aida-gold-soft: #D6E8F5;
   --aida-success: #1E7A52;
   --aida-warning: #8F5C0A;
@@ -52,13 +51,10 @@
   --aida-s-4: 16px;
   --aida-s-6: 24px;
   --aida-s-8: 32px;
-  --aida-s-12: 48px;
 
   --aida-r-sm: 6px;
   --aida-r-md: 8px;
-  --aida-r-lg: 10px;
   --aida-r-xl: 12px;
-  --aida-r-2xl: 12px;
   --aida-r-pill: 999px;
   --aida-r-circle: 50%;
 
@@ -68,7 +64,6 @@
   --aida-welcome-width: 840px;
   --aida-read-pad-x: 24px;
   --aida-turn-gap: 10px;
-  --aida-turn-gap-y: 4px;
   --aida-avatar-ai: 36px;
   --aida-avatar-user: 32px;
   --aida-avatar-hero: 96px;
@@ -119,7 +114,6 @@
   --aida-accent-hover: #8CC0EA;
       --aida-accent-soft: rgba(106,171,224,.16);
       --aida-on-accent: #FFFFFF;
-      --aida-gold: #6AABE0;
       --aida-gold-soft: rgba(106,171,224,.16);
       --aida-success: #4FB585;
       --aida-warning: #D6A14A;
@@ -152,7 +146,6 @@
   --aida-accent-hover: #8CC0EA;
   --aida-accent-soft: rgba(106,171,224,.16);
   --aida-on-accent: #FFFFFF;
-  --aida-gold: #6AABE0;
   --aida-gold-soft: rgba(106,171,224,.16);
   --aida-success: #4FB585;
   --aida-warning: #D6A14A;
@@ -167,4 +160,8 @@
   --aida-shadow-pop: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
   --aida-shadow-drawer: var(--pibico-panel-shadow);
   color-scheme: dark;
+}
+
+@media (max-width: 639.98px) {
+  :root { --aida-read-pad-x: 16px; }
 }

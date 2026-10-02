@@ -20,6 +20,8 @@ from typing import Any, Dict, List
 import frappe
 from frappe import _
 
+from pibiassistant.plugins.query_errors import log_failure as _log_failure
+
 from .report_requirements import VALUE_CONSTRAINED_FIELDTYPES, discover_filter_definitions
 
 
@@ -38,6 +40,38 @@ class ReportTools:
     - get_report_columns(): Get report metadata and requirements
     - _validate_filters(): Validate filter values before execution
     """
+
+    @staticmethod
+    def _default_date_filters(filters: Any) -> Dict[str, Any]:
+        """Drop None values and fill from_date/to_date (fiscal year, else last 12 months)."""
+        from frappe.utils import add_months, getdate
+
+        if not isinstance(filters, dict):
+            filters = {}
+        filters = {key: value for key, value in filters.items() if value is not None}
+
+        if not filters.get("from_date") and not filters.get("to_date"):
+            try:
+                fiscal_year = frappe.db.get_value(
+                    "Fiscal Year",
+                    {"disabled": 0},
+                    ["year_start_date", "year_end_date"],
+                    order_by="year_start_date desc",
+                )
+            except Exception:
+                fiscal_year = None
+            if fiscal_year:
+                filters["from_date"] = str(fiscal_year[0])
+                filters["to_date"] = str(fiscal_year[1])
+            else:
+                today = getdate()
+                filters["to_date"] = str(today)
+                filters["from_date"] = str(add_months(today, -12))
+        elif not filters.get("to_date") and filters.get("from_date"):
+            filters["to_date"] = str(getdate())
+        elif not filters.get("from_date") and filters.get("to_date"):
+            filters["from_date"] = str(add_months(getdate(filters["to_date"]), -12))
+        return filters
 
     @staticmethod
     def execute_report(
@@ -94,6 +128,16 @@ class ReportTools:
                 # Extract the final filters that were actually used
                 final_filters = result.pop("_final_filters", effective_filters)
 
+                if result.get("error"):
+                    return {
+                        "success": False,
+                        "report_name": report_name,
+                        "error": result["error"],
+                        "message": result.get("message"),
+                        "suggestion": result.get("suggestion"),
+                        "filters_applied": final_filters,
+                    }
+
                 # Script/Query reports return {'result': [...], 'columns': [...]}
                 raw_data = result.get("result", [])
                 columns = result.get("columns", [])
@@ -139,8 +183,8 @@ class ReportTools:
             return debug_info
 
         except Exception as e:
-            frappe.log_error(f"assistant Execute Report Error: {str(e)}")
-            return {"success": False, "error": str(e)}
+            _log_failure("Report Execute Error", e)
+            return {"success": False, "error": str(e)[:2000]}
 
     @staticmethod
     def list_reports(module: str = None, report_type: str = None) -> Dict[str, Any]:
@@ -173,8 +217,8 @@ class ReportTools:
             }
 
         except Exception as e:
-            frappe.log_error(f"assistant List Reports Error: {str(e)}")
-            return {"success": False, "error": str(e)}
+            _log_failure("Report List Error", e)
+            return {"success": False, "error": str(e)[:2000]}
 
     @staticmethod
     def get_report_columns(report_name: str) -> Dict[str, Any]:
@@ -204,8 +248,8 @@ class ReportTools:
                                 report_doc, {"company": default_company}, get_columns_only=True
                             )
                             columns = result.get("columns", [])
-                    except Exception:
-                        frappe.log_error(f"Error getting columns from query report: {str(e)}")
+                    except Exception as e:
+                        _log_failure("Report Columns Error", e)
                         # Return basic info if column extraction fails
                         columns = [
                             {
@@ -240,8 +284,20 @@ class ReportTools:
             return result
 
         except Exception as e:
-            frappe.log_error(f"assistant Get Report Columns Error: {str(e)}")
-            return {"success": False, "error": str(e)}
+            _log_failure("Report Columns Error", e)
+            return {"success": False, "error": str(e)[:2000]}
+
+    @staticmethod
+    def _as_check(value) -> int:
+        if isinstance(value, str):
+            return 0 if value.strip().lower() in ("", "0", "false", "no") else 1
+        return 1 if value else 0
+
+    @staticmethod
+    def _empty_result_message(result):
+        if result.get("result"):
+            return None
+        return _("The report ran and returned no rows for these filters.")
 
     @staticmethod
     def _handle_prepared_report_execution(report_doc, filters):
@@ -270,13 +326,13 @@ class ReportTools:
                 # Found existing prepared report - retrieve cached data
                 result = get_prepared_report_result(report_doc, filters, dn=prepared_report_name)
 
-                if result and result.get("result"):
-                    # Successfully retrieved cached data
+                if result and "result" in result:
+                    # Successfully retrieved cached data (an empty result is still a result)
                     prepared_doc = result.get("doc")
                     return {
                         "result": result.get("result", []),
                         "columns": result.get("columns", []),
-                        "message": result.get("message"),
+                        "message": result.get("message") or ReportTools._empty_result_message(result),
                         "prepared_report": True,
                         "source": "cached",
                         "prepared_report_name": prepared_report_name,
@@ -308,7 +364,7 @@ class ReportTools:
                         }
                 except Exception as e:
                     # Quick execution failed, fall through to background job
-                    frappe.log_error(f"Quick execution failed for {report_doc.name}: {str(e)}")
+                    _log_failure("Report Quick Execution Error", e)
 
             # ===== Queue and WAIT for completion with polling =====
 
@@ -336,11 +392,11 @@ class ReportTools:
                     # Report is ready! Retrieve and return data
                     result = get_prepared_report_result(report_doc, filters, dn=prepared_report_name)
 
-                    if result and result.get("result"):
+                    if result and "result" in result:
                         return {
                             "result": result.get("result", []),
                             "columns": result.get("columns", []),
-                            "message": result.get("message"),
+                            "message": result.get("message") or ReportTools._empty_result_message(result),
                             "prepared_report": True,
                             "source": "background_job_completed",
                             "prepared_report_name": prepared_report_name,
@@ -377,7 +433,7 @@ class ReportTools:
             }
 
         except Exception as e:
-            frappe.log_error(f"Prepared report handling error for {report_doc.name}: {str(e)}")
+            _log_failure("Prepared Report Error", e)
             raise e
 
     @staticmethod
@@ -396,49 +452,7 @@ class ReportTools:
             if not filters:
                 filters = {}
 
-            # Clean any None values from filters that could cause startswith errors
-            cleaned_filters = {}
-            for key, value in filters.items():
-                if value is not None:
-                    cleaned_filters[key] = value
-            filters = cleaned_filters
-
-            # Add default date filters if missing - use current fiscal year dates
-            if not filters.get("from_date") and not filters.get("to_date"):
-                try:
-                    # Get current fiscal year
-                    fiscal_year = frappe.db.get_value(
-                        "Fiscal Year",
-                        {"disabled": 0},
-                        ["year_start_date", "year_end_date"],
-                        order_by="year_start_date desc",
-                    )
-
-                    if fiscal_year:
-                        filters["from_date"] = str(fiscal_year[0])  # Fiscal year start
-                        filters["to_date"] = str(fiscal_year[1])  # Fiscal year end
-                    else:
-                        # Fallback to last 12 months if no fiscal year found
-                        from frappe.utils import add_months, getdate
-
-                        today = getdate()
-                        filters["to_date"] = str(today)
-                        filters["from_date"] = str(add_months(today, -12))
-                except Exception:
-                    # Fallback to last 12 months on any error
-                    from frappe.utils import add_months, getdate
-
-                    today = getdate()
-                    filters["to_date"] = str(today)
-                    filters["from_date"] = str(add_months(today, -12))
-            elif not filters.get("to_date") and filters.get("from_date"):
-                from frappe.utils import getdate
-
-                filters["to_date"] = str(getdate())
-            elif not filters.get("from_date") and filters.get("to_date"):
-                from frappe.utils import add_months, getdate
-
-                filters["from_date"] = str(add_months(getdate(filters["to_date"]), -12))
+            filters = ReportTools._default_date_filters(filters)
 
             # Add company filter if required and not provided
             if "company" not in filters and frappe.db.exists("Company"):
@@ -507,49 +521,7 @@ class ReportTools:
             if not isinstance(filters, dict):
                 filters = {}
 
-            # Clean any None values from filters that could cause startswith errors
-            cleaned_filters = {}
-            for key, value in filters.items():
-                if value is not None:
-                    cleaned_filters[key] = value
-            filters = cleaned_filters
-
-            # Add default date filters if missing - use current fiscal year dates
-            if not filters.get("from_date") and not filters.get("to_date"):
-                try:
-                    # Get current fiscal year
-                    fiscal_year = frappe.db.get_value(
-                        "Fiscal Year",
-                        {"disabled": 0},
-                        ["year_start_date", "year_end_date"],
-                        order_by="year_start_date desc",
-                    )
-
-                    if fiscal_year:
-                        filters["from_date"] = str(fiscal_year[0])  # Fiscal year start
-                        filters["to_date"] = str(fiscal_year[1])  # Fiscal year end
-                    else:
-                        # Fallback to last 12 months if no fiscal year found
-                        from frappe.utils import add_months, getdate
-
-                        today = getdate()
-                        filters["to_date"] = str(today)
-                        filters["from_date"] = str(add_months(today, -12))
-                except Exception:
-                    # Fallback to last 12 months on any error
-                    from frappe.utils import add_months, getdate
-
-                    today = getdate()
-                    filters["to_date"] = str(today)
-                    filters["from_date"] = str(add_months(today, -12))
-            elif not filters.get("to_date") and filters.get("from_date"):
-                from frappe.utils import getdate
-
-                filters["to_date"] = str(getdate())
-            elif not filters.get("from_date") and filters.get("to_date"):
-                from frappe.utils import add_months, getdate
-
-                filters["from_date"] = str(add_months(getdate(filters["to_date"]), -12))
+            filters = ReportTools._default_date_filters(filters)
 
             # For Accounts Receivable Summary, ensure company is set
             if report_doc.name == "Accounts Receivable Summary" and not filters.get("company"):
@@ -602,10 +574,14 @@ class ReportTools:
             return result
 
         except Exception as e:
-            frappe.log_error(f"Script report execution error for {report_doc.name}: {str(e)}")
-
             # Provide helpful error messages for common issues
             error_message = str(e)
+            missing_filters = "'NoneType' object has no attribute 'startswith'" in error_message or (
+                "required" in error_message.lower()
+                and any(word in error_message.lower() for word in ["filter", "field", "parameter"])
+            )
+            if not missing_filters:
+                _log_failure("Script Report Error", e)
             if "'NoneType' object has no attribute 'startswith'" in error_message:
                 error_message = f"Missing required filters for {report_doc.name}. This report requires mandatory filters that were not provided. Use the report_requirements tool to discover required filters."
                 if "sales_analytics" in report_doc.name.lower():
@@ -722,10 +698,7 @@ class ReportTools:
         try:
             return discover_filter_definitions(report_doc)
         except Exception as e:
-            frappe.log_error(
-                title=_("Report Filter Discovery Error"),
-                message=f"Error discovering filters for {report_doc.name}: {str(e)}",
-            )
+            _log_failure("Report Filter Discovery Error", e)
             return {}
 
     @staticmethod
@@ -761,6 +734,11 @@ class ReportTools:
 
             for fieldname, definition in definitions.items():
                 default = definition.get("default")
+                if definition.get("fieldtype") == "Check":
+                    # "0" is a truthy string; reports test checkboxes by truthiness.
+                    given = filters.get(fieldname)
+                    filters[fieldname] = ReportTools._as_check(given if given is not None else default)
+                    continue
                 if default in (None, ""):
                     continue
                 # Never override a value the caller supplied.
@@ -770,6 +748,6 @@ class ReportTools:
 
         except Exception as e:
             # Log error but don't fail the report execution
-            frappe.log_error(f"Error applying filter defaults for {report_doc.name}: {str(e)}")
+            _log_failure("Report Filter Defaults Error", e)
 
         return filters

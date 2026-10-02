@@ -1,14 +1,10 @@
 # pibiAssistant — Repository Documentation
 
-> **User documentation has moved to [docs.assistantcore.cloud](https://docs.assistantcore.cloud).**
->
-> If you're installing FAC, configuring OAuth, calling the MCP API, or looking for the tool reference, start there.
-
 ## What lives in this folder
 
-This directory contains documentation that ships **with the code** — either because contributors editing FAC need it close at hand, or because the docs *are* the artefact (the bundled skill markdowns).
+This directory contains documentation that ships **with the code** — either because contributors editing pibiAssistant need it close at hand, or because the docs *are* the artefact (the bundled skill markdowns).
 
-### Development guides — for people editing FAC
+### Development guides — for people editing pibiAssistant
 
 - **[DEVELOPMENT_GUIDE.md](development/DEVELOPMENT_GUIDE.md)** — local dev setup, code style, debugging
 - **[PLUGIN_DEVELOPMENT.md](development/PLUGIN_DEVELOPMENT.md)** — write an internal plugin
@@ -29,13 +25,10 @@ These files live in the repo (not on the docs site) because they are versioned a
 
 | You want to… | Go to |
 |---|---|
-| Install FAC | [docs.assistantcore.cloud/getting-started/installation](https://docs.assistantcore.cloud/getting-started/installation) |
-| Connect Claude Desktop / ChatGPT | [Quick Start](https://docs.assistantcore.cloud/getting-started/quick-start) |
-| Configure OAuth | [OAuth Setup Guide](https://docs.assistantcore.cloud/getting-started/oauth/setup-guide) |
-| Browse the tool catalogue | [Tool Reference](https://docs.assistantcore.cloud/api/tool-reference) |
-| Read release notes | [Changelog](https://docs.assistantcore.cloud/reference/changelog) |
-| Report a bug or request a feature | [GitHub Issues](https://github.com/buildswithpaul/Frappe_Assistant_Core/issues) |
-| Sponsor ongoing development | [GitHub Sponsors](https://github.com/sponsors/buildswithpaul) |
+| Install pibiAssistant | [Repository README](../README.md) |
+| Browse the tool catalogue | [`skills/`](skills/) — one markdown per tool |
+| Configure OAuth for browser MCP clients | [OAUTH_CORS_CONFIGURATION.md](development/OAUTH_CORS_CONFIGURATION.md) |
+| Report a bug or request a feature | [GitHub Issues](https://github.com/pibico/pibiassistant/issues) |
 
 ## Contributing
 

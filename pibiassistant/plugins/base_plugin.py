@@ -126,32 +126,6 @@ class BasePlugin(ABC):
         info = self.get_info()
         self.logger.info(_("Plugin {0} disabled successfully").format(info["name"]))
 
-    def on_server_start(self) -> None:
-        """
-        Hook called when server starts with plugin enabled.
-
-        Override to perform startup tasks:
-        - Start background services
-        - Initialize connections
-        - Setup periodic tasks
-        """
-        # Default implementation does nothing
-        # Plugins can override this to perform startup tasks
-        pass
-
-    def on_server_stop(self) -> None:
-        """
-        Hook called when server stops with plugin enabled.
-
-        Override to perform shutdown tasks:
-        - Stop background services
-        - Close connections
-        - Cleanup resources
-        """
-        # Default implementation does nothing
-        # Plugins can override this to perform cleanup tasks
-        pass
-
     def _check_dependencies(self, dependencies: List[str]) -> Tuple[bool, Optional[str]]:
         """
         Helper method to check if dependencies are installed.
@@ -172,29 +146,5 @@ class BasePlugin(ABC):
 
         if missing:
             return False, _("Missing dependencies: {0}").format(", ".join(missing))
-
-        return True, None
-
-    def _check_permissions(self, required_permissions: List[str]) -> Tuple[bool, Optional[str]]:
-        """
-        Helper method to check if current user has required permissions.
-
-        Args:
-            required_permissions: List of DocType names requiring read permission
-
-        Returns:
-            Tuple of (has_permissions, error_message)
-        """
-        if not required_permissions:
-            return True, None
-
-        missing_perms = []
-
-        for perm in required_permissions:
-            if not frappe.has_permission(perm, "read"):
-                missing_perms.append(perm)
-
-        if missing_perms:
-            return False, _("Missing permissions for: {0}").format(", ".join(missing_perms))
 
         return True, None

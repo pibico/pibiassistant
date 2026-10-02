@@ -1,7 +1,7 @@
 import { h } from "../lib/dom.js";
 import { __ } from "../lib/i18n.js";
 import { store } from "../lib/store.js";
-import { loadHistory, retryLast } from "../lib/chat.js";
+import { loadHistory, loadEarlier, retryLast } from "../lib/chat.js";
 import { chatPath } from "../router.js";
 import { icon } from "./icons.js";
 import { createTurn } from "./message.js";
@@ -60,7 +60,9 @@ export function createMessageList() {
   const status = h("div", { class: "aida-status aida-sr-only", role: "status", "aria-live": "polite" });
   const el = h("div", { class: "aida-chat" }, thread, latest, status);
   const stateEl = h("div", { class: "aida-thread__state" });
-  col.append(stateEl);
+  const earlierBtn = h("button", { type: "button", class: "aida-link-btn aida-earlier", onClick: onEarlier }, __("Load earlier messages"));
+  const earlierEl = h("div", { class: "aida-thread__earlier", hidden: true }, earlierBtn);
+  col.append(earlierEl, stateEl);
 
   const turns = new Map();
   let following = true;
@@ -96,6 +98,21 @@ export function createMessageList() {
     updateLatest();
   }
 
+  async function onEarlier() {
+    const before = thread.scrollHeight;
+    const top = thread.scrollTop;
+    following = false;
+    await loadEarlier();
+    thread.scrollTop = top + (thread.scrollHeight - before);
+  }
+
+  function renderEarlier() {
+    const { history, messages } = store.get();
+    earlierEl.hidden = !(history.hasMore && messages.length);
+    earlierBtn.disabled = history.loadingMore;
+    earlierBtn.textContent = history.loadingMore ? __("Loading...") : __("Load earlier messages");
+  }
+
   function renderMessages() {
     const { messages, activeSessionId } = store.get();
     if (activeSessionId !== lastSession) {
@@ -110,7 +127,7 @@ export function createMessageList() {
         turns.delete(key);
       }
     }
-    let ref = col.firstChild;
+    let ref = earlierEl.nextSibling;
     messages.forEach((msg, i) => {
       let entry = turns.get(msg.key);
       if (!entry) {
@@ -125,6 +142,7 @@ export function createMessageList() {
       entry.turn.el.classList.toggle("is-last", i === messages.length - 1);
     });
     renderState();
+    renderEarlier();
     updateLatest();
     if (following) scrollToBottom();
   }
@@ -149,7 +167,7 @@ export function createMessageList() {
   latest.addEventListener("click", jumpLatest);
   document.addEventListener("aida:scroll-bottom", onScrollBottom);
   if (resizer) resizer.observe(col);
-  const unsubscribe = store.subscribe(renderMessages, ["messages", "historyState", "activeSessionId", "streaming"]);
+  const unsubscribe = store.subscribe(renderMessages, ["messages", "historyState", "activeSessionId", "streaming", "history"]);
   const unsubscribeUi = store.subscribe(renderStatus, ["ui"]);
   renderMessages();
   renderStatus();

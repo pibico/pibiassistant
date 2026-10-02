@@ -1,3 +1,5 @@
+import { escapeHtml } from './dom.js';
+
 let converter = null;
 
 export function renderMarkdown(text) {
@@ -17,12 +19,12 @@ export function renderMarkdown(text) {
         }
     }
     if (converter) return converter.makeHtml(text);
-    return `<pre>${frappe.utils.escape_html(text)}</pre>`;
+    return `<pre>${escapeHtml(text)}</pre>`;
 }
 
 export function highlight(text, query) {
     const raw = text || '';
-    const esc = (s) => frappe.utils.escape_html(s);
+    const esc = escapeHtml;
     const needle = String(query || '').trim();
     if (!needle) return esc(raw);
     const re = new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');

@@ -34,18 +34,33 @@ class TestUploadMarksPending(BaseAssistantTest):
             frappe.db.get_value("File", result["file"]["name"], "pa_pending_chat_attachment"), 1
         )
 
+    def _upload_png(self, aida_mode, **kwargs):
+        with (
+            patch(
+                "pibiassistant.pibiassistant_chat.api.settings.access.can_use_pao",
+                return_value={"can_use": True},
+            ),
+            patch("pibiassistant.pibiassistant_chat.api.chat.aida_stream.is_aida_mode", return_value=aida_mode),
+        ):
+            return upload_message_file(
+                file_data=PNG, file_name="shot.png", content_type="image/png", **kwargs
+            )
+
     def test_upload_returns_vision_keys_the_clients_read(self):
         # The Desk widget builds its vision payload off `type` and `format`.
         # Renaming either without updating widget.js silently disables vision.
-        with patch(
-            "pibiassistant.pibiassistant_chat.api.settings.access.can_use_pao",
-            return_value={"can_use": True},
-        ):
-            result = upload_message_file(file_data=PNG, file_name="shot.png", content_type="image/png")
+        result = self._upload_png(aida_mode=True, include_base64=1)
 
         self.assertEqual(result["file"]["type"], "image")
         self.assertEqual(result["file"]["format"], "png")
         self.assertTrue(result["file"]["base64_data"])
+
+    def test_aida_mode_omits_base64_unless_requested(self):
+        self.assertNotIn("base64_data", self._upload_png(aida_mode=True)["file"])
+        self.assertIn("base64_data", self._upload_png(aida_mode=True, include_base64=1)["file"])
+
+    def test_legacy_mode_always_returns_base64(self):
+        self.assertTrue(self._upload_png(aida_mode=False)["file"]["base64_data"])
 
 
 class TestAttachFilesToMessage(BaseAssistantTest):

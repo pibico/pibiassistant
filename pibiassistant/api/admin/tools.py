@@ -16,9 +16,9 @@ def get_tool_configurations() -> dict:
     and role access settings.
     """
     frappe.only_for(["System Manager", "PA Admin"])
-    from pibiassistant.core.tool_registry import get_tool_registry
+    from pibiassistant.core.tool_registry import get_role_access_by_parent, get_tool_registry
     from pibiassistant.utils.plugin_manager import get_plugin_manager
-    from pibiassistant.utils.tool_category_detector import get_category_info
+    from pibiassistant.utils.tool_category_detector import detect_tool_category, get_category_info
 
     try:
         plugin_manager = get_plugin_manager()
@@ -51,6 +51,8 @@ def get_tool_configurations() -> dict:
                 tool_name = config.get("tool_name") or config.get("name")
                 existing_configs[tool_name] = config
 
+        role_access_by_parent = get_role_access_by_parent([c.get("name") for c in existing_configs.values()])
+
         tool_list = []
         for tool_name, tool_info in all_tools.items():
             plugin_enabled = tool_info.plugin_name in enabled_plugins
@@ -58,7 +60,7 @@ def get_tool_configurations() -> dict:
             # Get configuration if exists
             config = existing_configs.get(tool_name, {})
             tool_enabled = config.get("enabled", 1) if config else 1
-            category = config.get("tool_category", "read_write") if config else "read_write"
+            category = config.get("tool_category", "read_write") if config else detect_tool_category(tool_info.instance)
             # Normalize 'dangerous' to 'privileged' for UI consistency
             if category == "dangerous":
                 category = "privileged"
@@ -69,16 +71,7 @@ def get_tool_configurations() -> dict:
             role_access_mode = config.get("role_access_mode", "Allow All") if config else "Allow All"
 
             # Get role access if configured
-            role_access = []
-            if config:
-                try:
-                    role_access = frappe.get_all(
-                        "PA Tool Role Access",
-                        filters={"parent": config.get("name")},
-                        fields=["role", "allow_access"],
-                    )
-                except Exception:
-                    pass
+            role_access = role_access_by_parent.get(config.get("name"), []) if config else []
 
             # Get category display info
             category_info = get_category_info(category)
@@ -111,7 +104,10 @@ def get_tool_configurations() -> dict:
         return {"success": True, "tools": tool_list}
 
     except Exception as e:
-        frappe.log_error(f"Failed to get tool configurations: {str(e)}")
+        frappe.log_error(
+            title="Failed to get tool configurations",
+            message=f"Failed to get tool configurations: {str(e)}",
+        )
         return {"success": False, "error": str(e), "tools": []}
 
 
@@ -143,7 +139,7 @@ def toggle_tool(tool_name: str, enabled: bool):
         all_tools.update(external_tools)
 
         if tool_name not in all_tools:
-            return {"success": False, "message": _(f"Tool '{tool_name}' not found")}
+            return {"success": False, "message": _("Tool '{0}' not found").format(tool_name)}
 
         # Convert enabled to boolean
         enabled = frappe.utils.cint(enabled)
@@ -183,19 +179,38 @@ def toggle_tool(tool_name: str, enabled: bool):
             cache.delete_keys("pa_tool_*")
 
             action = "enabled" if enabled else "disabled"
-            return {"success": True, "message": _(f"Tool '{tool_name}' {action} successfully")}
+            return {"success": True, "message": _("Tool '{0}' {1} successfully").format(tool_name, action)}
 
         except Exception as e:
             frappe.db.rollback_savepoint("toggle_tool")
             raise e
 
     except Exception as e:
-        frappe.log_error(f"Failed to toggle tool '{tool_name}': {str(e)}")
-        return {"success": False, "message": _(f"Error: {str(e)}")}
+        frappe.log_error(
+            title="Failed to toggle tool",
+            message=f"Failed to toggle tool '{tool_name}': {str(e)}",
+        )
+        return {"success": False, "message": _("Error: {0}").format(str(e))}
+
+
+def _parse_json_list(value):
+    """Return (list, None) for a list or JSON-encoded list, else (None, error message)."""
+    if isinstance(value, str):
+        import json
+
+        try:
+            value = json.loads(value)
+        except ValueError:
+            return None, _("Invalid JSON list")
+    if value is None:
+        return [], None
+    if not isinstance(value, list):
+        return None, _("Invalid JSON list")
+    return value, None
 
 
 @frappe.whitelist(methods=["POST"])
-def bulk_toggle_tools(tool_names: list, enabled: bool):
+def bulk_toggle_tools(tool_names: list | str, enabled: bool):
     """
     Enable or disable multiple tools at once.
 
@@ -207,10 +222,9 @@ def bulk_toggle_tools(tool_names: list, enabled: bool):
         Success status with details
     """
     frappe.only_for(["System Manager", "PA Admin"])
-    if isinstance(tool_names, str):
-        import json
-
-        tool_names = json.loads(tool_names)
+    tool_names, error = _parse_json_list(tool_names)
+    if error:
+        return {"success": False, "toggled": [], "failed": [], "message": error}
 
     results = {"success": True, "toggled": [], "failed": []}
 
@@ -223,12 +237,40 @@ def bulk_toggle_tools(tool_names: list, enabled: bool):
 
     if results["failed"]:
         results["success"] = False
-        results["message"] = _(f"Failed to toggle {len(results['failed'])} tools")
+        results["message"] = _("Failed to toggle {0} tools").format(len(results['failed']))
     else:
         action = "enabled" if enabled else "disabled"
-        results["message"] = _(f"Successfully {action} {len(results['toggled'])} tools")
+        results["message"] = _("Successfully {0} {1} tools").format(action, len(results['toggled']))
 
     return results
+
+
+def _matching_tool_names(category: str = None, plugin_name: str = None) -> list:
+    """Names of discovered tools matching category/plugin, with or without a configuration row."""
+    from pibiassistant.core.tool_registry import get_tool_registry
+    from pibiassistant.utils.plugin_manager import get_plugin_manager
+    from pibiassistant.utils.tool_category_detector import detect_tool_category
+
+    all_tools = dict(get_plugin_manager().get_all_tools())
+    all_tools.update(get_tool_registry()._get_external_tools())
+
+    configured = {}
+    if frappe.db.table_exists("PA Tool Configuration"):
+        for row in frappe.get_all("PA Tool Configuration", fields=["tool_name", "name", "tool_category"]):
+            configured[row.get("tool_name") or row.get("name")] = row.get("tool_category")
+
+    names = []
+    for tool_name, tool_info in all_tools.items():
+        if plugin_name and tool_info.plugin_name != plugin_name:
+            continue
+        if category:
+            tool_category = configured.get(tool_name) or detect_tool_category(tool_info.instance)
+            if tool_category == "dangerous":
+                tool_category = "privileged"
+            if tool_category != category:
+                continue
+        names.append(tool_name)
+    return sorted(names)
 
 
 @frappe.whitelist(methods=["POST"])
@@ -255,24 +297,15 @@ def bulk_toggle_tools_by_category(category: str = None, enabled: bool = True, pl
     if category and category not in valid_categories:
         return {
             "success": False,
-            "message": _(f"Invalid category. Must be one of: {', '.join(valid_categories)}"),
+            "message": _("Invalid category. Must be one of: {0}").format(', '.join(valid_categories)),
         }
 
-    # Build filters for query
-    filters = {}
-    if category:
-        filters["tool_category"] = category
-    if plugin_name:
-        filters["plugin_name"] = plugin_name
-
-    # Get matching tools from PA Tool Configuration
+    # Target set comes from the discovered tools, not only from PA Tool Configuration
+    # rows: tools never toggled before have no row yet (toggle_tool creates it).
     try:
-        if filters:
-            tool_names = frappe.get_all("PA Tool Configuration", filters=filters, pluck="tool_name")
-        else:
-            tool_names = frappe.get_all("PA Tool Configuration", pluck="tool_name")
+        tool_names = _matching_tool_names(category, plugin_name)
     except Exception as e:
-        return {"success": False, "message": _(f"Error querying tools: {str(e)}")}
+        return {"success": False, "message": _("Error querying tools: {0}").format(str(e))}
 
     if not tool_names:
         filter_desc = []
@@ -286,7 +319,7 @@ def bulk_toggle_tools_by_category(category: str = None, enabled: bool = True, pl
             "toggled": [],
             "failed": [],
             "total": 0,
-            "message": _(f"No tools found matching {filter_str}"),
+            "message": _("No tools found matching {0}").format(filter_str),
         }
 
     # Toggle each tool
@@ -302,7 +335,7 @@ def bulk_toggle_tools_by_category(category: str = None, enabled: bool = True, pl
     # Set overall status and message
     if results["failed"]:
         results["success"] = len(results["toggled"]) > 0  # Partial success
-        results["message"] = _(f"{len(results['toggled'])} tools toggled, {len(results['failed'])} failed")
+        results["message"] = _("{0} tools toggled, {1} failed").format(len(results['toggled']), len(results['failed']))
     else:
         action = "enabled" if enabled else "disabled"
         filter_desc = []
@@ -311,7 +344,7 @@ def bulk_toggle_tools_by_category(category: str = None, enabled: bool = True, pl
         if plugin_name:
             filter_desc.append(f"in '{plugin_name}'")
         filter_str = " ".join(filter_desc) if filter_desc else ""
-        results["message"] = _(f"Successfully {action} {len(results['toggled'])} {filter_str} tools")
+        results["message"] = _("Successfully {0} {1} {2} tools").format(action, len(results['toggled']), filter_str)
 
     return results
 
@@ -340,7 +373,7 @@ def update_tool_category(tool_name: str, category: str, override: bool = True):
     if category == "dangerous":
         category = "privileged"
     if category not in valid_categories:
-        return {"success": False, "message": _(f"Invalid category. Must be one of: {valid_categories}")}
+        return {"success": False, "message": _("Invalid category. Must be one of: {0}").format(valid_categories)}
 
     try:
         # Validate tool exists
@@ -353,7 +386,7 @@ def update_tool_category(tool_name: str, category: str, override: bool = True):
         all_tools.update(external_tools)
 
         if tool_name not in all_tools:
-            return {"success": False, "message": _(f"Tool '{tool_name}' not found")}
+            return {"success": False, "message": _("Tool '{0}' not found").format(tool_name)}
 
         # Get or create tool configuration
         if frappe.db.exists("PA Tool Configuration", tool_name):
@@ -380,11 +413,14 @@ def update_tool_category(tool_name: str, category: str, override: bool = True):
         # Clear caches
         tool_registry.clear_cache()
 
-        return {"success": True, "message": _(f"Tool '{tool_name}' category updated to '{category}'")}
+        return {"success": True, "message": _("Tool '{0}' category updated to '{1}'").format(tool_name, category)}
 
     except Exception as e:
-        frappe.log_error(f"Failed to update tool category for '{tool_name}': {str(e)}")
-        return {"success": False, "message": _(f"Error: {str(e)}")}
+        frappe.log_error(
+            title="Failed to update tool category",
+            message=f"Failed to update tool category for '{tool_name}': {str(e)}",
+        )
+        return {"success": False, "message": _("Error: {0}").format(str(e))}
 
 
 @frappe.whitelist(methods=["POST"])
@@ -407,12 +443,14 @@ def update_tool_role_access(tool_name: str, role_access_mode: str, roles: list |
 
     valid_modes = ["Allow All", "Restrict to Listed Roles"]
     if role_access_mode not in valid_modes:
-        return {"success": False, "message": _(f"Invalid mode. Must be one of: {valid_modes}")}
+        return {"success": False, "message": _("Invalid mode. Must be one of: {0}").format(valid_modes)}
 
-    if isinstance(roles, str):
-        import json
+    roles, error = _parse_json_list(roles)
+    if error:
+        return {"success": False, "message": error}
 
-        roles = json.loads(roles)
+    if role_access_mode == "Restrict to Listed Roles" and not roles:
+        return {"success": False, "message": _("Select at least one role to restrict access to")}
 
     try:
         # Validate tool exists
@@ -425,7 +463,7 @@ def update_tool_role_access(tool_name: str, role_access_mode: str, roles: list |
         all_tools.update(external_tools)
 
         if tool_name not in all_tools:
-            return {"success": False, "message": _(f"Tool '{tool_name}' not found")}
+            return {"success": False, "message": _("Tool '{0}' not found").format(tool_name)}
 
         # Get or create tool configuration
         if frappe.db.exists("PA Tool Configuration", tool_name):
@@ -447,8 +485,7 @@ def update_tool_role_access(tool_name: str, role_access_mode: str, roles: list |
         config.role_access_mode = role_access_mode
 
         # Update role access table if in restricted mode
-        if role_access_mode == "Restrict to Listed Roles" and roles:
-            # Clear existing role access
+        if role_access_mode == "Restrict to Listed Roles":
             config.role_access = []
 
             # Add new role access entries
@@ -465,11 +502,14 @@ def update_tool_role_access(tool_name: str, role_access_mode: str, roles: list |
         # Clear caches
         tool_registry.clear_cache()
 
-        return {"success": True, "message": _(f"Tool '{tool_name}' role access updated")}
+        return {"success": True, "message": _("Tool '{0}' role access updated").format(tool_name)}
 
     except Exception as e:
-        frappe.log_error(f"Failed to update tool role access for '{tool_name}': {str(e)}")
-        return {"success": False, "message": _(f"Error: {str(e)}")}
+        frappe.log_error(
+            title="Failed to update tool role access",
+            message=f"Failed to update tool role access for '{tool_name}': {str(e)}",
+        )
+        return {"success": False, "message": _("Error: {0}").format(str(e))}
 
 
 @frappe.whitelist()
@@ -498,5 +538,8 @@ def get_available_roles() -> dict:
         return {"success": True, "roles": roles}
 
     except Exception as e:
-        frappe.log_error(f"Failed to get available roles: {str(e)}")
+        frappe.log_error(
+            title="Failed to get available roles",
+            message=f"Failed to get available roles: {str(e)}",
+        )
         return {"success": False, "error": str(e), "roles": []}

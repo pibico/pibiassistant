@@ -39,9 +39,8 @@
 .aida-mic:disabled { cursor: not-allowed; }
 .aida-mic.is-recording { background: var(--aida-danger-fill); color: var(--aida-on-accent); padding: 0 10px; animation: aida-mic-pulse 1.2s ease-out infinite; }
 .aida-mic__time { font-size: var(--aida-fs-sm); font-weight: 600; }
-.aida-mic.is-transcribing .aida-mic__icon { opacity: .5; animation: aida-mic-spin 1s linear infinite; }
+.aida-mic.is-transcribing .aida-mic__icon { opacity: .5; animation: aida-spin 1s linear infinite; }
 @keyframes aida-mic-pulse { 0% { box-shadow: 0 0 0 0 var(--aida-danger-soft); } 100% { box-shadow: 0 0 0 8px transparent; } }
-@keyframes aida-mic-spin { to { transform: rotate(360deg); } }
 
 .aida-composer__counter { font-size: var(--aida-fs-xs); color: var(--aida-text-muted); }
 .aida-composer__counter.is-over { color: var(--aida-danger); font-weight: 600; }
@@ -82,7 +81,6 @@
   background: transparent; color: var(--aida-text-muted); cursor: pointer;
 }
 .aida-chip__remove:hover { background: var(--aida-danger-soft); color: var(--aida-danger); }
-.aida-chip__remove::after { content: ""; position: absolute; left: 50%; top: 50%; width: var(--aida-hit); height: var(--aida-hit); transform: translate(-50%, -50%); }
 
 .aida-model { position: relative; min-width: 0; }
 .aida-model__trigger {
@@ -152,6 +150,36 @@
 }
 .aida-tile__sub { font-size: var(--aida-fs-xs); color: var(--aida-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+/* Slash prompt picker */
+.aida-slash {
+  position: absolute; left: 0; right: 0; bottom: 100%; z-index: var(--aida-z-popover);
+  max-height: min(320px, 50dvh); margin-bottom: var(--aida-s-2); overflow-y: auto; overscroll-behavior: contain;
+  background: var(--aida-surface); border-radius: var(--aida-r-xl); box-shadow: var(--aida-shadow-pop);
+}
+.aida-slash[hidden] { display: none; }
+.aida-slash__list { padding: var(--aida-s-1); }
+.aida-slash__row {
+  display: flex; align-items: center; gap: var(--aida-s-3); min-height: 36px; padding: var(--pad-y-md) var(--aida-s-3);
+  border-radius: var(--aida-r-md); cursor: pointer;
+}
+.aida-slash__row[aria-selected="true"], .aida-slash__row:hover { background: var(--aida-accent-soft); }
+.aida-slash__icon { display: inline-flex; flex: none; color: var(--aida-accent-hover); }
+.aida-slash__text { display: flex; flex-direction: column; min-width: 0; }
+.aida-slash__title { font: 500 var(--aida-fs-base)/var(--aida-lh) var(--aida-font-heading); color: var(--aida-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aida-slash__desc { font-size: var(--aida-fs-xs); line-height: var(--aida-lh-read); color: var(--aida-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aida-slash__empty { margin: 0; padding: var(--aida-s-3); font-size: var(--aida-fs-sm); color: var(--aida-text-muted); }
+.aida-template-form { display: flex; flex-direction: column; gap: var(--aida-s-3); }
+.aida-field { display: flex; flex-direction: column; gap: var(--aida-s-1); }
+.aida-field__label { font: 500 var(--aida-fs-base)/var(--aida-lh) var(--aida-font-heading); }
+.aida-field__hint { margin: 0; font-size: var(--aida-fs-xs); line-height: var(--aida-lh-read); color: var(--aida-text-muted); }
+.aida-field__input {
+  box-sizing: border-box; width: 100%; min-height: 36px; padding: var(--pad-y-lg) var(--aida-s-3);
+  font: inherit; font-family: var(--aida-font-sans); color: var(--aida-text); background: var(--aida-surface);
+  border: 0; border-radius: var(--aida-r-md); box-shadow: inset 0 0 0 1.5px var(--aida-border-hover);
+}
+.aida-field__input:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--aida-accent); }
+.aida-template-form__actions { display: flex; justify-content: flex-end; gap: var(--aida-s-2); }
+
 @media (max-width: 767.98px) { .aida-composer__input { font-size: var(--aida-fs-prompt); } }
 @media (max-width: 720px) { .aida-tiles__grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 640px) {
@@ -168,6 +196,8 @@
 }
 @media (pointer: coarse) {
   .aida-composer__input { min-height: var(--aida-hit); }
+  .aida-slash__row, .aida-field__input, .aida-template-form__actions .aida-btn { min-height: var(--aida-hit); }
+  .aida-composer__btn, .aida-mic, .aida-composer__send { min-width: var(--aida-hit); min-height: var(--aida-hit); }
 }
 @media (prefers-reduced-motion: reduce) {
   .aida-mic.is-recording { animation: none; box-shadow: 0 0 0 3px var(--aida-danger-soft); }

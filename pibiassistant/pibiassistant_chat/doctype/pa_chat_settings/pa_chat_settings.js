@@ -73,6 +73,12 @@ frappe.ui.form.on("PA Chat Settings", {
 		);
 		frm.dashboard.add_indicator(__("AIDA mode: connected to api.espib.co"), "green");
 		frm.set_intro(__("AIDA is connected to its own API services. No registration is required."), "blue");
+		// Every field of the first tab is hidden above; do not leave the user on an empty tab.
+		const tabs = (frm.layout && frm.layout.tabs) || [];
+		if (tabs.length > 1 && tabs[0].hide) {
+			tabs[0].hide();
+			tabs[1].set_active();
+		}
 	},
 
 	render_cloud_mode(frm) {

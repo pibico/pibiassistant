@@ -30,6 +30,8 @@
   padding-inline: calc(var(--aida-read-pad-x) + var(--aida-safe-left)) calc(var(--aida-read-pad-x) + var(--aida-safe-right));
 }
 .aida-thread__state:empty { display: none; }
+.aida-thread__earlier { display: flex; justify-content: center; padding: var(--aida-s-2) 0; }
+.aida-thread__earlier[hidden] { display: none; }
 
 /* Turns */
 .aida-turn {

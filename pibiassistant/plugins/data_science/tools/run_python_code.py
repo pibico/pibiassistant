@@ -128,10 +128,10 @@ PRE-LOADED: pd, np, frappe, math, datetime, json, re, statistics, random"""
         library_warnings = []
         if not self.library_status.get("pandas"):
             library_warnings.append(
-                "⚠️  pandas NOT available - use tools.generate_report() or frappe.get_all() instead"
+                "pandas NOT available - use tools.generate_report() or frappe.get_all() instead"
             )
         if not self.library_status.get("numpy"):
-            library_warnings.append("⚠️  numpy NOT available - use math/statistics modules")
+            library_warnings.append("numpy NOT available - use math/statistics modules")
 
         if library_warnings:
             base_description += "\n\n" + "\n".join(library_warnings)
@@ -403,20 +403,12 @@ PRE-LOADED: pd, np, frappe, math, datetime, json, re, statistics, random"""
         return result
 
     def _preprocess_code_for_common_errors(self, code: str) -> Dict[str, Any]:
-        """Auto-fix common pandas/numpy errors before execution"""
+        """Light, syntax-safe code hints. Rewriting user code with regexes also rewrites string literals and
+        list indexing, so only the pd.concat ignore_index default and a chained-indexing warning remain."""
         import re
 
         fixes_applied = []
         original_code = code
-
-        # Fix 1: Replace deprecated df.append() with pd.concat()
-        # Pattern: df = df.append(...) -> df = pd.concat([df, ...], ignore_index=True)
-        append_pattern = r"(\w+)\s*=\s*\1\.append\s*\(([^)]+)\)"
-        if re.search(append_pattern, code):
-            code = re.sub(append_pattern, r"\1 = pd.concat([\1, \2], ignore_index=True)", code)
-            if code != original_code:
-                fixes_applied.append("✓ Replaced deprecated df.append() with pd.concat()")
-                original_code = code
 
         # Fix 2: Add ignore_index=True to pd.concat if missing
         concat_pattern = r"pd\.concat\s*\(\s*\[([^\]]+)\]\s*\)"
@@ -428,31 +420,9 @@ PRE-LOADED: pd, np, frappe, math, datetime, json, re, statistics, random"""
                 new_match = full_match[:-1] + ", ignore_index=True)"
                 code = code.replace(full_match, new_match)
                 if code != original_code:
-                    fixes_applied.append("✓ Added ignore_index=True to pd.concat()")
+                    fixes_applied.append(_("Added ignore_index=True to pd.concat()"))
                     original_code = code
                     break  # Only fix first occurrence to avoid issues
-
-        # Fix 3: Replace inplace=True with explicit assignment (safer)
-        # Pattern: df.sort_values(..., inplace=True) -> df = df.sort_values(...)
-        inplace_pattern = (
-            r"(\w+)\.(sort_values|drop_duplicates|fillna|reset_index)\(([^)]*inplace\s*=\s*True[^)]*)\)"
-        )
-        if re.search(inplace_pattern, code):
-
-            def replace_inplace(match):
-                var_name = match.group(1)
-                method_name = match.group(2)
-                args = match.group(3)
-                # Remove inplace=True from args
-                args_clean = re.sub(r",?\s*inplace\s*=\s*True,?", "", args)
-                args_clean = args_clean.strip(", ")
-                return f"{var_name} = {var_name}.{method_name}({args_clean})"
-
-            new_code = re.sub(inplace_pattern, replace_inplace, code)
-            if new_code != code:
-                code = new_code
-                fixes_applied.append("✓ Replaced inplace=True with explicit assignment (safer)")
-                original_code = code
 
         # Fix 4: Fix chained indexing df['col'][0] = value -> df.loc[0, 'col'] = value
         # This is complex and risky, so only warn in comments
@@ -461,22 +431,7 @@ PRE-LOADED: pd, np, frappe, math, datetime, json, re, statistics, random"""
             warning = "# Warning: Chained indexing detected - consider using .loc[] instead\n"
             if not code.startswith(warning):
                 code = warning + code
-                fixes_applied.append("ℹ️  Added warning about chained indexing")
-
-        # Fix 5: Auto-add .copy() when slicing DataFrames to avoid SettingWithCopyWarning
-        # Pattern: df2 = df[...] -> df2 = df[...].copy()
-        slice_pattern = r"(\w+)\s*=\s*(\w+)\[([^\]]+)\](?!\s*\.)"
-        if re.search(slice_pattern, code):
-            # Only apply if it looks like a DataFrame slice (not dict or list access)
-            def add_copy(match):
-                if "pd.DataFrame" in code or "data" in match.group(2):
-                    return f"{match.group(1)} = {match.group(2)}[{match.group(3)}].copy()"
-                return match.group(0)
-
-            new_code = re.sub(slice_pattern, add_copy, code)
-            if new_code != code:
-                code = new_code
-                fixes_applied.append("✓ Added .copy() to DataFrame slices to avoid SettingWithCopyWarning")
+                fixes_applied.append(_("Added warning about chained indexing"))
 
         return {"success": True, "code": code, "fixes_applied": fixes_applied}
 
@@ -583,24 +538,24 @@ PRE-LOADED: pd, np, frappe, math, datetime, json, re, statistics, random"""
 
                 removed_note = ""
                 if hit_removed:
-                    removed_note = (
-                        "\n\n🚫 matplotlib, seaborn, plotly, and scipy are NOT available in this sandbox.\n"
-                        "   Plots cannot be rendered back to the caller. For charts, use the dashboard\n"
-                        "   tools (create_dashboard_chart, create_dashboard) instead of plotting libraries."
+                    removed_note = "\n\n" + _(
+                        "matplotlib, seaborn, plotly, and scipy are NOT available in this sandbox. "
+                        "Plots cannot be rendered back to the caller. For charts, use the dashboard "
+                        "tools (create_dashboard_chart, create_dashboard) instead of plotting libraries."
                     )
 
-                error_msg = f"""Import statements detected that are not available or needed:
+                error_msg = f"""{_("Import statements detected that are not available or needed:")}
 
-❌ Problematic imports found:
+{_("Problematic imports found:")}
 {chr(10).join(f"   Line {line_num}: {stmt}" for line_num, stmt in problematic_imports)}
 
-✅ Available pre-loaded libraries (use directly, no imports needed):
+{_("Available pre-loaded libraries (use directly, no imports needed):")}
    • pd (pandas) - Data manipulation
    • np (numpy) - Numerical operations
    • frappe - Frappe API access
    • math, datetime, json, re, random - Standard libraries{removed_note}
 
-💡 Example correct usage:
+{_("Example correct usage:")}
    df = pd.DataFrame({{'A': [1,2,3]}})
    arr = np.array([1,2,3])
    print(df.describe())"""
@@ -772,7 +727,7 @@ PRE-LOADED: pd, np, frappe, math, datetime, json, re, statistics, random"""
             if re.search(pattern, code, re.IGNORECASE | re.MULTILINE):
                 return {
                     "success": False,
-                    "error": f"🚫 Security: {message}",
+                    "error": _("Security: {0}").format(_(message)),
                     "pattern_matched": pattern,
                     "security_violation": True,
                     "output": "",
@@ -845,8 +800,7 @@ PRE-LOADED: pd, np, frappe, math, datetime, json, re, statistics, random"""
                 frappe.logger().error(f"Unicode encoding still failed after cleaning: {str(e)}")
                 return {
                     "success": False,
-                    "error": "🚫 Unicode Error: Code contains characters that cannot be encoded in UTF-8. "
-                    "Please remove or replace non-standard Unicode characters.",
+                    "error": _("Unicode Error: Code contains characters that cannot be encoded in UTF-8. Please remove or replace non-standard Unicode characters."),
                     "output": "",
                     "variables": {},
                     "unicode_error": True,
@@ -867,7 +821,7 @@ PRE-LOADED: pd, np, frappe, math, datetime, json, re, statistics, random"""
             frappe.logger().error(f"Unicode sanitization failed: {str(e)}")
             return {
                 "success": False,
-                "error": f"🚫 Unicode Processing Error: {str(e)}",
+                "error": _("Unicode Processing Error: {0}").format(str(e)),
                 "output": "",
                 "variables": {},
                 "unicode_error": True,

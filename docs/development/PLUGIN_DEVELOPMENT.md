@@ -171,16 +171,6 @@ class MyAwesomePlugin(BasePlugin):
         self._cleanup_awesome_cache()
         self._unregister_awesome_hooks()
 
-    def on_server_start(self) -> None:
-        """Called when server starts with plugin enabled"""
-        # Start background services if needed
-        self._start_awesome_background_service()
-
-    def on_server_stop(self) -> None:
-        """Called when server stops"""
-        # Stop background services
-        self._stop_awesome_background_service()
-
     def _setup_awesome_cache(self):
         """Setup plugin-specific caching"""
         try:
@@ -206,16 +196,6 @@ class MyAwesomePlugin(BasePlugin):
     def _unregister_awesome_hooks(self):
         """Unregister plugin hooks"""
         # Clean up any registered hooks
-        pass
-
-    def _start_awesome_background_service(self):
-        """Start background services"""
-        # Example: Start scheduled jobs
-        pass
-
-    def _stop_awesome_background_service(self):
-        """Stop background services"""
-        # Example: Stop scheduled jobs
         pass
 ```
 
@@ -426,7 +406,7 @@ This plugin provides awesome functionality for pibiAssistant.
    ```
 ````
 
-2. Enable plugin in Assistant Core Settings
+2. Enable plugin in PA Core Settings
 
 ## Usage
 
@@ -559,7 +539,7 @@ def validate_environment(self):
     # Check for other plugins
     plugin_manager = get_plugin_manager()
 
-    if 'data_science' not in plugin_manager.loaded_plugins:
+    if 'data_science' not in plugin_manager.get_enabled_plugins():
         return False, _("Requires Data Science plugin to be enabled")
 
     return super().validate_environment()

@@ -66,7 +66,7 @@ class TestAnalysisTools(BaseAssistantTest):
 
     def test_execute_python_code_basic(self):
         """Test basic Python code execution"""
-        if not self.registry.has_tool("run_python_code"):
+        if not self.registry.get_tool("run_python_code"):
             self.skipTest("run_python_code tool not available")
 
         # Simple, safe code

@@ -55,7 +55,16 @@ test("lists", () => {
   assert.equal(ol.ordered, true);
   assert.equal(ol.start, 3);
   const nested = parse("- a\n  - b\n- c")[0];
-  assert.equal(nested.items.length, 3);
+  assert.equal(nested.items.length, 2);
+  assert.equal(nested.subs[0].type, "list");
+  assert.equal(nested.subs[0].items.length, 1);
+  assert.equal(nested.subs[1], null);
+  const deep = parse("1. one\n   - x\n     - y\n   - z\n2. two")[0];
+  assert.equal(deep.items.length, 2);
+  assert.equal(deep.subs[0].ordered, false);
+  assert.equal(deep.subs[0].items.length, 2);
+  assert.equal(deep.subs[0].subs[0].items.length, 1);
+  assert.equal(parse("- a\n\n  - b\n\n- c")[0].items.length, 2);
   assert.deepEqual(types(parse("intro:\n- a\n- b")), ["paragraph", "list"]);
 });
 

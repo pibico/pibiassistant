@@ -41,6 +41,11 @@ class TestHooksGate(BaseAssistantTest):
         frappe.clear_cache()
         clear_chat_gate_cache()
 
+    def tearDown(self):
+        frappe.clear_cache()
+        clear_chat_gate_cache()
+        super().tearDown()
+
     def test_chat_assets_always_registered(self):
         """Widget JS + CSS must be in hooks regardless of the chat gate.
 
@@ -62,16 +67,16 @@ class TestHooksGate(BaseAssistantTest):
         )
 
     def test_spa_route_always_registered(self):
-        """`/copilot/<path>` must be in website_route_rules unconditionally.
+        """`/aida/<path>` must be in website_route_rules unconditionally.
 
-        The controller (`www/copilot.py`) raises PageDoesNotExistError when
+        The controller (`www/aida.py`) raises PageDoesNotExistError when
         the gate is off, so the route is inert but always present.
         """
         from pibiassistant import hooks
 
         rules = getattr(hooks, "website_route_rules", []) or []
         self.assertTrue(
-            any("copilot" in (r.get("from_route") or "") for r in rules),
+            any("aida" in (r.get("from_route") or "") for r in rules),
             f"AIDA SPA route must always be registered; got: {rules}",
         )
 

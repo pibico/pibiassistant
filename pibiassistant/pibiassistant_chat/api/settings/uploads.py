@@ -9,9 +9,8 @@ Supports two input modes:
 - Base64 JSON payload (mobile app — avoids CSRF issues with FormData)
 """
 
-from __future__ import annotations
-
 import base64
+import binascii
 import os
 
 import frappe
@@ -129,6 +128,7 @@ def upload_message_file(
     file_name: str | None = None,
     content_type: str | None = None,
     is_private: int = 1,
+    include_base64: int = 0,
 ) -> dict:
     """
     Upload a file for AIDA message attachment.
@@ -157,9 +157,12 @@ def upload_message_file(
             mime_type = file.mimetype or ""
         # Path 2: Base64 JSON payload (mobile app — avoids CSRF issues with FormData)
         elif file_data:
-            import base64 as b64
-
-            content = b64.b64decode(file_data)
+            try:
+                if not isinstance(file_data, str):
+                    raise ValueError
+                content = base64.b64decode(file_data)
+            except (binascii.Error, ValueError):
+                frappe.throw(_("The file data is not valid base64."), frappe.ValidationError)
             filename = file_name or "upload"
             mime_type = content_type or ""
         else:
@@ -233,7 +236,13 @@ def upload_message_file(
                 "pa_pending_chat_attachment": 1,
             }
         )
-        file_doc.save(ignore_permissions=True)
+        try:
+            file_doc.save(ignore_permissions=True)
+        except Exception as e:
+            # Frappe scans PDFs for scripts with pypdf, which raises on a truncated or damaged file.
+            if type(e).__module__.startswith("pypdf"):
+                frappe.throw(_("This PDF file is damaged or cannot be read."), frappe.ValidationError)
+            raise
 
         # Determine file type and format
         filename_lower = filename.lower()
@@ -274,9 +283,12 @@ def upload_message_file(
             },
         }
 
-        # For images under 10MB, include base64 for vision API
+        # Only the legacy cloud vision path consumes the base64 copy; AIDA mode never reads it.
+        from ..chat.aida_stream import is_aida_mode
+
         max_vision_size = 10 * 1024 * 1024  # 10MB limit for vision API
-        if is_image and file_size <= max_vision_size:
+        wants_base64 = frappe.utils.cint(include_base64) or not is_aida_mode()
+        if is_image and wants_base64 and file_size <= max_vision_size:
             response["file"]["base64_data"] = base64.b64encode(content).decode("utf-8")
 
         return response
@@ -285,4 +297,4 @@ def upload_message_file(
         raise
     except Exception as e:
         frappe.log_error(title="AIDA File Upload Error", message=f"Error uploading file: {e!s}")
-        frappe.throw(_("Error uploading file: {0}").format(str(e)))
+        frappe.throw(_("Error uploading file. Please try again."))

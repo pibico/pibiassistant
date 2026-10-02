@@ -90,7 +90,7 @@ class assistantServer:
             }
 
         except Exception as e:
-            frappe.log_error(_("Failed to enable MCP API: {0}").format(str(e)))
+            frappe.log_error(title=_("Failed to enable MCP API"), message=str(e))
             return {"success": False, "message": _("Failed to enable MCP API: {0}").format(str(e))}
 
     def disable(self):
@@ -105,7 +105,7 @@ class assistantServer:
             return {"success": True, "message": _("MCP API endpoints disabled")}
 
         except Exception as e:
-            frappe.log_error(_("Failed to disable MCP API: {0}").format(str(e)))
+            frappe.log_error(title=_("Failed to disable MCP API"), message=str(e))
             return {"success": False, "message": _("Failed to disable MCP API: {0}").format(str(e))}
 
     def get_status(self):
@@ -195,19 +195,9 @@ def cleanup_old_logs():
         frappe.logger().info(f"Cleaned up assistant audit logs older than {days_to_keep} days")
 
     except Exception as e:
-        frappe.log_error(f"Failed to cleanup assistant logs: {str(e)}")
+        frappe.log_error(title=_("Failed to cleanup assistant logs"), message=str(e))
 
 
-def update_connection_stats():
-    """Update connection statistics (scheduled task) - DEPRECATED"""
-    # NOTE: This function is deprecated since Assistant Connection Log was removed
-    # Keeping for backward compatibility, but it does nothing
-    pass
-
-
-def start_background_server():
-    """Enable API in background job (legacy)"""
-    return enable_api()
 
 
 def enable_background_api():

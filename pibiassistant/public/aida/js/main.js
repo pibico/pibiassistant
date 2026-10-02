@@ -10,6 +10,8 @@ import { firstNameOf } from "./lib/greeting.js";
 import { documentTitleOf, isValidSessionId } from "./lib/format.js";
 import { initChat, refreshSessions } from "./lib/chat.js";
 import { loadModels } from "./components/model-picker.js";
+import { hasAccess, noAccessMessage } from "./lib/access.js";
+import { logout } from "./lib/api.js";
 import { mountSidebar } from "./components/sidebar.js";
 import { mountTopbar } from "./components/topbar.js";
 import { mountChat } from "./views/chat.js";
@@ -60,6 +62,21 @@ function routeController(viewEl) {
 
 function boot() {
   const root = document.getElementById("aida-root");
+  if (!hasAccess(window)) {
+    document.title = __("AIDA");
+    const logoutBtn = h("button", { type: "button", class: "aida-btn" }, __("Log out"));
+    logoutBtn.addEventListener("click", () => logout());
+    root.append(
+      h(
+        "section",
+        { class: "aida-noaccess", role: "alert" },
+        h("h1", null, __("No access to AIDA")),
+        h("p", null, noAccessMessage()),
+        h("div", { class: "aida-noaccess__actions" }, h("a", { class: "aida-btn", href: "/app" }, __("Go to the Desk")), logoutBtn),
+      ),
+    );
+    return;
+  }
   try {
     preferences.init();
     document.documentElement.lang = getLang();

@@ -36,7 +36,7 @@ Use it for analytics — fetch data, run calculations, and analyse results in a 
 | `statistics` | statistics | ✅ mean, median, stdev |
 | `random` | random | ✅ random, randint, choice |
 | `datetime` | datetime module | ⚠️ Use carefully — see datetime section |
-| `tools` | FAC tools API | ✅ All methods now work — see tools section |
+| `tools` | pibiAssistant tools API | ✅ All methods now work — see tools section |
 
 ### NOT available — these are NOT pre-loaded despite what the tool description says
 
@@ -66,7 +66,7 @@ Use it for analytics — fetch data, run calculations, and analyse results in a 
 
 ## tools.* API — All Working (Tested)
 
-All FAC tool methods now work inside `run_python_code`. Data comes back as plain
+All pibiAssistant tool methods now work inside `run_python_code`. Data comes back as plain
 Python dicts — pass directly to `pd.DataFrame()` with no conversion needed.
 
 ### tools.get_documents() ✅

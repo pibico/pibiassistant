@@ -1,10 +1,9 @@
-import { qs, qsa, setHtml, addClass, removeClass } from '../dom.js';
+import { qs, qsa, setHtml, addClass, removeClass, escapeHtml as esc } from '../dom.js';
 import { call, log } from '../api.js';
 import { state, beginToggle, endToggle } from '../state.js';
 import { loadStats } from './counts.js';
 import { openPanel } from '../panel.js';
 
-const esc = (s) => frappe.utils.escape_html(String(s ?? ''));
 
 export function errorBlockHtml(text) {
 	return `<div role="alert" class="pa-error-block">${esc(text)}</div>`;
@@ -43,7 +42,7 @@ export function cardHtml(cfg, item) {
 			<div class="pa-item-header">
 				<div class="pa-item-title">
 					${title}
-					<span class="pa-status-badge ${esc(statusClass)}">${esc(item.status)}</span>
+					<span class="pa-status-badge ${esc(statusClass)}">${esc(__(item.status || 'Draft'))}</span>
 				</div>
 				<div class="pa-item-actions">
 					<button class="pa-tool-settings-btn ${cfg.actionBtnClass}"

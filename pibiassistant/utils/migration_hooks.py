@@ -21,6 +21,7 @@ This module provides hooks that integrate with Frappe's migration system
 to automatically refresh tool discovery cache when needed.
 """
 
+import os
 from typing import Any, Dict
 
 import frappe
@@ -108,14 +109,13 @@ def after_install():
     try:
         frappe.logger("migration_hooks").info("Initializing tool discovery after app install")
 
-        from pibiassistant.core.enhanced_tool_registry import get_tool_registry
+        from pibiassistant.utils.tool_cache import refresh_tool_cache
 
         # Discover and cache tools
-        registry = get_tool_registry()
-        result = registry.refresh_tools(force=True)
+        result = refresh_tool_cache(force=True)
 
         if result.get("success"):
-            tools_discovered = result.get("tools_discovered", 0)
+            tools_discovered = result.get("stats", {}).get("available_tools", 0)
             frappe.logger("migration_hooks").info(
                 f"Tool discovery initialized: {tools_discovered} tools found"
             )
@@ -280,7 +280,7 @@ def get_migration_status() -> Dict[str, Any]:
         Status dictionary with cache and discovery information
     """
     try:
-        from pibiassistant.core.enhanced_tool_registry import get_tool_registry
+        from pibiassistant.core.tool_registry import get_tool_registry
         from pibiassistant.utils.tool_cache import get_tool_cache
 
         cache = get_tool_cache()
@@ -288,7 +288,7 @@ def get_migration_status() -> Dict[str, Any]:
 
         return {
             "cache_stats": cache.get_cache_stats(),
-            "registry_stats": registry.get_registry_stats(),
+            "registry_stats": registry.get_stats(),
             "migration_hooks_active": True,
         }
 
@@ -384,6 +384,58 @@ def _install_system_prompt_categories():
         frappe.logger("migration_hooks").error(f"Failed to install system prompt categories: {str(e)}")
 
 
+def _prompt_arguments_changed(doc, manifest_args):
+    rows = doc.arguments or []
+    if len(rows) != len(manifest_args):
+        return True
+    return any(row.get(key) != value for row, arg in zip(rows, manifest_args) for key, value in arg.items())
+
+
+def _sync_system_prompt_template(template_data):
+    """Create or update one system template. Returns "created", "updated" or "unchanged"."""
+    prompt_id = template_data.get("prompt_id")
+    existing = frappe.db.get_value("Prompt Template", {"prompt_id": prompt_id, "is_system": 1}, "name")
+
+    if existing:
+        doc = frappe.get_doc("Prompt Template", existing)
+        needs_update = False
+        for field in ["title", "description", "template_content", "rendering_engine", "category"]:
+            if template_data.get(field) is not None and doc.get(field) != template_data.get(field):
+                doc.set(field, template_data.get(field))
+                needs_update = True
+
+        if "arguments" in template_data and _prompt_arguments_changed(doc, template_data["arguments"]):
+            doc.arguments = []
+            for arg_data in template_data["arguments"]:
+                doc.append("arguments", arg_data)
+            needs_update = True
+
+        if not needs_update:
+            return "unchanged"
+        doc.flags.ignore_permissions = True
+        doc.save()
+        frappe.logger("migration_hooks").debug(f"Updated system prompt template: {prompt_id}")
+        return "updated"
+
+    doc = frappe.new_doc("Prompt Template")
+    doc.prompt_id = prompt_id
+    doc.title = template_data.get("title")
+    doc.description = template_data.get("description")
+    doc.status = template_data.get("status", "Published")
+    doc.visibility = template_data.get("visibility", "Public")
+    doc.is_system = 1
+    doc.rendering_engine = template_data.get("rendering_engine", "Jinja2")
+    doc.template_content = template_data.get("template_content")
+    doc.owner_user = "Administrator"
+    doc.category = template_data.get("category")
+    for arg_data in template_data.get("arguments", []):
+        doc.append("arguments", arg_data)
+    doc.flags.ignore_permissions = True
+    doc.insert()
+    frappe.logger("migration_hooks").debug(f"Created system prompt template: {prompt_id}")
+    return "created"
+
+
 def _install_system_prompt_templates():
     """
     Install system prompt templates from fixtures.
@@ -441,59 +493,16 @@ def _install_system_prompt_templates():
         updated_count = 0
 
         for template_data in templates:
-            prompt_id = template_data.get("prompt_id")
-
-            # Check if system template already exists
-            existing = frappe.db.get_value(
-                "Prompt Template", {"prompt_id": prompt_id, "is_system": 1}, "name"
-            )
-
-            if existing:
-                # Update existing system template
-                doc = frappe.get_doc("Prompt Template", existing)
-
-                # Only update if content has changed
-                needs_update = False
-                for field in ["title", "description", "template_content", "rendering_engine", "category"]:
-                    if template_data.get(field) is not None and doc.get(field) != template_data.get(field):
-                        doc.set(field, template_data.get(field))
-                        needs_update = True
-
-                # Update arguments if changed
-                if "arguments" in template_data:
-                    # Clear and recreate arguments
-                    doc.arguments = []
-                    for arg_data in template_data["arguments"]:
-                        doc.append("arguments", arg_data)
-                    needs_update = True
-
-                if needs_update:
-                    doc.flags.ignore_permissions = True
-                    doc.save()
-                    updated_count += 1
-                    frappe.logger("migration_hooks").debug(f"Updated system prompt template: {prompt_id}")
-            else:
-                # Create new system template
-                doc = frappe.new_doc("Prompt Template")
-                doc.prompt_id = prompt_id
-                doc.title = template_data.get("title")
-                doc.description = template_data.get("description")
-                doc.status = template_data.get("status", "Published")
-                doc.visibility = template_data.get("visibility", "Public")
-                doc.is_system = 1
-                doc.rendering_engine = template_data.get("rendering_engine", "Jinja2")
-                doc.template_content = template_data.get("template_content")
-                doc.owner_user = "Administrator"
-                doc.category = template_data.get("category")
-
-                # Add arguments
-                for arg_data in template_data.get("arguments", []):
-                    doc.append("arguments", arg_data)
-
-                doc.flags.ignore_permissions = True
-                doc.insert()
-                created_count += 1
-                frappe.logger("migration_hooks").debug(f"Created system prompt template: {prompt_id}")
+            try:
+                outcome = _sync_system_prompt_template(template_data)
+            except Exception as e:
+                frappe.log_error(
+                    title="System prompt template install failed",
+                    message=f"{template_data.get('prompt_id')}: {e}\n{frappe.get_traceback()}",
+                )
+                continue
+            created_count += outcome == "created"
+            updated_count += outcome == "updated"
 
         frappe.db.commit()
 
@@ -503,6 +512,72 @@ def _install_system_prompt_templates():
 
     except Exception as e:
         frappe.logger("migration_hooks").error(f"Failed to install system prompt templates: {str(e)}")
+
+
+def _sync_system_skill(skill_data, docs_skills_dir):
+    """Create or update one system skill. Returns "created", "updated", "unchanged" or "skipped"."""
+    skill_id = skill_data.get("skill_id")
+
+    # Read content from markdown file
+    content_file = skill_data.get("content_file")
+    content = ""
+    if content_file:
+        content_path = os.path.join(docs_skills_dir, content_file)
+        if os.path.exists(content_path):
+            # nosemgrep: frappe-security-file-traversal — skill markdown under app docs dir, filename from app-controlled manifest
+            with open(content_path) as f:
+                content = f.read()
+        else:
+            frappe.logger("migration_hooks").warning(f"Skill content file not found: {content_path}")
+            return "skipped"
+
+    # Check if system skill already exists
+    existing = frappe.db.get_value("PA Skill", {"skill_id": skill_id, "is_system": 1}, "name")
+
+    if existing:
+        # Update existing system skill
+        doc = frappe.get_doc("PA Skill", existing)
+
+        needs_update = False
+        for field in ["title", "description", "skill_type", "linked_tool", "category"]:
+            if skill_data.get(field) is not None and doc.get(field) != skill_data.get(field):
+                doc.set(field, skill_data.get(field))
+                needs_update = True
+
+        if content and doc.content != content:
+            doc.content = content
+            needs_update = True
+
+        if doc.source_app != "pibiassistant":
+            doc.source_app = "pibiassistant"
+            needs_update = True
+
+        if needs_update:
+            doc.flags.ignore_permissions = True
+            doc.save()
+            frappe.logger("migration_hooks").debug(f"Updated system skill: {skill_id}")
+            return "updated"
+        return "unchanged"
+    else:
+        # Create new system skill
+        doc = frappe.new_doc("PA Skill")
+        doc.skill_id = skill_id
+        doc.title = skill_data.get("title")
+        doc.description = skill_data.get("description")
+        doc.status = skill_data.get("status", "Published")
+        doc.visibility = skill_data.get("visibility", "Public")
+        doc.is_system = 1
+        doc.skill_type = skill_data.get("skill_type", "Tool Usage")
+        doc.linked_tool = skill_data.get("linked_tool")
+        doc.content = content
+        doc.owner_user = "Administrator"
+        doc.category = skill_data.get("category")
+        doc.source_app = "pibiassistant"
+
+        doc.flags.ignore_permissions = True
+        doc.insert()
+        frappe.logger("migration_hooks").debug(f"Created system skill: {skill_id}")
+        return "created"
 
 
 def _install_system_skills():
@@ -561,67 +636,16 @@ def _install_system_skills():
         updated_count = 0
 
         for skill_data in skills_manifest:
-            skill_id = skill_data.get("skill_id")
-
-            # Read content from markdown file
-            content_file = skill_data.get("content_file")
-            content = ""
-            if content_file:
-                content_path = os.path.join(docs_skills_dir, content_file)
-                if os.path.exists(content_path):
-                    # nosemgrep: frappe-security-file-traversal — skill markdown under app docs dir, filename from app-controlled manifest
-                    with open(content_path) as f:
-                        content = f.read()
-                else:
-                    frappe.logger("migration_hooks").warning(f"Skill content file not found: {content_path}")
-                    continue
-
-            # Check if system skill already exists
-            existing = frappe.db.get_value("PA Skill", {"skill_id": skill_id, "is_system": 1}, "name")
-
-            if existing:
-                # Update existing system skill
-                doc = frappe.get_doc("PA Skill", existing)
-
-                needs_update = False
-                for field in ["title", "description", "skill_type", "linked_tool", "category"]:
-                    if skill_data.get(field) is not None and doc.get(field) != skill_data.get(field):
-                        doc.set(field, skill_data.get(field))
-                        needs_update = True
-
-                if content and doc.content != content:
-                    doc.content = content
-                    needs_update = True
-
-                if doc.source_app != "pibiassistant":
-                    doc.source_app = "pibiassistant"
-                    needs_update = True
-
-                if needs_update:
-                    doc.flags.ignore_permissions = True
-                    doc.save()
-                    updated_count += 1
-                    frappe.logger("migration_hooks").debug(f"Updated system skill: {skill_id}")
-            else:
-                # Create new system skill
-                doc = frappe.new_doc("PA Skill")
-                doc.skill_id = skill_id
-                doc.title = skill_data.get("title")
-                doc.description = skill_data.get("description")
-                doc.status = skill_data.get("status", "Published")
-                doc.visibility = skill_data.get("visibility", "Public")
-                doc.is_system = 1
-                doc.skill_type = skill_data.get("skill_type", "Tool Usage")
-                doc.linked_tool = skill_data.get("linked_tool")
-                doc.content = content
-                doc.owner_user = "Administrator"
-                doc.category = skill_data.get("category")
-                doc.source_app = "pibiassistant"
-
-                doc.flags.ignore_permissions = True
-                doc.insert()
-                created_count += 1
-                frappe.logger("migration_hooks").debug(f"Created system skill: {skill_id}")
+            try:
+                outcome = _sync_system_skill(skill_data, docs_skills_dir)
+            except Exception as e:
+                frappe.log_error(
+                    title="System skill install failed",
+                    message=f"{skill_data.get('skill_id')}: {e}\n{frappe.get_traceback()}",
+                )
+                continue
+            created_count += outcome == "created"
+            updated_count += outcome == "updated"
 
         frappe.db.commit()
 

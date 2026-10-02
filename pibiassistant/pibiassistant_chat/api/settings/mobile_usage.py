@@ -177,14 +177,18 @@ def get_model_usage() -> list:
     try:
         user = frappe.session.user
 
-        # Get token usage by model from usage logs
-        model_usage = frappe.get_all(
-            "PA Chat Usage Log",
-            filters={"user": user},
-            fields=["COALESCE(model, 'Unknown') as model_id", "SUM(tokens_total) as tokens_used"],
-            group_by="model",
-            order_by="tokens_used desc",
-            limit_page_length=10,
+        from frappe.query_builder.functions import Coalesce, Sum
+
+        log = frappe.qb.DocType("PA Chat Usage Log")
+        tokens_sum = Sum(log.tokens_total)
+        model_usage = (
+            frappe.qb.from_(log)
+            .select(Coalesce(log.model, "Unknown").as_("model_id"), tokens_sum.as_("tokens_used"))
+            .where(log.user == user)
+            .groupby(log.model)
+            .orderby(tokens_sum, order=frappe.qb.desc)
+            .limit(10)
+            .run(as_dict=True)
         )
 
         if not model_usage:

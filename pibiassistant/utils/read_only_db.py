@@ -22,6 +22,7 @@ Provides secure, read-only access to Frappe database operations
 import re
 
 import frappe
+from frappe import _
 
 
 class ReadOnlyDatabase:
@@ -93,7 +94,7 @@ class ReadOnlyDatabase:
         Blocks all write operations with clear error messages.
         """
         if not query or not query.strip():
-            raise frappe.ValidationError("🚫 Security: Empty query not allowed")
+            raise frappe.ValidationError(_("Security: Empty query not allowed"))
 
         # Clean and normalize query for analysis
         query_upper = query.strip().upper()
@@ -123,8 +124,10 @@ class ReadOnlyDatabase:
         for keyword in dangerous_keywords:
             if query_normalized.startswith(keyword + " ") or query_normalized == keyword:
                 raise frappe.ValidationError(
-                    f"🚫 Security: {keyword} operations not allowed in read-only mode. "
-                    f"Only SELECT, SHOW, DESCRIBE, and EXPLAIN queries are permitted."
+                    _(
+                        "Security: {0} operations not allowed in read-only mode. "
+                        "Only SELECT, SHOW, DESCRIBE, and EXPLAIN queries are permitted."
+                    ).format(keyword)
                 )
 
         # Define allowed read-only query types
@@ -133,15 +136,17 @@ class ReadOnlyDatabase:
         # Check if query starts with allowed operations
         if not any(query_normalized.startswith(prefix) for prefix in allowed_prefixes):
             raise frappe.ValidationError(
-                f"🚫 Security: Only SELECT, SHOW, DESCRIBE, and EXPLAIN queries are allowed in read-only mode. "
-                f"Query starts with: {query_normalized.split()[0] if query_normalized else 'unknown'}"
+                _(
+                    "Security: Only SELECT, SHOW, DESCRIBE, and EXPLAIN queries are allowed in read-only mode. "
+                    "Query starts with: {0}"
+                ).format(query_normalized.split()[0] if query_normalized else "unknown")
             )
 
         # Additional security check for nested dangerous operations
         for keyword in dangerous_keywords:
             if f" {keyword} " in query_normalized or query_normalized.endswith(f" {keyword}"):
                 raise frappe.ValidationError(
-                    f"🚫 Security: Nested {keyword} operations not allowed in read-only mode"
+                    _("Security: Nested {0} operations not allowed in read-only mode").format(keyword)
                 )
 
         try:
@@ -180,14 +185,18 @@ class ReadOnlyDatabase:
 
         if name in dangerous_methods:
             raise AttributeError(
-                f"🚫 Security: Database method '{name}' is not allowed in read-only mode. "
-                f"This method can modify data and is blocked for security."
+                _(
+                    "Security: Database method '{0}' is not allowed in read-only mode. "
+                    "This method can modify data and is blocked for security."
+                ).format(name)
             )
 
         # For unknown methods, be conservative and block them
         raise AttributeError(
-            f"🚫 Security: Database method '{name}' is not available in read-only mode. "
-            f"Available methods: {', '.join(sorted(self._allowed_methods))}"
+            _(
+                "Security: Database method '{0}' is not available in read-only mode. "
+                "Available methods: {1}"
+            ).format(name, ", ".join(sorted(self._allowed_methods)))
         )
 
     def __repr__(self):
@@ -197,59 +206,3 @@ class ReadOnlyDatabase:
     def __str__(self):
         """String representation"""
         return f"ReadOnlyDatabase({str(self._original_db)})"
-
-
-def create_read_only_db(original_db=None):
-    """
-    Factory function to create a read-only database wrapper
-
-    Args:
-        original_db: Database object to wrap (defaults to frappe.db)
-
-    Returns:
-        ReadOnlyDatabase: Secure read-only wrapper
-    """
-    if original_db is None:
-        original_db = frappe.db
-
-    return ReadOnlyDatabase(original_db)
-
-
-# Convenience function for testing
-def test_read_only_operations():
-    """Test function to verify read-only database security"""
-    read_only_db = create_read_only_db()
-
-    print("Testing read-only database security...")
-
-    # Test allowed operations
-    try:
-        result = read_only_db.sql("SELECT name FROM tabUser LIMIT 1")
-        print("✅ SELECT query: ALLOWED")
-    except Exception as e:
-        print(f"❌ SELECT query failed: {e}")
-
-    # Test blocked operations
-    blocked_queries = [
-        "DELETE FROM tabUser WHERE name = 'test'",
-        "UPDATE tabUser SET enabled = 0",
-        "INSERT INTO tabUser (name) VALUES ('hacker')",
-        "DROP TABLE tabUser",
-        "TRUNCATE TABLE tabUser",
-    ]
-
-    for query in blocked_queries:
-        try:
-            read_only_db.sql(query)
-            print(f"❌ {query.split()[0]} query: INCORRECTLY ALLOWED")
-        except frappe.ValidationError as e:
-            print(f"✅ {query.split()[0]} query: CORRECTLY BLOCKED")
-        except Exception as e:
-            print(f"⚠️ {query.split()[0]} query: UNEXPECTED ERROR - {e}")
-
-    print("Security test completed.")
-
-
-if __name__ == "__main__":
-    # Run tests if executed directly
-    test_read_only_operations()

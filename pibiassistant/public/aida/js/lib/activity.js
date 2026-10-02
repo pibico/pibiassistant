@@ -1,6 +1,6 @@
 // Tool activity and approval requests of an assistant turn, as plain data.
 
-export const emptyActivity = () => ({ tools: [], approvals: [] });
+const emptyActivity = () => ({ tools: [], approvals: [] });
 
 function approvalFromBlock(block) {
   const interrupt = (Array.isArray(block.interrupts) && block.interrupts[0]) || {};

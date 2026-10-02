@@ -45,21 +45,6 @@ class PACoreSettings(Document):
         # Plugin validation is handled by plugin manager
         pass
 
-    def restart_assistant_core(self):
-        """Restart the assistant MCP API with new settings"""
-        try:
-            # Disable existing API
-            self.disable_assistant_api()
-
-            # Enable API with new settings
-            self.enable_assistant_api()
-
-            frappe.msgprint(_("PA MCP API restarted successfully"))
-
-        except Exception as e:
-            frappe.log_error(f"Failed to restart assistant MCP API: {str(e)}")
-            frappe.throw(_("Failed to restart assistant MCP API: {0}").format(str(e)))
-
     def enable_assistant_api(self):
         """Enable the assistant MCP API"""
         try:
@@ -67,7 +52,7 @@ class PACoreSettings(Document):
             server.enable()
 
         except Exception as e:
-            frappe.log_error(f"Failed to enable assistant MCP API: {str(e)}")
+            frappe.log_error(title=_("Failed to enable assistant MCP API"), message=str(e))
             raise
 
     def disable_assistant_api(self):
@@ -77,17 +62,8 @@ class PACoreSettings(Document):
             server.disable()
 
         except Exception as e:
-            frappe.log_error(f"Failed to disable assistant MCP API: {str(e)}")
+            frappe.log_error(title=_("Failed to disable assistant MCP API"), message=str(e))
             raise
-
-    # Legacy function names for backward compatibility
-    def start_assistant_core(self):
-        """Legacy: Enable the assistant MCP API"""
-        return self.enable_assistant_api()
-
-    def stop_assistant_core(self):
-        """Legacy: Disable the assistant MCP API"""
-        return self.disable_assistant_api()
 
     @frappe.whitelist()
     def get_mcp_server_info(self):
@@ -257,70 +233,33 @@ class PACoreSettings(Document):
     @frappe.whitelist()
     def toggle_plugin(self, plugin_name: str, action: str) -> Dict[str, Any]:
         """Enable or disable a plugin"""
+        from pibiassistant.utils.plugin_manager import PluginError, get_plugin_manager
+
+        if action not in ("enable", "disable"):
+            frappe.throw(_("Invalid action: {0}").format(action))
+
         try:
-            from pibiassistant.utils.plugin_manager import PluginError, get_plugin_manager
-
             plugin_manager = get_plugin_manager()
-
             if action == "enable":
                 result = plugin_manager.enable_plugin(plugin_name)
                 message = _("Plugin '{0}' enabled successfully").format(plugin_name)
-            elif action == "disable":
+            else:
                 result = plugin_manager.disable_plugin(plugin_name)
                 message = _("Plugin '{0}' disabled successfully").format(plugin_name)
-            else:
-                frappe.throw(_("Invalid action: {0}").format(action))
-
-            if result:
-                frappe.msgprint(message)
-                return {"success": True, "message": message}
-            else:
-                error_msg = _("Failed to {0} plugin '{1}'").format(action, plugin_name)
-                frappe.throw(error_msg)
-
         except PluginError as e:
-            frappe.log_error(title=frappe._("Plugin Toggle Error"), message=str(e))
-            frappe.throw(frappe._(str(e)))
+            frappe.throw(str(e))
         except Exception as e:
             frappe.log_error(title=frappe._("Plugin Toggle Error"), message=str(e))
             frappe.throw(frappe._("Failed to {0} plugin '{1}': {2}").format(action, plugin_name, str(e)))
 
+        if not result:
+            frappe.throw(_("Failed to {0} plugin '{1}'").format(action, plugin_name))
+        frappe.msgprint(message)
+        return {"success": True, "message": message}
+
 
 # SSE Bridge API endpoints removed - SSE transport is deprecated
 # Use StreamableHTTP (OAuth-based) transport instead
-
-
-def toggle_plugin_api(plugin_name: str, action: str):
-    """
-    Standalone API to enable or disable a plugin.
-    This is called from the HTML buttons in the plugin management UI.
-    """
-    try:
-        from pibiassistant.utils.plugin_manager import PluginError, get_plugin_manager
-
-        plugin_manager = get_plugin_manager()
-
-        if action == "enable":
-            result = plugin_manager.enable_plugin(plugin_name)
-            message = _("Plugin '{0}' enabled successfully").format(plugin_name)
-        elif action == "disable":
-            result = plugin_manager.disable_plugin(plugin_name)
-            message = _("Plugin '{0}' disabled successfully").format(plugin_name)
-        else:
-            frappe.throw(_("Invalid action: {0}").format(action))
-
-        if result:
-            return {"success": True, "message": message}
-        else:
-            error_msg = _("Failed to {0} plugin '{1}'").format(action, plugin_name)
-            frappe.throw(error_msg)
-
-    except PluginError as e:
-        frappe.log_error(title=frappe._("Plugin Toggle Error"), message=str(e))
-        frappe.throw(frappe._(str(e)))
-    except Exception as e:
-        frappe.log_error(title=frappe._("Plugin Toggle Error"), message=str(e))
-        frappe.throw(frappe._("Failed to {0} plugin '{1}': {2}").format(action, plugin_name, str(e)))
 
 
 def get_context(context):

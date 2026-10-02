@@ -42,7 +42,7 @@ class ListUserDashboards(BaseTool):
             "properties": {
                 "user": {
                     "type": "string",
-                    "description": "Specific user to list dashboards for (defaults to current user)",
+                    "description": "User to list dashboards for (defaults to the current user; only System Managers may list another user's)",
                 },
                 "dashboard_type": {
                     "type": "string",
@@ -61,56 +61,40 @@ class ListUserDashboards(BaseTool):
     def execute(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """List accessible dashboards"""
         try:
-            user = arguments.get("user", frappe.session.user)
+            session_user = frappe.session.user
+            user = arguments.get("user") or session_user
+            if user != session_user and "System Manager" not in frappe.get_roles(session_user):
+                user = session_user
             dashboard_type = arguments.get("dashboard_type", "all")
             include_shared = arguments.get("include_shared", True)
 
-            dashboards = []
+            fields = ["name", "dashboard_name", "creation", "modified", "module"]
 
-            # Get user's own dashboards
-            own_dashboards = frappe.get_all(
-                "Dashboard",
-                filters={"owner": user},
-                fields=["name", "dashboard_name", "creation", "modified", "module"],
-            )
+            def _row(dashboard, access_type):
+                return {
+                    **dashboard,
+                    "access_type": access_type,
+                    "dashboard_type": "insights" if dashboard.get("module") == "Insights" else "frappe_dashboard",
+                }
 
-            for dashboard in own_dashboards:
-                dashboards.append(
-                    {
-                        **dashboard,
-                        "access_type": "owner",
-                        "dashboard_type": "insights"
-                        if dashboard.module == "Insights"
-                        else "frappe_dashboard",
-                    }
-                )
+            dashboards = [
+                _row(d, "owner") for d in frappe.get_list("Dashboard", filters={"owner": user}, fields=fields)
+            ]
+            owned = {d["name"] for d in dashboards}
 
-            # Get shared dashboards if requested
             if include_shared:
-                shared_docs = frappe.get_all(
+                shares = frappe.get_all(
                     "DocShare",
-                    filters={"share_name": user, "share_doctype": "Dashboard", "read": 1},
-                    fields=["share_name", "everyone"],
+                    filters={"share_doctype": "Dashboard", "read": 1},
+                    or_filters=[["user", "=", user], ["everyone", "=", 1]],
+                    pluck="share_name",
                 )
-
-                for shared in shared_docs:
-                    try:
-                        dashboard_doc = frappe.get_doc("Dashboard", shared.share_name)
-                        dashboards.append(
-                            {
-                                "name": dashboard_doc.name,
-                                "dashboard_name": dashboard_doc.dashboard_name,
-                                "creation": dashboard_doc.creation,
-                                "modified": dashboard_doc.modified,
-                                "module": dashboard_doc.module,
-                                "access_type": "shared",
-                                "dashboard_type": "insights"
-                                if dashboard_doc.module == "Insights"
-                                else "frappe_dashboard",
-                            }
-                        )
-                    except Exception:
-                        continue  # Skip if dashboard doesn't exist or no access
+                shared_names = [n for n in set(shares) if n not in owned]
+                if shared_names:
+                    shared = frappe.get_list(
+                        "Dashboard", filters={"name": ["in", shared_names]}, fields=fields
+                    )
+                    dashboards.extend(_row(d, "shared") for d in shared)
 
             # Filter by dashboard type if specified
             if dashboard_type != "all":

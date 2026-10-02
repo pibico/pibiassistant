@@ -19,6 +19,30 @@ from typing import Any, Dict, List
 import frappe
 from frappe import _
 
+from pibiassistant.plugins.query_errors import log_failure
+
+LAYOUT_FIELDTYPES = frozenset({"Section Break", "Column Break", "Tab Break", "HTML", "Heading", "Fold", "Button"})
+TABLE_FIELDTYPES = frozenset({"Table", "Table MultiSelect"})
+OPTIONS_MAX = 120
+
+DOCTYPE_INFO_PROPERTIES = {
+    "doctype": {"type": "string", "description": "DocType name"},
+    "child_table": {
+        "type": "string",
+        "description": "Child table fieldname (e.g. 'items'): return that table's full field metadata only.",
+    },
+    "fieldnames": {
+        "type": "array",
+        "items": {"type": "string"},
+        "description": "Return full metadata (label, description, depends_on...) only for these fields, in the parent and its child tables.",
+    },
+    "include_layout": {
+        "type": "boolean",
+        "default": False,
+        "description": "Return the verbose legacy shape with layout breaks and hidden fields (large).",
+    },
+}
+
 
 class MetadataTools:
     """assistant tools for Frappe metadata operations"""
@@ -32,7 +56,7 @@ class MetadataTools:
                 "description": "Get DocType metadata and field information",
                 "inputSchema": {
                     "type": "object",
-                    "properties": {"doctype": {"type": "string", "description": "DocType name"}},
+                    "properties": DOCTYPE_INFO_PROPERTIES,
                     "required": ["doctype"],
                 },
             },
@@ -104,8 +128,58 @@ class MetadataTools:
         }
 
     @staticmethod
-    def get_doctype_metadata(doctype: str) -> Dict[str, Any]:
-        """Get DocType metadata and field information"""
+    def _compact_field(field) -> str:
+        """One line per field: 'fieldname: Fieldtype>options *' (* = required)."""
+        entry = f"{field.fieldname}: {field.fieldtype}"
+        options = (field.options or "").strip()
+        if options:
+            options = "|".join(options.split("\n"))
+            entry += f">{options[:OPTIONS_MAX]}"
+        if field.reqd:
+            entry += " *"
+        if field.default and str(field.default) not in ("0", "1"):
+            entry += f" default={str(field.default)[:40]}"
+        return entry
+
+    @staticmethod
+    def _data_fields(meta) -> list:
+        """Fields a caller can actually fill: no layout breaks, hidden or read-only fields, or tables."""
+        return [
+            f
+            for f in meta.fields
+            if f.fieldtype not in LAYOUT_FIELDTYPES
+            and f.fieldtype not in TABLE_FIELDTYPES
+            and not f.hidden
+            and not f.read_only
+        ]
+
+    @staticmethod
+    def _child_meta(table_field):
+        child_doctype = table_field.options
+        if child_doctype and frappe.db.exists("DocType", child_doctype):
+            return frappe.get_meta(child_doctype)
+        return None
+
+    @staticmethod
+    def _compact_permissions(meta) -> list:
+        flags = ("read", "write", "create", "delete", "submit", "cancel", "amend")
+        rows = []
+        for p in meta.permissions:
+            row = {"role": p.role, "permlevel": p.permlevel or 0}
+            row.update({flag: 1 for flag in flags if p.get(flag)})
+            rows.append(row)
+        return rows
+
+    @staticmethod
+    def get_doctype_metadata(
+        doctype: str, include_layout: bool = False, child_table: str = None, fieldnames: list = None
+    ) -> Dict[str, Any]:
+        """Get DocType metadata and field information.
+
+        The default answer is compact (one line per fillable field, required fields and child
+        tables first) so it survives the chat's tool-result truncation; include_layout=true
+        restores the verbose shape.
+        """
         try:
             if not frappe.db.exists("DocType", doctype):
                 return {"success": False, "error": f"DocType '{doctype}' not found"}
@@ -115,30 +189,61 @@ class MetadataTools:
 
             meta = frappe.get_meta(doctype)
 
-            fields = [MetadataTools._serialize_field(field) for field in meta.fields]
+            if include_layout:
+                return MetadataTools._verbose_metadata(doctype, meta)
 
-            link_fields = [
-                {"fieldname": field.fieldname, "label": field.label, "options": field.options}
-                for field in meta.get_link_fields()
-            ]
+            table_fields = meta.get_table_fields()
 
-            # Child tables: include the child DocType's own field metadata so the
-            # caller can build nested row objects without a second tool call (#192).
-            child_tables = []
-            for table_field in meta.get_table_fields():
-                child_doctype = table_field.options
-                child_entry = {
-                    "fieldname": table_field.fieldname,
-                    "label": table_field.label,
-                    "fieldtype": table_field.fieldtype,
-                    "options": child_doctype,
-                    "reqd": table_field.reqd,
-                    "fields": [],
+            if child_table:
+                table_field = next((t for t in table_fields if t.fieldname == child_table), None)
+                if table_field is None:
+                    return {
+                        "success": False,
+                        "error": f"'{child_table}' is not a child table of {doctype}. "
+                        f"Child tables: {', '.join(t.fieldname for t in table_fields) or 'none'}",
+                    }
+                child_meta = MetadataTools._child_meta(table_field)
+                return {
+                    "success": True,
+                    "doctype": doctype,
+                    "child_table": {
+                        "fieldname": table_field.fieldname,
+                        "options": table_field.options,
+                        "reqd": table_field.reqd,
+                        "fields": [
+                            MetadataTools._serialize_field(f) for f in MetadataTools._data_fields(child_meta)
+                        ]
+                        if child_meta
+                        else [],
+                    },
                 }
-                if child_doctype and frappe.db.exists("DocType", child_doctype):
-                    child_meta = frappe.get_meta(child_doctype)
-                    child_entry["fields"] = [MetadataTools._serialize_field(f) for f in child_meta.fields]
-                child_tables.append(child_entry)
+
+            if fieldnames:
+                wanted = set(fieldnames)
+                details = [MetadataTools._serialize_field(f) for f in meta.fields if f.fieldname in wanted]
+                for table_field in table_fields:
+                    child_meta = MetadataTools._child_meta(table_field)
+                    for f in child_meta.fields if child_meta else []:
+                        if f.fieldname in wanted:
+                            entry = MetadataTools._serialize_field(f)
+                            entry["child_table"] = table_field.fieldname
+                            details.append(entry)
+                return {"success": True, "doctype": doctype, "field_details": details}
+
+            data_fields = MetadataTools._data_fields(meta)
+            child_tables = []
+            for table_field in table_fields:
+                child_meta = MetadataTools._child_meta(table_field)
+                child_tables.append(
+                    {
+                        "fieldname": table_field.fieldname,
+                        "options": table_field.options,
+                        "reqd": table_field.reqd,
+                        "fields": [MetadataTools._compact_field(f) for f in MetadataTools._data_fields(child_meta)]
+                        if child_meta
+                        else [],
+                    }
+                )
 
             return {
                 "success": True,
@@ -150,15 +255,58 @@ class MetadataTools:
                 "is_child_table": bool(meta.istable),
                 "naming_rule": meta.naming_rule,
                 "title_field": meta.title_field,
-                "fields": fields,
-                "link_fields": link_fields,
+                "format": "fields are 'fieldname: Fieldtype>options', * = required; read-only and hidden fields are omitted. "
+                "Pass child_table='<fieldname>' or fieldnames=[...] for full detail, include_layout=true for everything.",
+                "required_fields": [f.fieldname for f in data_fields if f.reqd],
                 "child_tables": child_tables,
-                "permissions": [p.as_dict() for p in meta.permissions],
+                "fields": [MetadataTools._compact_field(f) for f in data_fields],
+                "permissions": MetadataTools._compact_permissions(meta),
             }
 
         except Exception as e:
-            frappe.log_error(f"assistant Get DocType Metadata Error: {str(e)}")
-            return {"success": False, "error": str(e)}
+            log_failure("DocType Metadata Error", e)
+            return {"success": False, "error": str(e)[:2000]}
+
+    @staticmethod
+    def _verbose_metadata(doctype: str, meta) -> Dict[str, Any]:
+        fields = [MetadataTools._serialize_field(field) for field in meta.fields]
+
+        link_fields = [
+            {"fieldname": field.fieldname, "label": field.label, "options": field.options}
+            for field in meta.get_link_fields()
+        ]
+
+        child_tables = []
+        for table_field in meta.get_table_fields():
+            child_meta = MetadataTools._child_meta(table_field)
+            child_tables.append(
+                {
+                    "fieldname": table_field.fieldname,
+                    "label": table_field.label,
+                    "fieldtype": table_field.fieldtype,
+                    "options": table_field.options,
+                    "reqd": table_field.reqd,
+                    "fields": [MetadataTools._serialize_field(f) for f in child_meta.fields]
+                    if child_meta
+                    else [],
+                }
+            )
+
+        return {
+            "success": True,
+            "doctype": doctype,
+            "module": meta.module,
+            "is_submittable": bool(meta.is_submittable),
+            "is_tree": bool(meta.is_tree),
+            "is_single": bool(meta.issingle),
+            "is_child_table": bool(meta.istable),
+            "naming_rule": meta.naming_rule,
+            "title_field": meta.title_field,
+            "fields": fields,
+            "link_fields": link_fields,
+            "child_tables": child_tables,
+            "permissions": [p.as_dict() for p in meta.permissions],
+        }
 
     @staticmethod
     def list_doctypes(module: str = None, custom_only: bool = False) -> Dict[str, Any]:
@@ -191,8 +339,8 @@ class MetadataTools:
             }
 
         except Exception as e:
-            frappe.log_error(f"assistant List DocTypes Error: {str(e)}")
-            return {"success": False, "error": str(e)}
+            log_failure("List DocTypes Error", e)
+            return {"success": False, "error": str(e)[:2000]}
 
     @staticmethod
     def get_permissions(doctype: str, user: str = None) -> Dict[str, Any]:
@@ -232,8 +380,8 @@ class MetadataTools:
             }
 
         except Exception as e:
-            frappe.log_error(f"assistant Get Permissions Error: {str(e)}")
-            return {"success": False, "error": str(e)}
+            log_failure("Get Permissions Error", e)
+            return {"success": False, "error": str(e)[:2000]}
 
     @staticmethod
     def get_workflow(doctype: str) -> Dict[str, Any]:
@@ -292,5 +440,5 @@ class MetadataTools:
             }
 
         except Exception as e:
-            frappe.log_error(f"assistant Get Workflow Error: {str(e)}")
-            return {"success": False, "error": str(e)}
+            log_failure("Get Workflow Error", e)
+            return {"success": False, "error": str(e)[:2000]}

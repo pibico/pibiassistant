@@ -27,6 +27,9 @@
   text-decoration: none;
 }
 .aida-back:hover { text-decoration: underline; }
+@media (pointer: coarse) {
+  .aida-back { min-height: var(--aida-hit); }
+}
 .aida-card {
   background: var(--aida-surface);
   border: 0;

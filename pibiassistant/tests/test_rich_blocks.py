@@ -101,8 +101,8 @@ class TestCalloutJsonBody(unittest.TestCase):
             '"content":"All 216 Leads were bulk-imported."}\n```'
         )
         # The warning palette, not the info default the attrs-only read gave.
-        self.assertIn("#f59e0b", out)
-        self.assertIn('<div class="callout-title">Data quality caveat</div>', out)
+        self.assertIn("#fffbeb", out)
+        self.assertIn('<div class="callout-title" style="color:#92400e">Data quality caveat</div>', out)
         self.assertIn("All 216 Leads were bulk-imported.", out)
         # No JSON punctuation survives — escaped or otherwise. Matching on a
         # bare '"type"' would pass on the *unfixed* renderer, which escapes
@@ -119,7 +119,7 @@ class TestCalloutJsonBody(unittest.TestCase):
 
     def test_message_alias_is_accepted(self):
         out = render('```callout\n{"type":"tip","message":"Try the filter."}\n```')
-        self.assertIn("#10b981", out)
+        self.assertIn("#ecfdf5", out)
         self.assertIn("Try the filter.", out)
         self.assertNotIn("quot;", out)
 

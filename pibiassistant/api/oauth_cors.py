@@ -168,6 +168,75 @@ def _set_allowed_cors():
         frappe.local.allow_cors = allowed
 
 
+_WELLKNOWN_GET_HEADERS = "Content-Type, MCP-Protocol-Version"
+
+
+def _wellknown_metadata(name: str):
+    """Metadata document for the well-known endpoint named in ``name`` (substring match), or None."""
+    if "openid-configuration" in name:
+        from pibiassistant.api.oauth_discovery import openid_configuration
+
+        openid_configuration()
+        return frappe.local.response
+
+    if "oauth-protected-resource" in name:
+        from pibiassistant.api.oauth_discovery import protected_resource_metadata
+
+        return protected_resource_metadata()
+
+    if "oauth-authorization-server" in name:
+        from pibiassistant.api.oauth_discovery import authorization_server_metadata
+
+        return authorization_server_metadata()
+
+    return None
+
+
+def _serve_wellknown(name: str, request_method: str, options_methods: str, options_headers: str):
+    """
+    Answer a well-known request directly, bypassing Frappe's handler, by raising
+    the werkzeug response. Does nothing when ``name`` is not a known endpoint.
+    """
+    import json
+
+    from werkzeug.exceptions import HTTPException
+    from werkzeug.wrappers import Response as WerkzeugResponse
+
+    metadata = _wellknown_metadata(name)
+    if not metadata:
+        return
+
+    if request_method == "OPTIONS":
+        response = WerkzeugResponse(
+            "",
+            status=200,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": options_methods,
+                "Access-Control-Allow-Headers": options_headers,
+                "Access-Control-Max-Age": "3600",
+            },
+        )
+    else:
+        response = WerkzeugResponse(
+            json.dumps(metadata, indent=2),
+            status=200,
+            headers={
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, OPTIONS",
+                "Access-Control-Allow-Headers": _WELLKNOWN_GET_HEADERS,
+                "Cache-Control": "public, max-age=3600",
+            },
+        )
+
+    class ResponseException(HTTPException):
+        def get_response(self, environ=None):
+            return response
+
+    raise ResponseException()
+
+
 def _handle_wellknown_endpoint(request_path: str, request_method: str):
     """
     Handle well-known discovery endpoints directly to bypass Frappe's redirect.
@@ -181,67 +250,7 @@ def _handle_wellknown_endpoint(request_path: str, request_method: str):
     to /api/method/frappe.integrations.oauth2.openid_configuration before our
     page_renderer can intercept it. This handler catches it in before_request.
     """
-    import json
-
-    from werkzeug.wrappers import Response
-
-    # Determine which endpoint is being requested
-    metadata = None
-
-    if request_path == "/.well-known/openid-configuration":
-        from pibiassistant.api.oauth_discovery import openid_configuration
-
-        openid_configuration()
-        metadata = frappe.local.response
-
-    elif request_path == "/.well-known/oauth-authorization-server":
-        from pibiassistant.api.oauth_discovery import authorization_server_metadata
-
-        metadata = authorization_server_metadata()
-
-    elif request_path == "/.well-known/oauth-protected-resource":
-        from pibiassistant.api.oauth_discovery import protected_resource_metadata
-
-        metadata = protected_resource_metadata()
-
-    if metadata:
-        # Build a proper werkzeug Response and bypass Frappe's handler
-        from werkzeug.wrappers import Response as WerkzeugResponse
-
-        # Handle OPTIONS preflight request
-        if request_method == "OPTIONS":
-            response = WerkzeugResponse(
-                "",
-                status=200,
-                headers={
-                    "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Methods": "GET, OPTIONS",
-                    "Access-Control-Allow-Headers": "Content-Type, MCP-Protocol-Version",
-                    "Access-Control-Max-Age": "3600",
-                },
-            )
-        else:
-            # Return JSON response for GET
-            response = WerkzeugResponse(
-                json.dumps(metadata, indent=2),
-                status=200,
-                headers={
-                    "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Methods": "GET, OPTIONS",
-                    "Access-Control-Allow-Headers": "Content-Type, MCP-Protocol-Version",
-                    "Cache-Control": "public, max-age=3600",
-                },
-            )
-
-        # Raise the response as an HTTPException to bypass normal processing
-        from werkzeug.exceptions import HTTPException
-
-        class ResponseException(HTTPException):
-            def get_response(self, environ=None):
-                return response
-
-        raise ResponseException()
+    _serve_wellknown(request_path, request_method, "GET, OPTIONS", _WELLKNOWN_GET_HEADERS)
 
 
 def _handle_malformed_wellknown_url(request_path: str, request_method: str):
@@ -254,70 +263,12 @@ def _handle_malformed_wellknown_url(request_path: str, request_method: str):
 
     This handler extracts the .well-known endpoint and returns the correct metadata.
     """
-    import json
-
-    from werkzeug.wrappers import Response
-
-    # Extract the .well-known endpoint name
-    wellknown_part = request_path.split("/api/method/")[0]
-
-    # Determine which endpoint is being requested
-    metadata = None
-
-    if "openid-configuration" in wellknown_part:
-        from pibiassistant.api.oauth_discovery import openid_configuration
-
-        openid_configuration()
-        metadata = frappe.local.response
-
-    elif "oauth-protected-resource" in wellknown_part:
-        from pibiassistant.api.oauth_discovery import protected_resource_metadata
-
-        metadata = protected_resource_metadata()
-
-    elif "oauth-authorization-server" in wellknown_part:
-        from pibiassistant.api.oauth_discovery import authorization_server_metadata
-
-        metadata = authorization_server_metadata()
-
-    if metadata:
-        # Build a proper werkzeug Response and bypass Frappe's handler
-        from werkzeug.wrappers import Response as WerkzeugResponse
-
-        # Handle OPTIONS preflight request
-        if request_method == "OPTIONS":
-            response = WerkzeugResponse(
-                "",
-                status=200,
-                headers={
-                    "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-                    "Access-Control-Allow-Headers": "Content-Type, Authorization, MCP-Protocol-Version",
-                    "Access-Control-Max-Age": "3600",
-                },
-            )
-        else:
-            # Return JSON response for GET
-            response = WerkzeugResponse(
-                json.dumps(metadata, indent=2),
-                status=200,
-                headers={
-                    "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Methods": "GET, OPTIONS",
-                    "Access-Control-Allow-Headers": "Content-Type, MCP-Protocol-Version",
-                    "Cache-Control": "public, max-age=3600",
-                },
-            )
-
-        # Raise the response as an HTTPException to bypass normal processing
-        from werkzeug.exceptions import HTTPException
-
-        class ResponseException(HTTPException):
-            def get_response(self, environ=None):
-                return response
-
-        raise ResponseException()
+    _serve_wellknown(
+        request_path.split("/api/method/")[0],
+        request_method,
+        "GET, POST, OPTIONS",
+        "Content-Type, Authorization, MCP-Protocol-Version",
+    )
 
 
 _AUTH_PATCH_INSTALLED = False

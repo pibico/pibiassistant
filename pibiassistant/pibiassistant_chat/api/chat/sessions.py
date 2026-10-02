@@ -4,8 +4,6 @@
 
 """Session lifecycle endpoints — list, history, archive, continue."""
 
-from __future__ import annotations
-
 import frappe
 from frappe import _
 
@@ -13,8 +11,20 @@ from pibiassistant.pibiassistant_chat.doctype.pa_chat_session_state.pa_chat_sess
     PAChatSessionState,
 )
 
-from .._helpers import _safe_error
+from .._helpers import _safe_error, _validate_session_id
 from .._untrusted import wrap_untrusted
+
+
+def _int_param(value, default: int, low: int, high: int | None = None) -> int:
+    """Parse a numeric request parameter; non-numeric is a client error, out-of-range is clamped."""
+    if value in (None, ""):
+        return default
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        frappe.throw(_("Invalid pagination parameter"), frappe.ValidationError)
+    number = max(low, number)
+    return min(number, high) if high is not None else number
 
 
 @frappe.whitelist(methods=["GET"])
@@ -39,8 +49,9 @@ def get_session_history(session_id: str, limit: int = 30, offset: int = 0) -> di
         PAChatMessage,
     )
 
-    limit = min(int(limit or 30), 100)
-    offset = int(offset or 0)
+    _validate_session_id(session_id)
+    limit = _int_param(limit, 30, 1, 100)
+    offset = _int_param(offset, 0, 0)
 
     # Ownership check — prevent cross-user session read (IDOR).
     # A user may only read a session that contains at least one of their own messages.
@@ -71,61 +82,64 @@ def get_user_sessions(limit: int = 20) -> list:
     Returns:
             list: Sessions with session_id, preview, started, last_activity
     """
+    limit = _int_param(limit, 20, 1, 100)
     try:
-        user = frappe.session.user
-        limit = min(int(limit), 100)  # Cap at 100
-
-        # Query 1: Get session aggregates (distinct sessions with timestamps)
-        from pypika.functions import Count, Max, Min
-
-        FM = frappe.qb.DocType("PA Chat Message")
-        session_query = (
-            frappe.qb.from_(FM)
-            .select(
-                FM.session_id,
-                Min(FM.creation).as_("started"),
-                Max(FM.creation).as_("last_activity"),
-                Count(FM.name).as_("message_count"),
-            )
-            .where(FM.user == user)
-            .where(FM.is_archived == 0)
-            .groupby(FM.session_id)
-            .orderby("last_activity", order=frappe.qb.desc)
-            .limit(limit)
-        )
-        sessions = session_query.run(as_dict=True)
-
-        if not sessions:
-            return []
-
-        # Query 2: Get first user message per session for preview
-        session_ids = [s["session_id"] for s in sessions]
-        first_messages = frappe.get_all(
-            "PA Chat Message",
-            filters={
-                "session_id": ["in", session_ids],
-                "user": user,
-                "role": "user",
-            },
-            fields=["session_id", "content", "creation"],
-            order_by="creation asc",
-        )
-
-        # Keep only the first message per session
-        preview_map: dict[str, str] = {}
-        for msg in first_messages:
-            if msg.session_id not in preview_map:
-                content = (msg.content or "")[:100]
-                preview_map[msg.session_id] = content + ("..." if len(msg.content or "") > 100 else "")
-
-        for session in sessions:
-            session["preview"] = preview_map.get(session["session_id"], _("New conversation"))
-
-        return sessions
-
+        return _sessions_with_previews(frappe.session.user, 0, limit, _("New conversation"))
     except Exception as e:
         frappe.log_error(title="AIDA Sessions Error", message=f"Error getting user sessions: {e!s}")
         return []
+
+
+def _sessions_with_previews(user: str, archived: int, limit: int, empty_preview: str) -> list:
+    from frappe.query_builder.functions import Substring
+    from pypika.functions import Count, Max, Min
+
+    FM = frappe.qb.DocType("PA Chat Message")
+    sessions = (
+        frappe.qb.from_(FM)
+        .select(
+            FM.session_id,
+            Min(FM.creation).as_("started"),
+            Max(FM.creation).as_("last_activity"),
+            Count(FM.name).as_("message_count"),
+        )
+        .where(FM.user == user)
+        .where(FM.is_archived == archived)
+        .groupby(FM.session_id)
+        .orderby("last_activity", order=frappe.qb.desc)
+        .limit(limit)
+        .run(as_dict=True)
+    )
+    if not sessions:
+        return []
+
+    # First user message per session; only its first 101 chars leave the DB.
+    first = (
+        frappe.qb.from_(FM)
+        .select(FM.session_id, Min(FM.creation).as_("first_creation"))
+        .where(FM.user == user)
+        .where(FM.role == "user")
+        .where(FM.session_id.isin([s["session_id"] for s in sessions]))
+        .groupby(FM.session_id)
+        .as_("f")
+    )
+    rows = (
+        frappe.qb.from_(FM)
+        .join(first)
+        .on((FM.session_id == first.session_id) & (FM.creation == first.first_creation))
+        .select(FM.session_id, Substring(FM.content, 1, 101).as_("content"))
+        .where(FM.user == user)
+        .where(FM.role == "user")
+        .run(as_dict=True)
+    )
+    preview_map: dict[str, str] = {}
+    for row in rows:
+        if row.session_id not in preview_map:
+            content = row.content or ""
+            preview_map[row.session_id] = content[:100] + ("..." if len(content) > 100 else "")
+    for session in sessions:
+        session["preview"] = preview_map.get(session["session_id"], empty_preview)
+    return sessions
 
 
 @frappe.whitelist(methods=["POST"])
@@ -167,6 +181,7 @@ def archive_session(session_id: str) -> dict:
     Returns:
             dict: Success status
     """
+    _validate_session_id(session_id)
     try:
         user = frappe.session.user
 
@@ -222,17 +237,18 @@ def archive_all_conversations() -> dict:
         user = frappe.session.user
 
         # Get distinct session IDs before archiving
-        messages = frappe.get_all(
+        session_ids = frappe.get_all(
             "PA Chat Message",
-            filters={"user": user, "is_archived": 0},
-            fields=["session_id"],
+            filters={"user": user, "is_archived": 0, "session_id": ["is", "set"]},
+            pluck="session_id",
+            distinct=True,
             limit_page_length=0,
         )
 
-        if not messages:
+        if not session_ids:
             return {"success": True, "archived_count": 0}
 
-        session_ids = list({msg.session_id for msg in messages if msg.session_id})
+        archived_count = frappe.db.count("PA Chat Message", {"user": user, "is_archived": 0})
 
         # Archive all local messages
         frappe.db.set_value(
@@ -247,7 +263,7 @@ def archive_all_conversations() -> dict:
         # pass. Without this, bulk "Archive all" orphans every state row.
         PAChatSessionState.delete_for_sessions(session_ids)
 
-        return {"success": True, "archived_count": len(messages)}
+        return {"success": True, "archived_count": archived_count}
 
     except Exception as e:
         frappe.log_error(title="AIDA Archive All Error", message=f"Error archiving conversations: {e!s}")
@@ -268,55 +284,11 @@ def get_archived_sessions(limit: int = 50) -> list:
     Returns:
             list: Archived sessions with session_id, preview, started, last_activity
     """
+    limit = _int_param(limit, 50, 1, 100)
     try:
-        user = frappe.session.user
-        limit = min(int(limit), 100)
-
-        from pypika.functions import Count, Max, Min
-
-        FM = frappe.qb.DocType("PA Chat Message")
-        session_query = (
-            frappe.qb.from_(FM)
-            .select(
-                FM.session_id,
-                Min(FM.creation).as_("started"),
-                Max(FM.creation).as_("last_activity"),
-                Count(FM.name).as_("message_count"),
-            )
-            .where(FM.user == user)
-            .where(FM.is_archived == 1)
-            .groupby(FM.session_id)
-            .orderby("last_activity", order=frappe.qb.desc)
-            .limit(limit)
-        )
-        sessions = session_query.run(as_dict=True)
-
-        if not sessions:
-            return []
-
-        # Get first user message per session for preview
-        session_ids = [s["session_id"] for s in sessions]
-        first_messages = frappe.get_all(
-            "PA Chat Message",
-            filters={
-                "session_id": ["in", session_ids],
-                "user": user,
-                "role": "user",
-            },
-            fields=["session_id", "content", "creation"],
-            order_by="creation asc",
-        )
-
-        preview_map: dict[str, str] = {}
-        for msg in first_messages:
-            if msg.session_id not in preview_map:
-                content = (msg.content or "")[:100]
-                preview_map[msg.session_id] = content + ("..." if len(msg.content or "") > 100 else "")
-
+        sessions = _sessions_with_previews(frappe.session.user, 1, limit, _("Archived conversation"))
         for session in sessions:
-            session["preview"] = preview_map.get(session["session_id"], _("Archived conversation"))
             session["is_archived"] = True
-
         return sessions
 
     except Exception as e:
@@ -343,6 +315,7 @@ def continue_archived_session(old_session_id: str) -> dict:
     """
     import uuid
 
+    _validate_session_id(old_session_id)
     try:
         user = frappe.session.user
 

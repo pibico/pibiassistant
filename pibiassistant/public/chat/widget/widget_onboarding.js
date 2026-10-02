@@ -72,7 +72,7 @@ window.PAOWidgetOnboarding = {
 				`
 						: `
 					<div class="pao-contact-admin">
-						<p>${msg.no_admin}</p>
+						<p><i class="ph ph-warning" aria-hidden="true"></i><span>${msg.no_admin}</span></p>
 					</div>
 				`
 				}
@@ -102,6 +102,7 @@ window.PAOWidgetOnboarding = {
 	async check_user_auth(widget) {
 		try {
 			const response = await frappe.call({
+				silent: true,
 				method: "pibiassistant.pibiassistant_chat.api.auth.get_user_auth_status",
 				type: "GET",
 			});
@@ -127,21 +128,7 @@ window.PAOWidgetOnboarding = {
 
 		$messages.empty();
 
-		$messages.html(`
-			<div class="pao-welcome">
-				<div class="pao-avatar">
-					<img class="aida-avatar" src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" width="72" height="72" style="border-radius:50%;">
-				</div>
-				<h3>${__("Hi! I am AIDA")}</h3>
-				<p>${__("Your intelligent assistant from pibiCo. I can help you with:")}</p>
-				<ul>
-					<li>${__("Understanding forms and data")}</li>
-					<li>${__("Creating and managing documents")}</li>
-					<li>${__("Answering questions about your ERP")}</li>
-					<li>${__("Navigating the system")}</li>
-				</ul>
-			</div>
-		`);
+		$messages.html(PAOWidgetUI.get_welcome_message_html());
 
 		$inputArea.show();
 

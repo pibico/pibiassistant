@@ -73,7 +73,7 @@ def list_documents_harness(submittable=True, rows=None):
         stack.enter_context(
             patch(
                 "pibiassistant.plugins.core.tools.list_documents.frappe.get_meta",
-                return_value=MagicMock(is_submittable=1 if submittable else 0),
+                return_value=MagicMock(is_submittable=1 if submittable else 0, issingle=0, istable=0),
             )
         )
         get_list = stack.enter_context(
@@ -134,7 +134,7 @@ class TestDocstatusHelpers(BaseAssistantTest):
         original = {"status": "Paid"}
         with patch(
             "pibiassistant.plugins.core.tools.list_documents.frappe.get_meta",
-            return_value=MagicMock(is_submittable=1),
+            return_value=MagicMock(is_submittable=1, issingle=0, istable=0),
         ):
             defaulted, applied = apply_default_docstatus("Sales Invoice", original)
 
@@ -145,7 +145,7 @@ class TestDocstatusHelpers(BaseAssistantTest):
     def test_list_filters_gain_a_docstatus_condition(self):
         with patch(
             "pibiassistant.plugins.core.tools.list_documents.frappe.get_meta",
-            return_value=MagicMock(is_submittable=1),
+            return_value=MagicMock(is_submittable=1, issingle=0, istable=0),
         ):
             defaulted, applied = apply_default_docstatus("Sales Invoice", [["status", "=", "Paid"]])
 

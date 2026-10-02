@@ -276,7 +276,15 @@ class TestSensitiveKeyMatcher(BaseAssistantTest):
     def test_unrelated_keys_are_not_redacted(self):
         from pibiassistant.core.base_tool import _is_sensitive_key
 
-        for key in ["model", "content", "file_url", "ocr_backend"]:
+        for key in [
+            "model",
+            "content",
+            "file_url",
+            "ocr_backend",
+            "author",
+            "secretary",
+            "authorized_amount",
+        ]:
             self.assertFalse(_is_sensitive_key(key))
 
     def test_non_string_keys_return_false(self):

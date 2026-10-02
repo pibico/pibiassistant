@@ -27,10 +27,11 @@ document written to undo the confusion.
 
 from typing import Any, Dict
 
-import frappe
 from frappe import _
 
 from pibiassistant.core.base_tool import BaseTool
+from pibiassistant.plugins.limits import clamp_int
+from pibiassistant.plugins.query_errors import log_failure, single_doctype_message
 
 # Hard ceiling on rows returned, whatever the caller asks for.
 MAX_LIMIT = 100
@@ -55,7 +56,7 @@ class SearchDocuments(BaseTool):
             "Find documents by text. Omit 'doctype' to search across everything the user can read; "
             "pass 'doctype' to search within one DocType. Set purpose='link_value' to resolve a valid "
             "value for a Link field before creating or updating a document (returns display-ready "
-            "candidates). This is a text search — for exact filtering by status, date range, or amount, "
+            "candidates). Text search also matches identifiers where the DocType has them: NIF/tax_id, supplier invoice no. (bill_no), po_no, email_id, mobile_no. This is a text search — for exact filtering by status, date range, or amount, "
             "and for counting records, use list_documents instead."
         )
         self.requires_permission = None  # Permission checked dynamically per DocType
@@ -88,6 +89,11 @@ class SearchDocuments(BaseTool):
                     "maximum": MAX_LIMIT,
                     "description": f"Maximum results to return. Default {DEFAULT_LIMIT}, maximum {MAX_LIMIT}.",
                 },
+                "start": {
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Rows to skip, for paging within one doctype. When a result has has_more, pass its next_start here.",
+                },
             },
             "required": ["query"],
         }
@@ -102,6 +108,7 @@ class SearchDocuments(BaseTool):
             purpose = arguments.get("purpose") or "documents"
             filters = arguments.get("filters") or {}
             limit = self._clamp_limit(arguments.get("limit"))
+            start = clamp_int(arguments.get("start"), 0, 0, 1_000_000)
 
             if purpose == "link_value":
                 if not doctype:
@@ -112,7 +119,12 @@ class SearchDocuments(BaseTool):
                 return SearchTools.search_link(doctype=doctype, query=query, filters=filters, limit=limit)
 
             if doctype:
-                return SearchTools.search_doctype(doctype=doctype, query=query, limit=limit, filters=filters)
+                single_message = single_doctype_message(doctype)
+                if single_message:
+                    return {"success": False, "error": single_message, "doctype": doctype}
+                return SearchTools.search_doctype(
+                    doctype=doctype, query=query, limit=limit, filters=filters, start=start
+                )
 
             if filters:
                 # Filters need a DocType to resolve fieldnames against, so silently
@@ -125,23 +137,13 @@ class SearchDocuments(BaseTool):
             return SearchTools.global_search(query=query, limit=limit)
 
         except Exception as e:
-            frappe.log_error(
-                title=_("Search Documents Error"), message=f"Error searching documents: {str(e)}"
-            )
+            log_failure("Search Documents Error", e)
 
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e)[:2000]}
 
     def _clamp_limit(self, limit: Any) -> int:
         """Keep limit within bounds; a non-numeric value falls back to the default."""
-        try:
-            limit = int(limit)
-        except (TypeError, ValueError):
-            return DEFAULT_LIMIT
-
-        if limit < 1:
-            return DEFAULT_LIMIT
-
-        return min(limit, MAX_LIMIT)
+        return clamp_int(limit, DEFAULT_LIMIT, 0, MAX_LIMIT) or DEFAULT_LIMIT
 
 
 # Make sure class name matches file name for discovery

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="color-scheme" content="light dark">
+  <meta name="color-scheme" content="{{ boot.theme if boot.theme in ('light', 'dark') else 'light dark' }}">
   <meta name="csrf-token" content="{{ boot.csrf_token }}">
   <title>AIDA</title>
   <link rel="icon" type="image/svg+xml" href="/assets/pibiassistant/chat/widget/aida-icon.svg">
@@ -14,23 +14,30 @@
         if (t === "auto") {
           t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
         }
-        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+        if (t === "light" || t === "dark") {
+          document.documentElement.setAttribute("data-theme", t);
+          document.querySelector('meta[name="color-scheme"]').setAttribute("content", t);
+        }
       } catch (e) {}
     })();
   </script>
   <link rel="stylesheet" href="/assets/pibiassistant/vendor/phosphor/regular/style.css?v={{ asset_version }}">
   <link rel="stylesheet" href="/assets/pibiassistant/vendor/pibico/fonts.css?v={{ asset_version }}">
   <link rel="stylesheet" href="/assets/pibiassistant/vendor/pibico/tokens.css?v={{ asset_version }}">
-  {% for name in ["tokens", "fonts", "base", "components", "layout", "chat", "composer", "settings"] %}
+  {% for name in ["tokens", "base", "components", "sidebar", "layout", "chat", "composer", "settings"] %}
   <link rel="stylesheet" href="/assets/pibiassistant/aida/css/{{ name }}.css?v={{ asset_version }}">
+  {% endfor %}
+  <script type="importmap">{{ import_map | tojson }}</script>
+  {% for url in import_map.imports.values() %}
+  <link rel="modulepreload" href="{{ url }}">
   {% endfor %}
 </head>
 <body>
   <div id="aida-root"></div>
-  <noscript>{{ _("AIDA needs JavaScript to run. Please enable JavaScript in your browser.") }}</noscript>
+  <noscript style="display:block;padding:16px;font-family:Raleway,'Segoe UI',Arial,sans-serif;line-height:1.2">{{ _("AIDA needs JavaScript to run. Please enable JavaScript in your browser.") }}</noscript>
   <script>{% for key in boot %}window["{{ key }}"] = {{ boot[key] | tojson }};{% endfor %}</script>
   <script src="/assets/frappe/node_modules/socket.io-client/dist/socket.io.min.js"></script>
-  <script type="importmap">{{ import_map | tojson }}</script>
-  <script type="module" src="/assets/pibiassistant/aida/js/main.js?v={{ asset_version }}"></script>
+  {% set main_js = import_map.imports.get("/assets/pibiassistant/aida/js/main.js") or "/assets/pibiassistant/aida/js/main.js?v=" ~ asset_version %}
+  <script type="module" src="{{ main_js }}"></script>
 </body>
 </html>

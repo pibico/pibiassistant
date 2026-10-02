@@ -14,18 +14,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import frappe
 from frappe import _
 
 
 def get_context(context):
     context.title = _("AIDA Admin")
     context.description = _("AIDA administration panel — tools, plugins and settings.")
-
-    # Fetch assistant Server Settings
-    context.settings = frappe.get_single("assistant Server Settings")
-
-    # Fetch assistant Tool Registry
-    context.tools = frappe.get_all(
-        "assistant Tool Registry", filters={"enabled": 1}, fields=["tool_name", "tool_description"]
-    )

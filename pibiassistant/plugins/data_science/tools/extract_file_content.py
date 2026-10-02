@@ -34,6 +34,8 @@ import frappe
 from frappe import _
 
 from pibiassistant.core.base_tool import BaseTool
+from pibiassistant.plugins.query_errors import log_failure
+from pibiassistant.plugins.file_lookup import resolve_file_row
 
 
 class ExtractFileContent(BaseTool):
@@ -117,7 +119,8 @@ class ExtractFileContent(BaseTool):
     def execute(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Execute file content extraction"""
         try:
-            converted = self._try_convert_api(arguments)
+            file_doc = self._get_file_document(arguments)
+            converted = self._try_convert_api(arguments, file_doc)
             if converted:
                 return converted
 
@@ -126,8 +129,6 @@ class ExtractFileContent(BaseTool):
             if not dep_check["success"]:
                 return dep_check
 
-            # Get file from Frappe
-            file_doc = self._get_file_document(arguments)
             if not file_doc:
                 return {"success": False, "error": "File not found or access denied"}
 
@@ -178,32 +179,47 @@ class ExtractFileContent(BaseTool):
             return result
 
         except Exception as e:
-            frappe.log_error(title="File Processing Error", message=f"Error processing file: {str(e)}")
+            log_failure("File Processing Error", e)
             return {"success": False, "error": str(e)}
 
     CONVERT_EXTENSIONS = (".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".tif", ".tiff", ".docx", ".doc", ".pptx", ".xlsx", ".xls")
 
-    def _try_convert_api(self, arguments: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Use the AIDA Convert API for documents/images; None means fall back to local extraction."""
-        if arguments.get("operation", "extract") not in ("extract", "ocr", "extract_tables"):
+    CONVERT_CACHE_TTL = 3600
+    CONVERT_CACHE_MAX_CHARS = 1024 * 1024
+
+    def _try_convert_api(self, arguments: Dict[str, Any], file_doc: Any) -> Optional[Dict[str, Any]]:
+        """Use the AIDA Convert API for documents/images; None means fall back to local extraction.
+
+        The markdown is cached per File version so the conversion done when a file is attached
+        is not repeated when the model reads the same file again. Access to `file_doc` was
+        already checked by the caller, so a cache hit never skips a permission check.
+        """
+        operation = arguments.get("operation", "extract")
+        if operation not in ("extract", "ocr", "extract_tables"):
             return None
         try:
-            file_doc = self._get_file_document(arguments)
             if not file_doc or not (file_doc.file_name or "").lower().endswith(self.CONVERT_EXTENSIONS):
                 return None
             if not self._check_file_size(file_doc):
                 return None
-            content = self._get_file_content(file_doc)
-            if not content:
-                return None
 
-            from pibiassistant.pibiassistant_chat.api.aida import convert_bytes_to_markdown
+            cache_key = f"pa_convert:{file_doc.name}:{file_doc.modified}:{operation}"
+            markdown = frappe.cache().get_value(cache_key, expires=True)
+            content = None
+            if not markdown:
+                content = self._get_file_content(file_doc)
+                if not content:
+                    return None
 
-            markdown, error = convert_bytes_to_markdown(content, file_doc.file_name)
-            if error or not markdown.strip():
-                if error:
-                    frappe.log_error(title="AIDA Convert fallback", message=error)
-                return None
+                from pibiassistant.pibiassistant_chat.api.aida import convert_bytes_to_markdown
+
+                markdown, error = convert_bytes_to_markdown(content, file_doc.file_name)
+                if error or not markdown.strip():
+                    if error:
+                        frappe.log_error(title="AIDA Convert fallback", message=error)
+                    return None
+                if len(markdown) <= self.CONVERT_CACHE_MAX_CHARS:
+                    frappe.cache().set_value(cache_key, markdown, expires_in_sec=self.CONVERT_CACHE_TTL)
             return {
                 "success": True,
                 "content": markdown,
@@ -211,7 +227,7 @@ class ExtractFileContent(BaseTool):
                 "file_info": {
                     "name": file_doc.file_name,
                     "type": "markdown",
-                    "size": file_doc.file_size or len(content),
+                    "size": file_doc.file_size or (len(content) if content else 0),
                     "url": file_doc.file_url,
                 },
             }
@@ -253,17 +269,8 @@ class ExtractFileContent(BaseTool):
         file_name = arguments.get("file_name")
 
         try:
-            file_doc = None
-
-            if file_url:
-                results = frappe.get_all("File", filters={"file_url": file_url}, fields=["*"], limit=1)
-                if results:
-                    file_doc = frappe.get_doc("File", results[0].name)
-
-            elif file_name:
-                results = frappe.get_all("File", filters={"file_name": file_name}, fields=["*"], limit=1)
-                if results:
-                    file_doc = frappe.get_doc("File", results[0].name)
+            row = resolve_file_row(file_url=file_url, file_name=file_name)
+            file_doc = frappe.get_doc("File", row.name) if row else None
 
             if not file_doc:
                 return None
@@ -274,7 +281,7 @@ class ExtractFileContent(BaseTool):
         except frappe.PermissionError:
             raise
         except Exception as e:
-            frappe.log_error(f"Error getting file document: {str(e)}")
+            log_failure("File Document Error", e)
             return None
 
     def _check_file_access(self, file_doc) -> None:
@@ -355,7 +362,7 @@ class ExtractFileContent(BaseTool):
             return None
 
         except Exception as e:
-            frappe.log_error(f"Error reading file content: {str(e)}")
+            log_failure("File Read Error", e)
             return None
 
     def _get_s3_content(self, file_doc) -> Optional[bytes]:
@@ -385,7 +392,7 @@ class ExtractFileContent(BaseTool):
         except ImportError:
             return None
         except Exception as e:
-            frappe.log_error(f"S3 file read failed: {str(e)}")
+            log_failure("S3 File Read Error", e)
             return None
 
     def _detect_file_type(self, file_doc) -> str:

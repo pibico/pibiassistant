@@ -143,12 +143,6 @@ def _generate_oauth_tokens_for_user(oauth_client, user=None):
     }
 
 
-# Keep legacy alias for backwards compatibility
-def _generate_oauth_tokens_for_ar(oauth_client):
-    """Legacy alias - use _generate_oauth_tokens_for_user instead."""
-    return _generate_oauth_tokens_for_user(oauth_client)
-
-
 # ============================================================================
 # User Context Helpers
 # ============================================================================
@@ -478,8 +472,7 @@ def get_user_auth_status() -> dict:
     """
     try:
         # AIDA mode: skip cloud registration checks
-        aida_key = frappe.get_doc("PA Core Settings").get_password("aida_api_key")
-        if aida_key:
+        if _aida_mode():
             return {
                 "success": True,
                 "ready": True,

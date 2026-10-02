@@ -94,11 +94,20 @@ window.PAOWidgetAutofade = {
 		// Mouse wheel without scroll context (some Desk panes use overflow:hidden).
 		window.addEventListener("wheel", onActivity, { passive: true, capture: true });
 
-		window.addEventListener("resize", () => {
+		const onResize = () => {
 			if (window.innerWidth < 1024) {
 				el.classList.remove(this.FADE_CLASS);
 				isFaded = false;
 			}
+		};
+		window.addEventListener("resize", onResize);
+
+		(widget._cleanups = widget._cleanups || []).push(() => {
+			clearTimeout(idleTimer);
+			document.removeEventListener("keydown", onActivity, true);
+			window.removeEventListener("scroll", onActivity, true);
+			window.removeEventListener("wheel", onActivity, true);
+			window.removeEventListener("resize", onResize);
 		});
 	},
 };

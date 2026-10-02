@@ -23,6 +23,7 @@ from typing import Any, Dict, Optional
 import frappe
 from frappe import _
 
+from pibiassistant.utils.auth import check_assistant_enabled, validate_api_credentials
 from pibiassistant.utils.logger import api_logger
 
 
@@ -51,74 +52,9 @@ def get_usage_statistics() -> Dict[str, Any]:
         api_logger.info(f"Usage statistics requested by user: {authenticated_user}")
         api_logger.info(f"Current site: {frappe.local.site}")
 
-        # Get actual usage statistics
-        today = frappe.utils.today()
-        week_start = frappe.utils.add_days(today, -7)
+        from pibiassistant.utils.usage_statistics import collect_usage_statistics
 
-        # Connection statistics are no longer tracked (Assistant Connection Log removed)
-        # Using audit log activity as a proxy for connection activity
-        try:
-            total_connections = frappe.db.count("PA Audit Log") or 0
-            today_connections = frappe.db.count("PA Audit Log", {"creation": (">=", today)}) or 0
-            week_connections = frappe.db.count("PA Audit Log", {"creation": (">=", week_start)}) or 0
-        except Exception as e:
-            api_logger.warning(f"Connection stats error: {e}")
-            total_connections = today_connections = week_connections = 0
-
-        # Audit log statistics with error handling
-        try:
-            total_audit = frappe.db.count("PA Audit Log") or 0
-            today_audit = frappe.db.count("PA Audit Log", {"creation": (">=", today)}) or 0
-            week_audit = frappe.db.count("PA Audit Log", {"creation": (">=", week_start)}) or 0
-        except Exception as e:
-            api_logger.warning(f"Audit stats error: {e}")
-            total_audit = today_audit = week_audit = 0
-
-        # Tool statistics from plugin manager
-        try:
-            from pibiassistant.utils.plugin_manager import get_plugin_manager
-
-            plugin_manager = get_plugin_manager()
-            all_tools = plugin_manager.get_all_tools()
-            total_tools = len(all_tools)
-            enabled_tools = len(all_tools)  # All loaded tools are enabled
-            api_logger.debug(f"Tool stats: total={total_tools}, enabled={enabled_tools}")
-        except Exception as e:
-            api_logger.warning(f"Tool stats error: {e}")
-            total_tools = enabled_tools = 0
-
-        # Recent activity with error handling
-        try:
-            recent_activity = (
-                frappe.db.get_list(
-                    "PA Audit Log",
-                    fields=["action", "tool_name", "user", "status", "timestamp"],
-                    order_by="timestamp desc",
-                    limit=10,
-                )
-                or []
-            )
-        except Exception as e:
-            api_logger.warning(f"Recent activity error: {e}")
-            recent_activity = []
-
-        # Return statistics in the format expected by frontend
-        result = {
-            "success": True,
-            "data": {
-                "connections": {
-                    "total": total_connections,
-                    "today": today_connections,
-                    "this_week": week_connections,
-                },
-                "audit_logs": {"total": total_audit, "today": today_audit, "this_week": week_audit},
-                "tools": {"total": total_tools, "enabled": enabled_tools},
-                "recent_activity": recent_activity,
-            },
-        }
-
-        api_logger.debug(f"Usage statistics result: {result}")
-        return result
+        return {"success": True, "data": collect_usage_statistics()}
 
     except Exception as e:
         api_logger.error(f"Error getting usage statistics: {e}")
@@ -164,7 +100,7 @@ def _authenticate_request() -> Optional[str]:
     # Check if user is already authenticated (covers session and OAuth2.0 Bearer tokens)
     if frappe.session.user and frappe.session.user != "Guest":
         # Check if user has assistant access enabled
-        if not _check_assistant_enabled(frappe.session.user):
+        if not check_assistant_enabled(frappe.session.user):
             api_logger.warning(f"User {frappe.session.user} has assistant access disabled")
             return None
 
@@ -176,82 +112,16 @@ def _authenticate_request() -> Optional[str]:
         return frappe.session.user
 
     # Fallback to API key authentication for legacy clients
-    auth_header = frappe.get_request_header("Authorization")
-    api_logger.debug(f"Authorization header present: {bool(auth_header)}")
-
-    if auth_header and auth_header.startswith("token "):
-        try:
-            # Extract token from "token api_key:api_secret" format
-            token_part = auth_header[6:]  # Remove "token " prefix
-            if ":" in token_part:
-                api_key, api_secret = token_part.split(":", 1)
-                api_logger.debug("API key extracted from token header")
-
-                # Custom validation using database lookup and password verification
-                user_data = frappe.db.get_value(
-                    "User", {"api_key": api_key, "enabled": 1}, ["name", "api_secret"]
-                )
-
-                api_logger.debug(f"User data found: {bool(user_data)}")
-
-                if user_data:
-                    user, _ = user_data
-                    # Compare the provided secret with stored secret
-                    from frappe.utils.password import get_decrypted_password
-
-                    decrypted_secret = get_decrypted_password("User", user, "api_secret")
-
-                    if api_secret == decrypted_secret:
-                        # Check if user has assistant access enabled
-                        if not _check_assistant_enabled(str(user)):
-                            api_logger.warning(f"User {user} has assistant access disabled")
-                            return None
-
-                        # Set user context for this request
-                        # nosemgrep: frappe-setuser — user authenticated via API key:secret comparison above
-                        frappe.set_user(str(user))
-                        api_logger.debug(f"API key authentication successful: {user}")
-                        return str(user)
-                    else:
-                        api_logger.debug("API secret mismatch")
-                else:
-                    api_logger.debug("No user found with provided API key")
-
-        except Exception as e:
-            api_logger.error(f"API key authentication failed: {e}")
-    else:
-        api_logger.debug("No valid authorization header found")
+    auth_header = frappe.get_request_header("Authorization") or ""
+    if auth_header.startswith("token ") and ":" in auth_header[6:]:
+        api_key, api_secret = auth_header[6:].split(":", 1)
+        user = validate_api_credentials(api_key, api_secret)
+        if user and check_assistant_enabled(user):
+            # nosemgrep: frappe-setuser — user authenticated via API key:secret comparison above
+            frappe.set_user(str(user))
+            return str(user)
+        if user:
+            api_logger.warning(f"User {user} has assistant access disabled")
 
     api_logger.debug("Authentication failed")
     return None
-
-
-def _check_assistant_enabled(user: str) -> bool:
-    """
-    Check if the assistant_enabled field is enabled for the user.
-
-    Args:
-        user: Username to check
-
-    Returns:
-        bool: True if assistant is enabled, False otherwise
-    """
-    try:
-        # Get the assistant_enabled field value for the user
-        assistant_enabled = frappe.db.get_value("User", user, "assistant_enabled")
-
-        # If the field doesn't exist or is not set, default to disabled for security
-        if assistant_enabled is None:
-            api_logger.debug(f"assistant_enabled field not found for user {user}, defaulting to disabled")
-            return False
-
-        # Convert to boolean (handles 0/1, "0"/"1", and boolean values)
-        is_enabled = bool(int(assistant_enabled)) if assistant_enabled else False
-
-        api_logger.debug(f"User {user} assistant_enabled: {is_enabled}")
-        return is_enabled
-
-    except Exception as e:
-        # If there's any error checking the field, default to disabled for security
-        api_logger.error(f"Error checking assistant_enabled for user {user}: {e}")
-        return False

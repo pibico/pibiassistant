@@ -25,6 +25,26 @@ _PROFILE_FIELDS = (
 )
 
 
+_PROFILE_MAX_CHARS = {
+    "display_name": 140,
+    "job_title": 140,
+    "department": 140,
+    "about": 2000,
+    "custom_instructions": 4000,
+    "locale": 20,
+    "timezone": 64,
+}
+
+
+def _check_profile_lengths(**fields) -> None:
+    for name, value in fields.items():
+        if value is not None and len(str(value)) > _PROFILE_MAX_CHARS[name]:
+            frappe.throw(
+                _("{0} is too long (maximum {1} characters)").format(name.replace("_", " ").title(), _PROFILE_MAX_CHARS[name]),
+                frappe.ValidationError,
+            )
+
+
 def _local_profile() -> dict:
     """AIDA mode: the profile lives in the user's defaults, no cloud involved."""
     import json
@@ -122,6 +142,16 @@ def update_profile(
     Returns:
         {"success": true, "message": "..."}
     """
+    _check_profile_lengths(
+        display_name=display_name,
+        job_title=job_title,
+        department=department,
+        about=about,
+        custom_instructions=custom_instructions,
+        locale=locale,
+        timezone=timezone,
+    )
+
     from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
 
     client = get_pa_cloud_client()

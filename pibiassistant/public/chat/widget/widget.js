@@ -27,7 +27,7 @@ class PAOWidget {
 		this.messages = [];
 		// Turn-in-flight state, read by the reconnect recovery in
 		// widget_streaming.js to tell a lost answer from a finished one.
-		this._isStreaming = false;
+		this._streaming = false;
 		this.current_message_id = null;
 		this._seenMessageIds = new Set();
 		this.is_open = false;
@@ -104,7 +104,7 @@ class PAOWidget {
 
 		// Restore any pending HITL pause that survived a disconnect or
 		// worker restart so the user can finish where they left off.
-		if (window.PAOWidgetStreaming && window.PAOWidgetStreaming.hydrate_pending_interrupt) {
+		if (this.session_restored && window.PAOWidgetStreaming && window.PAOWidgetStreaming.hydrate_pending_interrupt) {
 			window.PAOWidgetStreaming.hydrate_pending_interrupt(this);
 		}
 
@@ -116,9 +116,13 @@ class PAOWidget {
 		// Note: PAOBrowserTools auto-initializes when its script loads
 		// (see widget_browser_tools.js) - no need to call initialize() here
 
-		// If site is registered, check per-user auth status
+		// AIDA-native sites (no PA Cloud URL) have no per-user registration to check.
 		if (this.can_use) {
-			await this.check_user_auth();
+			if (access.status === "ready" && !access.pa_cloud_url) {
+				this.user_setup_complete = true;
+			} else {
+				await this.check_user_auth();
+			}
 		}
 
 		// Check privacy consent from preferences (set during SPA onboarding)
@@ -129,7 +133,7 @@ class PAOWidget {
 		}
 
 		// Only load session history if fully set up (including consent)
-		if (this.can_use && this.user_setup_complete && this.privacy_consent_complete) {
+		if (this.session_restored && this.can_use && this.user_setup_complete && this.privacy_consent_complete) {
 			await this.load_session_history();
 		}
 
@@ -143,18 +147,81 @@ class PAOWidget {
 		this.start_tooltip_animation();
 
 		// Listen for route changes to update context and visibility
-		frappe.router.on("change", () => {
+		this._routeHandler = () => {
+			if (!this.$widget) return;
 			this.check_and_update_visibility();
 			this.update_context();
-		});
+		};
+		frappe.router.on("change", this._routeHandler);
 
 		// Initial visibility check (hide on pao-assistant page)
 		this.check_and_update_visibility();
 	}
 
+	get _isStreaming() {
+		return this._streaming;
+	}
+
+	set _isStreaming(value) {
+		this._streaming = !!value;
+		if (!this._streaming) {
+			this._stopping = false;
+			clearTimeout(this._stopFallback);
+		}
+		this.sync_send_button();
+	}
+
+	// While a turn is in flight the send button is the Stop control.
+	sync_send_button() {
+		if (!this.$widget) return;
+		const $btn = this.$widget.find(".pao-send-btn");
+		const stopping = this._streaming;
+		$btn.toggleClass("is-stop", stopping);
+		$btn.attr("aria-label", stopping ? __("Stop") : __("Send"));
+		$btn.attr("title", stopping ? __("Stop") : __("Send"));
+		$btn.find(".ph")
+			.toggleClass("ph-stop", stopping)
+			.toggleClass("ph-paper-plane-tilt", !stopping);
+		if (stopping) {
+			$btn.prop("disabled", false);
+		} else {
+			$btn.prop("disabled", !this.$widget.find(".pao-input").val().trim());
+		}
+	}
+
+	async stop_streaming() {
+		if (!this._streaming || this._stopping) return;
+		this._stopping = true;
+		this._lastStopAt = Date.now();
+		this.$widget.find(".pao-send-btn").prop("disabled", true);
+		// The server frees the session only after it sends stream_aborted; fall
+		// back locally so a lost event never leaves the widget locked.
+		clearTimeout(this._stopFallback);
+		this._stopFallback = setTimeout(() => {
+			if (!this._streaming) return;
+			// The server's own stream_aborted may still arrive; it must not close the next turn.
+			this._lateAbort = this.current_message_id || true;
+			PAOWidgetStreaming.finalize_aborted(this, {});
+		}, 5000);
+		await this.request_cancel();
+	}
+
+	async request_cancel() {
+		try {
+			await frappe.call({
+				silent: true,
+				method: "pibiassistant.pibiassistant_chat.api.cancel_stream",
+				args: { session_id: this.session_id, message_id: this.current_message_id || null },
+			});
+		} catch (error) {
+			PAOLogger.error("cancel_stream failed:", error);
+		}
+	}
+
 	async check_access() {
 		try {
 			const response = await frappe.call({
+				silent: true,
 				method: "pibiassistant.pibiassistant_chat.api.settings.access.can_use_pao",
 				type: "GET",
 				args: {},
@@ -171,6 +238,7 @@ class PAOWidget {
 		 */
 		try {
 			const response = await frappe.call({
+				silent: true,
 				method: "pibiassistant.pibiassistant_chat.api.settings.widget.get_widget_settings",
 				type: "GET",
 				args: {},
@@ -288,20 +356,7 @@ class PAOWidget {
 		 * Load previous messages from this session and restore them to the chat
 		 */
 		try {
-			const response = await frappe.call({
-				method: "pibiassistant.pibiassistant_chat.api.chat.sessions.get_session_history",
-				type: "GET",
-				args: {
-					session_id: this.session_id,
-				},
-			});
-
-			// get_session_history returns { messages: [...], has_more }. Older/edge
-			// paths may return a bare array — handle both.
-			const payload = response.message;
-			const messages = Array.isArray(payload)
-				? payload
-				: (payload && Array.isArray(payload.messages) ? payload.messages : []);
+			const messages = await PAOWidgetStreaming._fetch_session_messages(this.session_id);
 
 			// Clear welcome message if there are previous messages
 			if (messages.length > 0) {
@@ -324,7 +379,6 @@ class PAOWidget {
 				// Re-render a persisted task plan as a collapsed, expandable
 				// summary above this message's content (matches the SPA).
 				this.render_persisted_plan(msg, $msg);
-				this.render_routing_chip(msg, $msg);
 			});
 
 			// Scroll to bottom after loading history
@@ -372,17 +426,7 @@ class PAOWidget {
 			await new Promise((resolve) => setTimeout(resolve, pollInterval));
 
 			try {
-				const response = await frappe.call({
-					method: "pibiassistant.pibiassistant_chat.api.chat.sessions.get_session_history",
-					type: "GET",
-					args: { session_id: this.session_id },
-				});
-
-				// Same response shape as get_session_history: { messages: [...], has_more }.
-				const payload = response.message;
-				const messages = Array.isArray(payload)
-					? payload
-					: (payload && Array.isArray(payload.messages) ? payload.messages : []);
+				const messages = await PAOWidgetStreaming._fetch_session_messages(this.session_id);
 
 				// Check if we now have an assistant response at the end
 				if (messages.length > 0) {
@@ -392,10 +436,7 @@ class PAOWidget {
 						$waitingIndicator.remove();
 
 						this.messages.push(this._toWidgetMessage(lastMsg));
-						const $late = this.add_message_to_ui(lastMsg.role, lastMsg.content);
-						// The recovery path after a long tool call — exactly when a
-						// user most wants to know which model ran.
-						this.render_routing_chip(lastMsg, $late);
+						this.add_message_to_ui(lastMsg.role, lastMsg.content);
 						return;
 					}
 				}
@@ -431,13 +472,14 @@ class PAOWidget {
 				</div>
 
 				<!-- Toggle Button -->
-				<button class="pao-toggle-btn">
-						<img class="aida-avatar" src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" width="64" height="64" style="border-radius:50%;">
+				<button class="pao-toggle-btn" aria-label="${__('Open AIDA')}" aria-expanded="false" aria-describedby="pao-move-hint">
+						<img class="aida-avatar" src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="" width="64" height="64" style="border-radius:50%;">
 					<span class="pao-approval-badge" aria-hidden="true"></span>
 				</button>
+				<span id="pao-move-hint" class="pao-sr-only">${__('Move AIDA (Alt+arrows)')}</span>
 
 				<!-- Chat Window -->
-				<div class="pao-chat-window" style="display: none;">
+				<div class="pao-chat-window" role="dialog" aria-label="AIDA" style="display: none;">
 					<button type="button" class="pao-resize-grip" aria-label="${__('Resize chat (Alt+arrows, Alt+Home resets)')}" title="${__('Resize chat')}"></button>
 					<!-- Header -->
 					<div class="pao-header">
@@ -459,20 +501,8 @@ class PAOWidget {
 					</div>
 
 					<!-- Messages Container -->
-					<div class="pao-messages">
-						<div class="pao-welcome">
-							<div class="pao-avatar">
-								<img src="/assets/pibiassistant/chat/widget/aida-icon.svg" alt="AIDA" style="width:88px;height:88px;border-radius:50%;">
-							</div>
-							<h3>${__("Hi! I am AIDA")}</h3>
-							<p>${__("Your intelligent assistant from pibiCo. I can help you with:")}</p>
-							<ul>
-								<li>${__("Understanding forms and data")}</li>
-								<li>${__("Creating and managing documents")}</li>
-								<li>${__("Answering questions about your ERP")}</li>
-								<li>${__("Navigating the system")}</li>
-							</ul>
-						</div>
+					<div class="pao-messages" role="log" aria-live="polite" aria-relevant="additions">
+						${PAOWidgetUI.get_welcome_message_html()}
 					</div>
 
 					<!-- Input Area -->
@@ -494,7 +524,7 @@ class PAOWidget {
 								placeholder="${__('Ask AIDA...')}"
 								rows="1"
 							></textarea>
-							<button class="pao-send-btn" title="${__('Send')}" disabled>
+							<button class="pao-send-btn" title="${__('Send')}" aria-label="${__('Send')}" disabled>
 								<i class="ph ph-paper-plane-tilt" aria-hidden="true"></i>
 							</button>
 						</div>
@@ -594,8 +624,15 @@ class PAOWidget {
 
 			// Enable/disable send button + toggle active fill
 			const hasText = !!$input.val().trim();
-			$sendBtn.prop("disabled", !hasText);
+			$sendBtn.prop("disabled", !hasText && !this._streaming);
 			$sendBtn.toggleClass("is-active", hasText);
+		});
+
+		this.$widget.find(".pao-chat-window").on("keydown", (e) => {
+			if (e.key !== "Escape" || e.isDefaultPrevented()) return;
+			if (this._slashMenuState && this._slashMenuState.open) return;
+			if ($(e.target).closest(".pao-panel").length) return;
+			this.close();
 		});
 
 		$input.on("keydown", (e) => {
@@ -605,6 +642,7 @@ class PAOWidget {
 			}
 			// Send on Enter (without Shift)
 			if (e.key === "Enter" && !e.shiftKey) {
+				if ((e.originalEvent || e).isComposing || e.keyCode === 229) return;
 				e.preventDefault();
 				if ($input.val().trim()) {
 					this.send_message($input.val().trim());
@@ -613,7 +651,9 @@ class PAOWidget {
 		});
 
 		$sendBtn.on("click", () => {
-			if ($input.val().trim()) {
+			if (this._streaming) {
+				this.stop_streaming();
+			} else if ($input.val().trim()) {
 				this.send_message($input.val().trim());
 			}
 		});
@@ -690,20 +730,6 @@ class PAOWidget {
 		PAOWidgetPositioning.apply_custom_position(this, position);
 	}
 
-	async update_server_preference(field, value) {
-		try {
-			await frappe.call({
-				method: "pibiassistant.pibiassistant_chat.api.settings.widget.update_user_preference",
-				args: {
-					field: field,
-					value: value,
-				},
-			});
-		} catch (error) {
-			// Silently fail
-		}
-	}
-
 	_handleVoiceState(state) {
 		const $btn = this.$widget.find(".pao-mic-btn");
 		const $elapsed = this.$widget.find(".pao-mic-elapsed");
@@ -745,20 +771,13 @@ class PAOWidget {
 		formData.append("duration_ms", String(durationMs));
 		formData.append("language", await this._resolveTranscribeLanguage());
 		try {
-			const csrf = window.csrf_token || (window.frappe && window.frappe.csrf_token) || "";
-			const res = await fetch("/api/method/pibiassistant.pibiassistant_chat.api.voice.transcribe", {
-				method: "POST",
-				headers: { "X-Frappe-CSRF-Token": csrf },
-				body: formData,
-				credentials: "same-origin",
-			});
-			const json = await res.json();
+			const { res, json: body } = await PAOCore.post_form("/api/method/pibiassistant.pibiassistant_chat.api.voice.transcribe", formData);
+			const json = body || {};
 			const data = json.message || json;
 			if (!res.ok || !data || data.text === undefined) {
-				let detail = "";
-				try { detail = (JSON.parse(json._server_messages || "[]").map((m) => JSON.parse(m).message).join(" ") || json.exception || "").replace(/<[^>]*>/g, "").slice(0, 160); } catch (e) {}
+				const detail = PAOCore.server_error_text(json);
 				PAOLogger.error("Transcription failed", res.status, json);
-				frappe.show_alert({ message: __("Could not transcribe") + (detail ? ": " + detail : ""), indicator: "red" });
+				frappe.show_alert({ message: __("Could not transcribe") + (detail ? ": " + PAOCore.escape_html(detail) : ""), indicator: "red" });
 				return;
 			}
 			if (!data.text) {
@@ -797,7 +816,7 @@ class PAOWidget {
 		const key = parts.pop().toLowerCase();
 		const modifiers = parts.map((m) => m.toLowerCase());
 
-		$(document).on("keydown", (e) => {
+		this._shortcutHandler = (e) => {
 			const hasCtrl = modifiers.includes("ctrl")
 				? e.ctrlKey || e.metaKey
 				: !e.ctrlKey && !e.metaKey;
@@ -808,7 +827,8 @@ class PAOWidget {
 				e.preventDefault();
 				this.toggle();
 			}
-		});
+		};
+		$(document).on("keydown", this._shortcutHandler);
 	}
 
 	check_and_update_visibility() {
@@ -831,10 +851,6 @@ class PAOWidget {
 		// Update context indicator
 		this.update_context_indicator();
 
-		// Warm the slash-menu template cache for fully set up users.
-		if (this.can_use && this.user_setup_complete && window.PAOWidgetSlashMenu) {
-			PAOWidgetSlashMenu.prefetch(this);
-		}
 	}
 
 	update_context_indicator() {
@@ -851,6 +867,8 @@ class PAOWidget {
 	}
 
 	async send_message(message) {
+		// The server rejects a second turn (417) and the reset would wipe the draft.
+		if (this._isStreaming) return;
 		const $input = this.$widget.find(".pao-input");
 		const $sendBtn = this.$widget.find(".pao-send-btn");
 
@@ -862,7 +880,7 @@ class PAOWidget {
 		this.$widget.find(".pao-welcome").fadeOut();
 
 		// Add user message to UI with attached files
-		this.add_message_to_ui("user", message, false, this.attached_files.slice());
+		const $userMsg = this.add_message_to_ui("user", message, false, this.attached_files.slice());
 
 		// Add streaming assistant message placeholder
 		const $assistantMsg = this.add_streaming_message();
@@ -916,18 +934,31 @@ class PAOWidget {
 			} catch(e) {}
 
 			// Same endpoint as the full-page chat: stored history, site tools, model choice.
-			await frappe.call({
-				method: "pibiassistant.pibiassistant_chat.api.send_message",
-				args: {
-					session_id: this.session_id,
-					message: message,
-					file_urls: file_urls.length ? JSON.stringify(file_urls) : null,
-					attachments: attachments.length ? JSON.stringify(attachments) : null,
-					system_prompt_addendum: page_context || null,
-					client_signals: client_signals,
-					client_type: "widget",
-				},
-			});
+			const sendArgs = {
+				session_id: this.session_id,
+				message: message,
+				file_urls: file_urls.length ? JSON.stringify(file_urls) : null,
+				attachments: attachments.length ? JSON.stringify(attachments) : null,
+				system_prompt_addendum: page_context || null,
+				client_signals: client_signals,
+				client_type: "widget",
+			};
+			// Right after Stop the server may still be closing the stopped turn
+			// and refuses a new one (417); retry briefly instead of failing.
+			for (let attempt = 0; ; attempt++) {
+				try {
+					await frappe.call({
+						silent: true,
+						method: "pibiassistant.pibiassistant_chat.api.send_message",
+						args: sendArgs,
+					});
+					break;
+				} catch (err) {
+					const afterStop = Date.now() - (this._lastStopAt || 0) < 15000;
+					if (!afterStop || attempt >= 4) throw err;
+					await new Promise((resolve) => setTimeout(resolve, 1500));
+				}
+			}
 
 			// Clear attached files after sending
 			this.attached_files = [];
@@ -944,15 +975,10 @@ class PAOWidget {
 			}
 
 			$assistantMsg.remove();
-			$sendBtn.prop("disabled", false);
+			$userMsg.remove();
+			if (!$input.val()) $input.val(message).trigger("input");
 
-			let reason = "";
-			try {
-				const msgs = JSON.parse((error && error._server_messages) || "[]");
-				if (msgs.length) reason = $("<div>").html(JSON.parse(msgs[0]).message).text();
-			} catch (e) {
-				/* no readable server reason */
-			}
+			const reason = PAOCore.server_error_text(error);
 			const text = __("Sorry, I could not send your message. Please try again.");
 			this.add_message_to_ui("assistant", reason ? `${text} ${reason}` : text, true);
 		}
@@ -1001,20 +1027,12 @@ class PAOWidget {
 			const formData = new FormData();
 			formData.append("file", file);
 
-			const response = await fetch(
+			const { res: response, json: result } = await PAOCore.post_form(
 				"/api/method/pibiassistant.pibiassistant_chat.api.settings.uploads.upload_message_file",
-				{
-					method: "POST",
-					headers: {
-						"X-Frappe-CSRF-Token": frappe.csrf_token,
-					},
-					body: formData,
-				}
+				formData
 			);
 
-			const result = await response.json();
-
-			if (result.message && result.message.success) {
+			if (response.ok && result && result.message && result.message.success) {
 				// Add to attached files
 				this.attached_files.push(result.message.file);
 
@@ -1029,13 +1047,16 @@ class PAOWidget {
 					3
 				);
 			} else {
-				throw new Error(result.message || "Upload failed");
+				const m = result && result.message;
+				throw new Error(
+					PAOCore.server_error_text(result) || (m && typeof m.error === "string" && m.error) || (typeof m === "string" && m) || __("Upload failed")
+				);
 			}
 		} catch (error) {
 			PAOLogger.error("File upload error:", error);
 			frappe.show_alert(
 				{
-					message: __("Failed to upload file: {0}", [error.message || "Unknown error"]),
+					message: __("Failed to upload file: {0}", [PAOCore.escape_html(error.message || __("Unknown error"))]),
 					indicator: "red",
 				},
 				5
@@ -1093,8 +1114,8 @@ class PAOWidget {
 			attached_files.forEach((file) => {
 				const fileSizeKB = file.file_size ? (file.file_size / 1024).toFixed(1) : "0";
 				attachmentsHtml += `<div class="pao-attachment-item"><i class="ph ph-file" aria-hidden="true"></i><span class="pao-attachment-name">${
-					file.file_name || "Unnamed file"
-				}</span><span class="pao-attachment-size">${fileSizeKB} KB</span></div>`;
+					PAOCore.escape_html(file.file_name || __("Unnamed file"))
+				}</span><span class="pao-attachment-size">${fileSizeKB} ${__("KB")}</span></div>`;
 			});
 			attachmentsHtml += "</div>";
 		}
@@ -1106,7 +1127,7 @@ class PAOWidget {
 				</div>
 				<div class="pao-message-content">
 					${attachmentsHtml}
-					<div class="pao-message-text">${this.format_message(content, role)}</div>
+					<div class="pao-message-text">${role === "user" ? PAOCore.escape_html(content) : this.format_message(content, role)}</div>
 					<div class="pao-message-time">${this.format_time(new Date())}</div>
 				</div>
 			</div>
@@ -1126,38 +1147,7 @@ class PAOWidget {
 			content: msg.content,
 			model: msg.model,
 			credits_used: msg.credits_used,
-			routing: msg.routing,
 		};
-	}
-
-	render_routing_chip(msg, $message) {
-		let receipt = msg && msg.routing;
-		if (!receipt || msg.role === "user") return;
-		if (typeof receipt === "string") {
-			try {
-				receipt = JSON.parse(receipt);
-			} catch (e) {
-				return;
-			}
-		}
-		const routing = window.PAOWidgetRouting;
-		if (!routing) return;
-		const label = routing.chipLabel(receipt);
-		if (!label) return;
-
-		const $msg = $message && $message.length
-			? $message
-			: this.$widget.find(".pao-message").last();
-		if (!$msg.length || $msg.find(".pao-routing-chip").length) return;
-
-		// Non-interactive text, and exception-only: the widget has no panel to
-		// open, so an ordinary turn renders nothing here at all.
-		const $chip = $("<span>")
-			.addClass("pao-routing-chip")
-			.attr("title", routing.headline(receipt, null))
-			.text(label);
-		const $time = $msg.find(".pao-message-time");
-		($time.length ? $time : $msg).append($chip);
 	}
 
 	render_persisted_plan(msg, $message) {
@@ -1183,23 +1173,6 @@ class PAOWidget {
 		if ($content.length) {
 			$content.prepend(window.PAOPlanStrip.collapsedHtml(planBlock));
 		}
-	}
-
-	add_typing_indicator() {
-		const $messages = this.$widget.find(".pao-messages");
-		const $typing = $(`
-			<div class="pao-typing-indicator">
-				<div class="pao-message-avatar">
-					${this.get_assistant_avatar()}
-				</div>
-				<div class="pao-typing-dots">
-					<span></span><span></span><span></span>
-				</div>
-			</div>
-		`);
-		$messages.append($typing);
-		this.scroll_to_bottom();
-		return $typing;
 	}
 
 	// --- Formatting & Avatars — delegated to PAOCore ---
@@ -1233,9 +1206,16 @@ class PAOWidget {
 		}
 	}
 
+	_sync_toggle_a11y(isOpen) {
+		this.$widget
+			.find(".pao-toggle-btn")
+			.attr({ "aria-expanded": isOpen ? "true" : "false", "aria-label": isOpen ? __("Close AIDA") : __("Open AIDA") });
+	}
+
 	open() {
 		this.is_open = true;
 		this.is_minimized = false;
+		this._sync_toggle_a11y(true);
 
 		// Stop tooltip animation when opening
 		this.stop_tooltip_animation();
@@ -1274,6 +1254,7 @@ class PAOWidget {
 	close() {
 		this.is_open = false;
 		this.is_minimized = true;
+		this._sync_toggle_a11y(false);
 
 		const $chatWindow = this.$widget.find(".pao-chat-window");
 
@@ -1285,6 +1266,7 @@ class PAOWidget {
 			// After animation completes, update classes
 			this.$widget.removeClass("pao-open");
 			this.$widget.addClass("pao-minimized");
+			this.$widget.find(".pao-toggle-btn").trigger("focus");
 		});
 
 		// Start tooltip animation when closing
@@ -1480,6 +1462,36 @@ class PAOWidget {
 			this.stop_tooltip_animation();
 		} catch (e) {
 			// Tooltip animation may not have started — safe to ignore.
+		}
+
+		try {
+			if (this._routeHandler && frappe.router && frappe.router.off) {
+				frappe.router.off("change", this._routeHandler);
+			}
+			this._routeHandler = null;
+			if (window.PAOWidgetStreaming) {
+				PAOWidgetStreaming.clear_timeouts();
+				PAOWidgetStreaming.teardown_recovery();
+				PAOWidgetStreaming.clear_approval_attention(this);
+				PAOWidgetStreaming.stop_processing_indicator(this);
+			}
+			$(document).off("keydown.paoVoice");
+			const vc = this._voiceCapture;
+			if (vc) {
+				// Detach the recorder callbacks first: cancel() ends the recorder asynchronously and its
+				// "too short" error would otherwise toast into a widget that no longer exists.
+				if (vc._mediaRecorder) {
+					vc._mediaRecorder.onstop = null;
+					vc._mediaRecorder.onerror = null;
+				}
+				vc.cancel();
+				this._voiceCapture = null;
+			}
+			if (this._shortcutHandler) $(document).off("keydown", this._shortcutHandler);
+			(this._cleanups || []).forEach((fn) => fn());
+			this._cleanups = [];
+		} catch (e) {
+			PAOLogger.debug("Teardown: listener cleanup failed", e);
 		}
 
 		try {

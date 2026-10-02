@@ -1,7 +1,6 @@
-import { qs, setHtml } from '../dom.js';
+import { qs, setHtml, escapeHtml as esc } from '../dom.js';
 import { call, log } from '../api.js';
 
-const esc = (s) => frappe.utils.escape_html(String(s ?? ''));
 
 function rowHtml(a) {
 	const ok = a.status === 'Success';
@@ -13,7 +12,7 @@ function rowHtml(a) {
 				<span class="pa-act__name">${esc(a.action)}</span>
 				<span class="indicator-pill ${ok ? 'green' : 'red'}">
 					<i class="ph ${icon}" aria-hidden="true"></i>
-					${esc(a.status)}
+					${esc(__(a.status))}
 				</span>
 			</div>
 			<div class="pa-act__meta">${esc(a.user)}${tool} · ${esc(frappe.datetime.str_to_user(a.timestamp))}</div>

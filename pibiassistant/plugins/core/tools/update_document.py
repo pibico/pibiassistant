@@ -25,23 +25,8 @@ import frappe
 from frappe import _
 
 from pibiassistant.core.base_tool import BaseTool
-
-
-def _restricted_fields_for_doctype(doctype: str, user_role: str) -> Set[str]:
-    """Resolve the union of SENSITIVE_FIELDS + (role-conditional) ADMIN_ONLY_FIELDS for a doctype."""
-    from pibiassistant.core.security_config import ADMIN_ONLY_FIELDS, SENSITIVE_FIELDS
-
-    restricted: Set[str] = set()
-    restricted.update(SENSITIVE_FIELDS.get("all_doctypes", []))
-    restricted.update(SENSITIVE_FIELDS.get(doctype, []))
-
-    if user_role == "PA User":
-        restricted.update(ADMIN_ONLY_FIELDS.get("all_doctypes", []))
-        doctype_admin_fields = ADMIN_ONLY_FIELDS.get(doctype, [])
-        if doctype_admin_fields != "*":
-            restricted.update(doctype_admin_fields)
-
-    return restricted
+from pibiassistant.plugins.core.field_guard import check_field_names, restricted_fields_for_doctype
+from pibiassistant.plugins.query_errors import client_error_message, log_failure, permission_error_result
 
 
 def _apply_child_table_update(
@@ -226,6 +211,13 @@ class DocumentUpdate(BaseTool):
         name = arguments.get("name")
         data = arguments.get("data", {})
 
+        if not isinstance(data, dict) or not data:
+            return {
+                "success": False,
+                "error": _("data is empty: pass at least one field to change, e.g. {'field': 'value'}."),
+                "error_type": "empty_update",
+            }
+
         # Reject direct updates to child-table doctypes. Saving a child row in isolation
         # bypasses the parent's validate() pipeline, so derived fields (e.g. ERPNext's
         # row `amount` and parent `total`/`total_qty`/`grand_total`) never recompute.
@@ -305,16 +297,20 @@ class DocumentUpdate(BaseTool):
                     "error": f"Cannot modify cancelled document {doctype} '{name}'. Cancelled documents are read-only.",
                     "docstatus": current_docstatus,
                     "workflow_state": current_workflow_state,
-                    "suggestion": "Use document_get to view the cancelled document, or create a new document if needed.",
+                    "suggestion": "Use get_document to view the cancelled document, or create a new document if needed.",
                 }
                 return result
 
             # Resolve restricted fields for the parent doctype.
-            parent_restricted = _restricted_fields_for_doctype(doctype, user_role)
+            parent_restricted = restricted_fields_for_doctype(doctype, user_role)
 
             # Get DocType metadata for proper child-table handling.
             meta = frappe.get_meta(doctype)
             table_fields = {f.fieldname: f.options for f in meta.fields if f.fieldtype == "Table"}
+
+            field_error = check_field_names(meta, data.keys(), creating=False)
+            if field_error:
+                return field_error
 
             # Top-level restricted-field check (excludes child-table fields, which are checked
             # separately against the child doctype's restricted set).
@@ -334,7 +330,7 @@ class DocumentUpdate(BaseTool):
             for field, value in data.items():
                 if field in table_fields:
                     child_doctype = table_fields[field]
-                    child_restricted = _restricted_fields_for_doctype(child_doctype, user_role)
+                    child_restricted = restricted_fields_for_doctype(child_doctype, user_role)
                     err = _apply_child_table_update(doc, field, child_doctype, value, child_restricted)
                     if err is not None:
                         return err
@@ -392,12 +388,20 @@ class DocumentUpdate(BaseTool):
             # Log successful update
             return result
 
-        except Exception as e:
-            frappe.log_error(
-                title=_("Document Update Error"), message=f"Error updating {doctype} '{name}': {str(e)}"
+        except frappe.PermissionError as e:
+            return permission_error_result(
+                e,
+                _("You do not have permission to update {0} '{1}'.").format(doctype, name),
+                doctype=doctype,
+                name=name,
             )
+        except Exception as e:
+            friendly = client_error_message(e)
+            if friendly:
+                return {"success": False, "error": friendly, "doctype": doctype, "name": name}
+            log_failure("Document Update Error", e)
 
-            result = {"success": False, "error": str(e), "doctype": doctype, "name": name}
+            result = {"success": False, "error": str(e)[:2000] or type(e).__name__, "doctype": doctype, "name": name}
 
             # Log failed update
             return result

@@ -23,8 +23,10 @@ from typing import Any, Dict
 
 import frappe
 from frappe import _
+from frappe.utils import strip_html
 
 from pibiassistant.core.base_tool import BaseTool
+from pibiassistant.plugins.query_errors import log_failure, permission_error_result
 
 
 class DocumentDelete(BaseTool):
@@ -95,12 +97,12 @@ class DocumentDelete(BaseTool):
             try:
                 doc = frappe.get_doc(doctype, name)
             except frappe.PermissionError:
-                return {
-                    "success": False,
-                    "error": f"Insufficient permissions to access {doctype} '{name}'",
-                    "doctype": doctype,
-                    "name": name,
-                }
+                return permission_error_result(
+                    frappe.PermissionError(),
+                    _("Insufficient permissions to access {0} '{1}'").format(doctype, name),
+                    doctype=doctype,
+                    name=name,
+                )
             except Exception as get_error:
                 return {
                     "success": False,
@@ -134,13 +136,15 @@ class DocumentDelete(BaseTool):
                     "dependency_error": True,
                 }
             except frappe.PermissionError as perm_error:
-                return {
-                    "success": False,
-                    "error": f"Insufficient permissions to delete {doctype} '{name}': {str(perm_error) or 'Permission denied'}",
-                    "doctype": doctype,
-                    "name": name,
-                    "permission_error": True,
-                }
+                return permission_error_result(
+                    frappe.PermissionError(),
+                    _("Insufficient permissions to delete {0} '{1}': {2}").format(
+                        doctype, name, strip_html(str(perm_error)) or _("Permission denied")
+                    ),
+                    doctype=doctype,
+                    name=name,
+                    permission_error=True,
+                )
             except Exception as delete_error:
                 error_msg = str(delete_error) or f"Unknown error occurred while deleting {doctype} '{name}'"
                 return {
@@ -156,9 +160,7 @@ class DocumentDelete(BaseTool):
                 str(e) or f"Unexpected error occurred while processing delete request for {doctype} '{name}'"
             )
 
-            frappe.log_error(
-                title=_("Document Delete Error"), message=f"Error deleting {doctype} '{name}': {error_msg}"
-            )
+            log_failure("Document Delete Error", e)
 
             return {
                 "success": False,

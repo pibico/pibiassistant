@@ -135,4 +135,4 @@ Thank you for contributing to pibiAssistant! Together, we're building the future
 
 ---
 
-**Questions?** Feel free to reach out via [GitHub Discussions](https://github.com/paborana/pibiassistant/discussions) or email [proyectos@pibico.org](mailto:proyectos@pibico.org).
+**Questions?** Feel free to reach out via [GitHub Discussions](https://github.com/pibico/pibiassistant/discussions) or email [proyectos@pibico.org](mailto:proyectos@pibico.org).

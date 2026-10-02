@@ -1,4 +1,4 @@
-import { qs, on, delegate, setHtml, debounce } from '../dom.js';
+import { qs, on, delegate, setHtml, debounce, escapeHtml as esc } from '../dom.js';
 import { call, log } from '../api.js';
 import { state } from '../state.js';
 import { skeletonCards } from '../utils.js';
@@ -7,7 +7,6 @@ import {
 	emptyStateHtml, sharedChipsHtml, renderList, loadList, toggleStatus, togglePanel,
 } from './items.js';
 
-const esc = (s) => frappe.utils.escape_html(String(s ?? ''));
 
 function config(ctx) {
 	const root = ctx.root;
@@ -34,7 +33,7 @@ function config(ctx) {
 		loadErrorText: () => __('Error loading skills'),
 		toggleErrorText: () => __('Error toggling skill status'),
 		metaHtml: (s, lastUsed) => `
-			<span class="pa-meta-chip">${esc(s.skill_type || '')}</span>
+			<span class="pa-meta-chip">${esc(s.skill_type ? __(s.skill_type) : '')}</span>
 			${s.linked_tool ? `<span class="pa-meta-chip"><i class="ph ph-wrench" aria-hidden="true"></i> ${esc(s.linked_tool)}</span>` : ''}
 			${sharedChipsHtml(s, lastUsed)}`,
 		matches: (s) => {

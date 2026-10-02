@@ -17,8 +17,6 @@ must be visible to whichever gunicorn worker is running the relay loop,
 which may not be the worker that received this POST.
 """
 
-from __future__ import annotations
-
 import frappe
 from frappe import _
 
@@ -108,8 +106,9 @@ def cancel_stream(session_id: str, message_id: str | None = None) -> dict:
     ``message_id`` is accepted for forward-compat / audit but not
     required — there is at most one active stream per session.
     """
-    if not session_id:
-        frappe.throw(_("session_id is required"), frappe.ValidationError)
+    from .._helpers import _validate_session_id
+
+    _validate_session_id(session_id)
 
     # Ownership: only the session's owner (or System Manager) may cancel.
     # PA Chat Messages carry ``user``; check the most recent message in the
@@ -123,8 +122,21 @@ def cancel_stream(session_id: str, message_id: str | None = None) -> dict:
     if owner and owner != frappe.session.user and "System Manager" not in frappe.get_roles():
         frappe.throw(_("You can only cancel your own conversation"), frappe.PermissionError)
 
+    from ..chat.aida_stream import is_aida_mode, is_turn_active
+    from ..chat.aida_tools import discard_pending, peek_pending
+
+    # In AIDA mode a turn is only live while its lock is held and only paused
+    # while an approval is pending; Stop on an idle session must not rewrite
+    # the finished answer or leave a cancel flag behind to kill the next turn.
+    if is_aida_mode():
+        live = is_turn_active(session_id)
+        paused = bool(peek_pending(session_id, frappe.session.user))
+    else:
+        live = paused = True
+
     # Regime 1: signal any live relay loop to bail at its next iteration.
-    mark_cancelled(session_id)
+    if live:
+        mark_cancelled(session_id)
 
     # Regime 2: also handle the HITL-pause case where no relay is alive.
     # Idempotent — if a live relay also fires, it'll re-snapshot blocks
@@ -134,12 +146,15 @@ def cancel_stream(session_id: str, message_id: str | None = None) -> dict:
     # Guarded: a local failure (DB error, retry-writer exhaustion) must not
     # stop the AR cancel below — otherwise AR keeps the agent running and
     # burning tokens on a turn the user already stopped.
-    try:
-        _abort_pending_interactions(session_id, message_id)
-    except Exception:
-        frappe.logger("pao.chat.cancel").warning(
-            f"_abort_pending_interactions failed for {session_id}", exc_info=True
-        )
+    if paused:
+        try:
+            _abort_pending_interactions(session_id, message_id)
+            if is_aida_mode():
+                discard_pending(session_id, frappe.session.user)
+        except Exception:
+            frappe.logger("pao.chat.cancel").warning(
+                f"_abort_pending_interactions failed for {session_id}", exc_info=True
+            )
 
     # Optimistic UI ping — the relay (or our own HITL-abort handler) will
     # emit the authoritative ``stream_aborted``. This one is just to unstick

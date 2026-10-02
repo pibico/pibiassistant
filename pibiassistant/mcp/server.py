@@ -24,7 +24,7 @@ with Frappe-specific optimizations.
 Key improvements over frappe-mcp:
 - Proper JSON serialization with `default=str` (handles datetime, Decimal, etc.)
 - No Pydantic dependency (simpler, faster)
-- Full error tracebacks for debugging
+- Tracebacks stay in the server log, clients get short messages
 - Optional Bearer token authentication
 - Frappe-native integration
 """
@@ -35,6 +35,15 @@ from collections import OrderedDict
 from typing import Any, Dict, Optional
 
 from werkzeug.wrappers import Request, Response
+
+from pibiassistant.utils.json_safe import dumps_strict
+
+SUPPORTED_PROTOCOL_VERSIONS = ("2025-06-18", "2025-03-26", "2024-11-05")
+
+
+class InvalidParams(Exception):
+    """Raised by handlers for bad request params; mapped to JSON-RPC -32602."""
+
 
 
 class MCPServer:
@@ -63,16 +72,27 @@ class MCPServer:
         the tool_adapter. The @mcp.tool decorator pattern is not supported.
     """
 
-    def __init__(self, name: str = "pibiassistant"):
+    def __init__(self, name: str = "pibiassistant", name_resolver=None):
         """
         Initialize MCP server.
 
         Args:
             name: Server name for identification
+            name_resolver: Optional callable returning the live server name per request
         """
-        self.name = name
+        self._name = name
+        self._name_resolver = name_resolver
         self._tool_registry = OrderedDict()
         self._entry_fn = None
+
+    @property
+    def name(self) -> str:
+        if self._name_resolver:
+            try:
+                return self._name_resolver() or self._name
+            except Exception:
+                pass
+        return self._name
 
     def register(
         self,
@@ -127,8 +147,9 @@ class MCPServer:
                     return result
 
                 # Otherwise fn() returns the per-request tool registry (a dict),
-                # or None to fall back to the shared registry.
-                tool_registry = result if isinstance(result, dict) else None
+                # a zero-arg callable that builds it on demand, or None to fall
+                # back to the shared registry.
+                tool_registry = result if isinstance(result, dict) or callable(result) else None
 
                 # Handle MCP request
                 request = frappe.request
@@ -161,11 +182,6 @@ class MCPServer:
         """
         import frappe
 
-        # Per-request registry isolates concurrent requests. Never mutate the
-        # shared singleton during request handling.
-        if tool_registry is None:
-            tool_registry = self._tool_registry
-
         # Only POST allowed
         if request.method != "POST":
             response.status_code = 405
@@ -174,13 +190,15 @@ class MCPServer:
         # Parse JSON request
         try:
             data = request.get_json(force=True)
-            # Log incoming request for debugging
-            frappe.logger().debug(f"MCP Request: method={data.get('method')}, id={data.get('id')}")
         except Exception as e:
             frappe.logger().error(
                 f"MCP Parse Error: {str(e)}, Raw data: {request.get_data(as_text=True)[:500]}"
             )
-            return self._error_response(response, None, -32700, f"Parse error: {str(e)}")
+            return self._error_response(response, None, -32700, "Parse error")
+
+        if not isinstance(data, dict):
+            return self._error_response(response, None, -32600, "Invalid Request: expected a JSON object")
+        frappe.logger().debug(f"MCP Request: method={data.get('method')}, id={data.get('id')}")
 
         # Populate correlation ids on frappe.local so downstream audit logging
         # can tag every tool execution with the MCP session and client. See
@@ -203,7 +221,11 @@ class MCPServer:
 
         # Route method
         method = data.get("method")
-        params = data.get("params", {})
+        params = data.get("params")
+        if params is None:
+            params = {}
+        if not isinstance(params, dict):
+            return self._error_response(response, request_id, -32602, "Invalid params: expected an object")
 
         result = None
 
@@ -211,12 +233,12 @@ class MCPServer:
             if method == "initialize":
                 result = self._handle_initialize(params)
             elif method == "tools/list":
-                result = self._handle_tools_list(params, tool_registry)
+                result = self._handle_tools_list(params, self._resolve_registry(tool_registry))
             elif method == "tools/call":
-                frappe.logger().info(
-                    f"MCP tools/call: tool={params.get('name')}, args={json.dumps(params.get('arguments', {}), default=str)[:200]}"
-                )
-                result = self._handle_tools_call(params, tool_registry)
+                arguments = params.get("arguments")
+                arg_keys = sorted(arguments) if isinstance(arguments, dict) else []
+                frappe.logger().info(f"MCP tools/call: tool={params.get('name')}, arg_keys={arg_keys}")
+                result = self._handle_tools_call(params, self._resolve_registry(tool_registry))
             elif method == "resources/list":
                 result = self._handle_resources_list(params, request_id)
             elif method == "resources/read":
@@ -232,15 +254,22 @@ class MCPServer:
             else:
                 frappe.logger().warning(f"MCP Unknown method: {method}")
                 return self._error_response(response, request_id, -32601, f"Method not found: {method}")
+        except InvalidParams as e:
+            return self._error_response(response, request_id, -32602, f"Invalid params: {e}")
         except Exception as e:
-            # Log unexpected errors
             frappe.logger().error(
                 f"MCP Handler Error for method '{method}': {str(e)}\n{traceback.format_exc()}"
             )
-            return self._error_response(response, request_id, -32603, f"Internal error: {str(e)}")
+            return self._error_response(response, request_id, -32603, "Internal error")
 
         # Success response
         return self._success_response(response, request_id, result)
+
+    def _resolve_registry(self, tool_registry) -> Dict:
+        """Per-request registry (built on first need); falls back to the shared one."""
+        if callable(tool_registry):
+            return tool_registry()
+        return self._tool_registry if tool_registry is None else tool_registry
 
     def add_tool(self, tool_dict: Dict):
         """
@@ -279,9 +308,9 @@ class MCPServer:
 
         client_id = request.headers.get("X-Assistant-Client-Id")
         if not client_id:
-            params = data.get("params") or {}
-            client_info = params.get("clientInfo") or {}
-            client_id = client_info.get("name")
+            params = data.get("params")
+            client_info = params.get("clientInfo") if isinstance(params, dict) else None
+            client_id = client_info.get("name") if isinstance(client_info, dict) else None
 
         frappe.local.assistant_session_id = session_id
         frappe.local.assistant_client_id = client_id
@@ -295,13 +324,17 @@ class MCPServer:
         """
         import frappe
 
-        # Get protocol version from settings
-        protocol_version = "2025-06-18"  # Default
+        # Echo the client's version when we speak it, else offer our configured one.
+        protocol_version = SUPPORTED_PROTOCOL_VERSIONS[0]
         try:
-            settings = frappe.get_single("PA Core Settings")
-            protocol_version = settings.mcp_protocol_version or protocol_version
+            protocol_version = (
+                frappe.db.get_single_value("PA Core Settings", "mcp_protocol_version") or protocol_version
+            )
         except Exception:
             pass
+        requested = params.get("protocolVersion")
+        if requested in SUPPORTED_PROTOCOL_VERSIONS:
+            protocol_version = requested
 
         return {
             "protocolVersion": protocol_version,
@@ -368,14 +401,18 @@ class MCPServer:
             tool_registry = self._tool_registry
 
         tool_name = params.get("name")
-        arguments = params.get("arguments", {})
-
-        frappe.logger().debug(f"MCP _handle_tools_call: tool={tool_name}, args={arguments}")
+        arguments = params.get("arguments")
+        if arguments is None:
+            arguments = {}
+        if not isinstance(arguments, dict):
+            raise InvalidParams("arguments must be an object")
+        if not isinstance(tool_name, str):
+            raise InvalidParams("name must be a string")
 
         # Check tool exists
         if tool_name not in tool_registry:
-            error_msg = f"Tool '{tool_name}' not found. Available tools: {list(tool_registry.keys())}"
-            frappe.logger().error(f"MCP Tool Not Found: {error_msg}")
+            error_msg = f"Tool '{tool_name}' not found. Call tools/list to see the available tools."
+            frappe.logger().error(f"MCP Tool Not Found: {tool_name}")
             return {
                 "content": [{"type": "text", "text": error_msg}],
                 "isError": True,
@@ -408,7 +445,7 @@ class MCPServer:
             if isinstance(result, str):
                 result_text = result
             else:
-                result_text = json.dumps(result, default=str, indent=2)
+                result_text = dumps_strict(result, indent=2)
 
             # Build MCP content blocks
             content = [{"type": "text", "text": result_text}]
@@ -431,14 +468,17 @@ class MCPServer:
                     }
                 )
 
-            return {"content": content, "isError": False}
+            tool_failed = isinstance(result, dict) and result.get("success") is False
+            return {"content": content, "isError": tool_failed}
 
         except Exception as e:
-            # Full traceback for debugging
-            error_text = f"Error executing {tool_name}: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
-            frappe.logger().error(f"MCP Tool Execution Error: {error_text}")
-
-            return {"content": [{"type": "text", "text": error_text}], "isError": True}
+            frappe.logger().error(
+                f"MCP Tool Execution Error: {tool_name}: {str(e)}\n{traceback.format_exc()}"
+            )
+            return {
+                "content": [{"type": "text", "text": f"Error executing {tool_name}: {str(e)}"}],
+                "isError": True,
+            }
 
     def _success_response(self, response: Response, request_id: Any, result: Dict) -> Response:
         """Create JSON-RPC success response."""
@@ -506,7 +546,11 @@ class MCPServer:
             return response["result"]
         # If there's an error, re-raise it
         if "error" in response:
-            raise Exception(response["error"].get("message", "Unknown prompt error"))
+            err = response["error"]
+            message = err.get("message", "Unknown prompt error")
+            if err.get("code") in (-32602, -32000):  # validation / permission denied
+                raise InvalidParams(message)
+            raise Exception(message)
         return {}
 
     def _handle_resources_list(self, params: Dict, request_id: Any) -> Dict:
@@ -525,11 +569,16 @@ class MCPServer:
 
         Returns the content of a specific skill resource by URI.
         """
+        import frappe
+
         from pibiassistant.api.handlers.resources import handle_resources_read
 
-        return handle_resources_read(params, request_id)
+        try:
+            return handle_resources_read(params, request_id)
+        except (ValueError, frappe.PermissionError) as e:
+            raise InvalidParams(str(e))
 
     def _is_notification(self, data: Dict) -> bool:
-        """Check if request is a notification (no response needed)."""
+        """A notification is a notifications/* message without an id; with an id it is a request."""
         method = data.get("method", "")
-        return isinstance(method, str) and method.startswith("notifications/")
+        return "id" not in data and isinstance(method, str) and method.startswith("notifications/")

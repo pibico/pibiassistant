@@ -22,12 +22,16 @@ not standalone visualizations.
 """
 
 import json
+import re
 from typing import Any, Dict, List, Optional
 
 import frappe
 from frappe import _
 
 from pibiassistant.core.base_tool import BaseTool
+from pibiassistant.plugins.query_errors import log_failure
+
+HEX_COLOR = re.compile(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
 
 
 class CreateDashboardChart(BaseTool):
@@ -59,7 +63,7 @@ class CreateDashboardChart(BaseTool):
                 },
                 "aggregate_function": {
                     "type": "string",
-                    "enum": ["Count", "Sum", "Average", "Group By"],
+                    "enum": ["Count", "Sum", "Average"],
                     "default": "Count",
                     "description": "How to aggregate the data",
                 },
@@ -91,14 +95,14 @@ class CreateDashboardChart(BaseTool):
                 },
                 "color": {
                     "type": "string",
-                    "description": "Chart color, hex or name",
+                    "description": "Chart color as a hex code such as #4682B4",
                 },
                 "dashboard_name": {
                     "type": "string",
                     "description": "Dashboard to add this chart to",
                 },
             },
-            "required": ["chart_name", "chart_type", "doctype", "aggregate_function"],
+            "required": ["chart_name", "chart_type", "doctype"],
         }
 
     def _get_description(self) -> str:
@@ -123,6 +127,22 @@ class CreateDashboardChart(BaseTool):
             # Validate doctype access
             if not frappe.has_permission(doctype, "read"):
                 return {"success": False, "error": f"Insufficient permissions to access {doctype} data"}
+
+            if aggregate_function not in ("Count", "Sum", "Average"):
+                return {
+                    "success": False,
+                    "error": _("aggregate_function must be Count, Sum or Average"),
+                }
+
+            color = arguments.get("color")
+            if color and not HEX_COLOR.match(str(color)):
+                return {"success": False, "error": _("color must be a hex code such as #4682B4")}
+
+            if chart_name and frappe.db.exists("Dashboard Chart", chart_name):
+                return {
+                    "success": False,
+                    "error": _("A dashboard chart named '{0}' already exists. Choose another name.").format(chart_name),
+                }
 
             # Get DocType metadata for field validation
             meta = frappe.get_meta(doctype)
@@ -204,12 +224,9 @@ class CreateDashboardChart(BaseTool):
             return result
 
         except Exception as e:
-            frappe.log_error(
-                title=_("Dashboard Chart Creation Error"),
-                message=f"Error creating chart {arguments.get('chart_name')}: {str(e)}",
-            )
+            log_failure("Dashboard Chart Creation Error", e)
 
-            return {"success": False, "error": str(e)}
+            return {"success": False, "error": str(e)[:2000]}
 
     def _validate_required_fields(
         self, arguments: Dict, available_fields: Dict, chart_type: str, aggregate_function: str
@@ -417,51 +434,6 @@ class CreateDashboardChart(BaseTool):
                 frappe_filters.append([doctype, field, "=", condition])
 
         return frappe_filters
-
-    def _validate_chart_before_creation(self, chart_data: Dict) -> Dict[str, Any]:
-        """Validate chart configuration by testing data retrieval"""
-        try:
-            # Test chart data retrieval using Frappe's dashboard chart logic
-            from frappe.desk.doctype.dashboard_chart.dashboard_chart import get
-
-            # The get function expects either chart_name or chart as JSON string
-            # Pass chart as JSON string since we don't have a saved chart yet
-            test_result = get(chart=json.dumps(chart_data))
-
-            if not test_result or not test_result.get("data"):
-                return {
-                    "success": False,
-                    "error": "Chart validation failed: No data returned from chart query",
-                    "suggestion": "Check that the DocType has data matching the specified filters and fields",
-                }
-
-            return {"success": True, "data_points": len(test_result.get("data", [])), "chart_validated": True}
-
-        except Exception as e:
-            error_msg = str(e)
-
-            # Provide specific guidance based on error
-            if "does not exist" in error_msg.lower():
-                return {
-                    "success": False,
-                    "error": f"Chart validation failed: {error_msg}",
-                    "error_type": "field_not_found",
-                    "suggestion": "Use get_doctype_info tool to verify field names exist in the target DocType",
-                }
-            elif "permission" in error_msg.lower():
-                return {
-                    "success": False,
-                    "error": f"Chart validation failed: {error_msg}",
-                    "error_type": "permission_error",
-                    "suggestion": "Ensure you have read permissions for the target DocType",
-                }
-            else:
-                return {
-                    "success": False,
-                    "error": f"Chart validation failed: {error_msg}",
-                    "error_type": "validation_error",
-                    "suggestion": "Check chart configuration: field names, filters, and DocType access",
-                }
 
     def _detect_date_field(self, available_fields: Dict) -> Optional[str]:
         """Auto-detect suitable date field for time series"""

@@ -767,7 +767,7 @@ bench console
 
 ### Post-Deployment
 
-- [ ] Verify tools appear in Assistant Core Settings
+- [ ] Verify tools appear in PA Core Settings
 - [ ] Test tool execution through API
 - [ ] Check logs for any errors
 - [ ] Verify permissions work correctly

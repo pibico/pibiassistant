@@ -82,7 +82,7 @@ Keep it to one or two sentences. It's in your context on every single turn.
 
 ## Skill type and linked_tool
 
-- **`Tool Usage`** — teaches one specific tool. Set `linked_tool` to the exact tool name. This is the shape of the 20-odd skills shipped with FAC.
+- **`Tool Usage`** — teaches one specific tool. Set `linked_tool` to the exact tool name. This is the shape of the 20-odd skills shipped with AIDA.
 - **`Workflow`** — a multi-step procedure spanning several tools, or knowledge with no single tool behind it. Leave `linked_tool` empty.
 
 Choosing `Tool Usage` without a `linked_tool` saves fine but emits a warning. If there's no single tool, it's a `Workflow`.

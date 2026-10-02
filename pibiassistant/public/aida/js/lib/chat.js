@@ -4,9 +4,9 @@ import { store, setUi } from "./store.js";
 import { __ } from "./i18n.js";
 import { newSessionId, truncate, stripStopMarker } from "./format.js";
 import { IDLE_STREAMING, genericError, newMessage, setStreaming, clearTimers, armWatchdog, startCancelFallback } from "./chat-live.js";
-import { loadHistory, recover } from "./session-history.js";
+import { loadHistory, loadEarlier, recover, NO_HISTORY } from "./session-history.js";
 
-export { loadHistory, recover };
+export { loadHistory, loadEarlier, recover };
 import { applyStreamEvent, isTerminal } from "./stream.js";
 import { decide, expireApprovals, pendingApprovals, responsesFor } from "./activity.js";
 import * as router from "../router.js";
@@ -16,6 +16,7 @@ import { confirm } from "../components/dialog.js";
 const CANCEL_FALLBACK_MS = 4000;
 const LOCK_RETRY_WINDOW_MS = 15000;
 const LOCK_RETRY_MS = 1500;
+const LOCK_BUSY = /sigue respondiendo|still (answering|responding)|HTTP_417/i;
 const LOCK_RETRIES = 4;
 
 let started = false;
@@ -59,14 +60,14 @@ export function openSession(sessionId) {
   if (sessionId === null) {
     if (s.activeSessionId === null && s.historyState === "ready" && !s.messages.length && !s.streaming.active) return;
     detachLive();
-    store.set({ activeSessionId: null, messages: [], historyState: "ready" });
+    store.set({ activeSessionId: null, messages: [], historyState: "ready", history: NO_HISTORY });
     socket.unsubscribe();
     setUi({ announce: "" });
     return;
   }
   if (sessionId === s.activeSessionId && (s.historyState === "ready" || s.streaming.active)) return;
   detachLive();
-  store.set({ activeSessionId: sessionId, messages: [], historyState: "loading" });
+  store.set({ activeSessionId: sessionId, messages: [], historyState: "loading", history: NO_HISTORY });
   setUi({ announce: "" });
   socket.subscribe(sessionId);
   loadHistory(sessionId);
@@ -132,6 +133,8 @@ async function postSend(args) {
       const lock =
         err instanceof api.ApiError &&
         err.kind === "validation" &&
+        err.status === 417 &&
+        LOCK_BUSY.test(err.message) &&
         Date.now() - lastCancelAt < LOCK_RETRY_WINDOW_MS &&
         attempt < LOCK_RETRIES;
       if (!lock) throw err;
@@ -146,11 +149,12 @@ export function sendMessage({ text = "", fileUrls = [], files = [] } = {}) {
   if (s.streaming.active || (!body && !fileUrls.length) || text.length > 20000) return false;
   const now = Date.now();
   let id = s.activeSessionId;
+  const created = !id;
   if (!id) {
     id = newSessionId();
     router.replaceUrl(router.chatPath(id));
     const entry = { session_id: id, preview: truncate(body, 100), last_activity: now, started: now, message_count: 1 };
-    store.set({ activeSessionId: id, historyState: "ready", sessions: [entry, ...s.sessions] });
+    store.set({ activeSessionId: id, historyState: "ready", history: NO_HISTORY, sessions: [entry, ...s.sessions] });
   }
   socket.subscribe(id);
   const user = newMessage({
@@ -177,10 +181,17 @@ export function sendMessage({ text = "", fileUrls = [], files = [] } = {}) {
   }).catch((err) => {
       if (store.get().streaming.key !== bubble.key) return;
       clearTimers();
-      store.set({
-        messages: store.get().messages.filter((m) => m.key !== bubble.key && m.key !== user.key),
-        streaming: IDLE_STREAMING,
-      });
+      const remaining = store.get().messages.filter((m) => m.key !== bubble.key && m.key !== user.key);
+      store.set({ messages: remaining, streaming: IDLE_STREAMING });
+      if (created && !remaining.length && store.get().activeSessionId === id) {
+        socket.unsubscribe();
+        store.set({
+          activeSessionId: null,
+          history: NO_HISTORY,
+          sessions: store.get().sessions.filter((x) => x.session_id !== id),
+        });
+        router.replaceUrl(router.chatPath());
+      }
       const isApi = err instanceof api.ApiError;
       const expired = isApi && err.kind === "session";
       showToast({
@@ -269,10 +280,6 @@ export function newChat() {
   emit("aida:focus-composer");
 }
 
-export function selectSession(id) {
-  router.navigate(router.chatPath(id));
-}
-
 export async function archiveSession(id) {
   const { activeSessionId, streaming } = store.get();
   if (id === activeSessionId && streaming.active) {
@@ -284,6 +291,7 @@ export async function archiveSession(id) {
       danger: true,
     });
     if (!ok) return false;
+    await stopStreaming();
   }
   let done = false;
   try {

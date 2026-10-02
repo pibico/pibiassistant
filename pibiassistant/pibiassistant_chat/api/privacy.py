@@ -14,19 +14,8 @@ to HMAC-signed AR API calls.
 import frappe
 from frappe import _
 
-from ._helpers import _aida_guard, _aida_mode
+from ._helpers import _aida_guard, _aida_mode, cloud_client_or_throw
 from .auth import _ar_user_id
-
-
-def _get_client():
-    """Get an authenticated AR SDK client."""
-    from pibiassistant.pibiassistant_chat.pa_cloud_client import get_pa_cloud_client
-
-    client = get_pa_cloud_client()
-    if not client:
-        frappe.throw(_("Cloud service is not configured"))
-    return client
-
 
 
 @frappe.whitelist(methods=["GET"])
@@ -40,7 +29,7 @@ def export_my_data() -> dict:
     user = frappe.session.user
     aida = _aida_mode()
     # AR keys users by email; resolve the docname before every AR call.
-    ar_data = None if aida else _get_client().export_user_data(user_id=_ar_user_id(user))
+    ar_data = None if aida else cloud_client_or_throw().export_user_data(user_id=_ar_user_id(user))
 
     # Append local PA Chat data
     pao_data = {
@@ -105,7 +94,7 @@ def erase_my_data(password: str | None = None) -> dict:
         frappe.throw(_("Incorrect password"))
 
     # 1. Delete AR-side data (AR keys users by email); AIDA mode has none
-    ar_result = None if _aida_mode() else _get_client().erase_user_data(user_id=_ar_user_id(user))
+    ar_result = None if _aida_mode() else cloud_client_or_throw().erase_user_data(user_id=_ar_user_id(user))
 
     # 2. Collect PA Chat Message names BEFORE deleting so we can cascade
     #    into attached File docs (security note — incomplete GDPR erasure).
@@ -208,7 +197,7 @@ def update_my_data(updates: str | None = None) -> dict:
     user = frappe.session.user
     if _aida_mode():
         return {"success": False, "unavailable": True, "error": _("This feature is not available in AIDA mode.")}
-    client = _get_client()
+    client = cloud_client_or_throw()
 
     updates_dict = json.loads(updates) if isinstance(updates, str) else updates
     if not updates_dict:
@@ -235,7 +224,7 @@ def restrict_my_processing(restrict: bool = True) -> dict:
         _set_processing_restricted_flag(user, bool(restrict))
         return {"status": "success", "processing_restricted": bool(restrict)}
 
-    result = _get_client().restrict_user_processing(user_id=_ar_user_id(user), restrict=restrict)
+    result = cloud_client_or_throw().restrict_user_processing(user_id=_ar_user_id(user), restrict=restrict)
 
     # mirror: mirror the flag onto PA Chat User Preferences so
     # ``_log_conversation`` can skip persistence without an AR round-trip on
@@ -282,7 +271,7 @@ def update_my_consent(consent_type: str | None = None, granted: bool = True) -> 
             granted: True to grant, False to withdraw
     """
     user = frappe.session.user
-    client = _get_client()
+    client = cloud_client_or_throw()
 
     if not consent_type:
         frappe.throw(_("Consent type is required"))
@@ -317,7 +306,7 @@ def get_privacy_config() -> dict:
     """
     user = frappe.session.user
     is_admin = "System Manager" in frappe.get_roles(user)
-    client = _get_client()
+    client = cloud_client_or_throw()
 
     result = {"is_admin": is_admin}
 
@@ -358,7 +347,7 @@ def update_privacy_config(config: str | None = None) -> dict:
     if not config:
         frappe.throw(_("No configuration provided"))
 
-    client = _get_client()
+    client = cloud_client_or_throw()
     config_dict = json.loads(config) if isinstance(config, str) else config
     return client.update_tenant_privacy_config(config_dict)
 
@@ -375,7 +364,7 @@ def save_initial_consent(memory_consent: bool = False) -> dict:
     """
     user = frappe.session.user
     ar_user = _ar_user_id(user)
-    client = _get_client()
+    client = cloud_client_or_throw()
 
     # Convert string "true"/"false" from form data
     if isinstance(memory_consent, str):

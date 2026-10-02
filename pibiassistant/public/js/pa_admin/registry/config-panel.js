@@ -1,4 +1,4 @@
-import { setHtml, delegate, show, hide, qsa } from '../dom.js';
+import { setHtml, delegate, show, hide, qsa, escapeHtml as esc } from '../dom.js';
 import { call } from '../api.js';
 import * as toast from '../toast.js';
 import { openPanel } from '../panel.js';
@@ -6,7 +6,6 @@ import { byData, findTool, registryHost } from './lookup.js';
 import { roleTagHtml, configPanelHtml } from './tool-card.js';
 import { loadToolsView } from './tools-view.js';
 
-const esc = (s) => frappe.utils.escape_html(String(s ?? ''));
 
 // Edits to the allowed roles live in a draft until Save, so Cancel discards them.
 let active = null;

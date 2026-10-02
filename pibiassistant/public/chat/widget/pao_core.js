@@ -152,6 +152,50 @@ function _pao_sanitize_html(html) {
 }
 
 window.PAOCore = {
+	/** Escape the five HTML-significant characters; no DOMPurify dependency. */
+	escape_html(text) {
+		return String(text == null ? "" : text)
+			.replace(/&/g, "&amp;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;")
+			.replace(/"/g, "&quot;")
+			.replace(/'/g, "&#39;");
+	},
+
+	/** Readable reason from a Frappe error body (_server_messages, then exception), tags stripped. */
+	server_error_text(json) {
+		try {
+			const msgs = JSON.parse((json && json._server_messages) || "[]")
+				.map((m) => {
+					const v = JSON.parse(m);
+					return v && v.message;
+				})
+				.filter(Boolean)
+				.join(" ");
+			return (msgs || (json && json.exception) || "").replace(/<[^>]*>/g, "").trim().slice(0, 160);
+		} catch (e) {
+			return "";
+		}
+	},
+
+	/** POST multipart form data to a whitelisted method with the CSRF header. Returns { res, json }. */
+	async post_form(url, form_data) {
+		const csrf = window.csrf_token || (window.frappe && window.frappe.csrf_token) || "";
+		const res = await fetch(url, {
+			method: "POST",
+			headers: { "X-Frappe-CSRF-Token": csrf },
+			body: form_data,
+			credentials: "same-origin",
+		});
+		let json = null;
+		try {
+			json = await res.json();
+		} catch (e) {
+			json = null;
+		}
+		return { res, json };
+	},
+
 	// Markdown converter instance (shared)
 	markdown_converter: null,
 
@@ -161,6 +205,7 @@ window.PAOCore = {
 	init_markdown() {
 		if (this.markdown_converter) return this.markdown_converter;
 
+		if (!frappe.md2html) frappe.markdown("");
 		if (frappe.md2html) {
 			const ShowdownConstructor = frappe.md2html.constructor;
 			this.markdown_converter = new ShowdownConstructor({
@@ -171,20 +216,6 @@ window.PAOCore = {
 				simpleLineBreaks: false,
 				openLinksInNewWindow: true,
 			});
-		} else {
-			// Initialize frappe.md2html if not yet created
-			frappe.markdown("");
-			if (frappe.md2html) {
-				const ShowdownConstructor = frappe.md2html.constructor;
-				this.markdown_converter = new ShowdownConstructor({
-					tables: true,
-					strikethrough: true,
-					tasklists: true,
-					smoothLivePreview: true,
-					simpleLineBreaks: false,
-					openLinksInNewWindow: true,
-				});
-			}
 		}
 		return this.markdown_converter;
 	},
@@ -246,11 +277,8 @@ window.PAOCore = {
 	 * @returns {string} Formatted time string
 	 */
 	format_time(date) {
-		return date.toLocaleTimeString("en-US", {
-			hour: "numeric",
-			minute: "2-digit",
-			hour12: true,
-		});
+		const lang = (window.frappe && frappe.boot && frappe.boot.lang) || undefined;
+		return date.toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" });
 	},
 
 	/**
@@ -271,197 +299,6 @@ window.PAOCore = {
 		return "pao_" + Date.now() + "_" + random;
 	},
 
-	/**
-	 * Get stored active session ID (for switching between widget and full page).
-	 * Same-tab hand-off — uses sessionStorage so other tabs don't inherit the
-	 * session id (cross-tab continuity is not a use case). Returns the id only
-	 * when the user who stored it is still the one logged in; sessionStorage
-	 * outlives a login, and a session id names no user of its own.
-	 */
-	get_active_session() {
-		try {
-			const entry = PAOWidgetSession.decode(
-				sessionStorage.getItem("pao_active_session")
-			);
-			return PAOWidgetSession.owned(entry, frappe.session.user);
-		} catch (e) {
-			return null;
-		}
-	},
-
-	set_active_session(session_id) {
-		try {
-			sessionStorage.setItem(
-				"pao_active_session",
-				PAOWidgetSession.encode(session_id, frappe.session.user)
-			);
-		} catch (e) {
-			// Silently fail
-		}
-	},
-
-	clear_active_session() {
-		try {
-			sessionStorage.removeItem("pao_active_session");
-		} catch (e) {
-			// Silently fail
-		}
-	},
-
-	// --- API Methods ---
-
-	/**
-	 * Check if user can use AIDA
-	 * @returns {Promise<Object>} Access info
-	 */
-	async check_access() {
-		try {
-			const response = await frappe.call({
-				method: "pibiassistant.pibiassistant_chat.api.settings.access.can_use_pao",
-				type: "GET",
-				args: {},
-			});
-			return response.message;
-		} catch (error) {
-			return { can_use: false, reason: "Error checking access" };
-		}
-	},
-
-	/**
-	 * Load widget/UI settings from server
-	 * @returns {Promise<Object>} Settings object
-	 */
-	async load_settings() {
-		try {
-			const response = await frappe.call({
-				method: "pibiassistant.pibiassistant_chat.api.settings.widget.get_widget_settings",
-				type: "GET",
-				args: {},
-			});
-			return response.message || this.get_default_settings();
-		} catch (error) {
-			return this.get_default_settings();
-		}
-	},
-
-	/**
-	 * Default settings fallback
-	 * @returns {Object} Default settings
-	 */
-	get_default_settings() {
-		return {
-			button: {
-				size: 72,
-				icon: "aida",
-				enable_pulse: true,
-				shadow: "0 4px 20px rgba(0,0,0,0.15)",
-			},
-			window: {
-				width: 400,
-				height: 650,
-				border_radius: 12,
-				font_size: "14px",
-			},
-			messages: {},
-			custom_css: "",
-		};
-	},
-
-	/**
-	 * Load session history
-	 * @param {string} session_id - Session ID
-	 * @returns {Promise<Array>} Array of messages
-	 */
-	async load_session_history(session_id) {
-		try {
-			const response = await frappe.call({
-				method: "pibiassistant.pibiassistant_chat.api.chat.sessions.get_session_history",
-				type: "GET",
-				args: { session_id },
-			});
-			return response.message || [];
-		} catch (error) {
-			return [];
-		}
-	},
-
-	/**
-	 * Get user's recent sessions for history sidebar
-	 * @param {number} limit - Maximum sessions to return
-	 * @returns {Promise<Array>} Array of sessions
-	 */
-	async get_user_sessions(limit = 20) {
-		try {
-			const response = await frappe.call({
-				method: "pibiassistant.pibiassistant_chat.api.chat.sessions.get_user_sessions",
-				type: "GET",
-				args: { limit },
-			});
-			return response.message || [];
-		} catch (error) {
-			return [];
-		}
-	},
-
-	/**
-	 * Send a message to AIDA
-	 * @param {Object} params - Message parameters
-	 * @returns {Promise<Object>} Response
-	 */
-	async send_message({ session_id, message, context, include_context = true, file_urls = [] }) {
-		return frappe.call({
-			method: "pibiassistant.pibiassistant_chat.api.chat.messages.send_message",
-			args: {
-				session_id,
-				message,
-				context: include_context && context ? JSON.stringify(context) : null,
-				include_context,
-				file_urls: JSON.stringify(file_urls),
-			},
-		});
-	},
-
-	/**
-	 * Upload a file for message attachment
-	 * @param {File} file - File to upload
-	 * @returns {Promise<Object>} Upload result
-	 */
-	async upload_file(file) {
-		const formData = new FormData();
-		formData.append("file", file);
-
-		const response = await fetch(
-			"/api/method/pibiassistant.pibiassistant_chat.api.settings.uploads.upload_message_file",
-			{
-				method: "POST",
-				headers: {
-					"X-Frappe-CSRF-Token": frappe.csrf_token,
-				},
-				body: formData,
-			}
-		);
-
-		return response.json();
-	},
-
-	/**
-	 * Get suggested prompts based on context
-	 * @param {Object} context - Page context
-	 * @returns {Promise<Array>} Array of prompt suggestions
-	 */
-	async get_suggested_prompts(context) {
-		try {
-			const response = await frappe.call({
-				method: "pibiassistant.pibiassistant_chat.api.prompts.get_suggested_prompts",
-				type: "GET",
-				args: { context: JSON.stringify(context) },
-			});
-			return response.message || [];
-		} catch (error) {
-			return [];
-		}
-	},
-
 	// --- Avatar Helpers ---
 
 	/**
@@ -471,7 +308,7 @@ window.PAOCore = {
 	get_user_avatar() {
 		const user_image = frappe.user_info(frappe.session.user).image;
 		if (user_image) {
-			return `<img src="${user_image}" alt="User" />`;
+			return `<img src="${PAOCore.escape_html(user_image)}" alt="" />`;
 		}
 		return `<div class="avatar-placeholder">${frappe.session.user[0].toUpperCase()}</div>`;
 	},
@@ -512,117 +349,6 @@ window.PAOCore = {
 		return frm && frm.doc ? frm : null;
 	},
 
-	/**
-	 * Detect current page context
-	 * @returns {Object} Context object
-	 */
-	get_page_context() {
-		const route = frappe.get_route() || [];
-		const frm = this.get_current_form();
-
-		if (frm) {
-			return {
-				type: "Form",
-				doctype: frm.doctype,
-				name: frm.doc.name,
-				url: window.location.href,
-				is_new: frm.is_new(),
-			};
-		} else if (route && route[0] === "List") {
-			return {
-				type: "List",
-				doctype: route[1],
-				url: window.location.href,
-				has_list_view: window.cur_list ? true : false,
-			};
-		} else if (route && route[0] === "query-report") {
-			return {
-				type: "Report",
-				name: route[1],
-				url: window.location.href,
-			};
-		} else if (route && route[0] === "Tree" && route[1]) {
-			return {
-				type: "Tree",
-				doctype: route[1],
-				url: window.location.href,
-			};
-		} else if (
-			(route && route[0] === "Workspaces") ||
-			(route && route.length === 0) ||
-			route[0] === "workspace"
-		) {
-			return {
-				type: "Workspace",
-				workspace_name: route[1] || "Home",
-				url: window.location.href,
-			};
-		} else if (route && route[0] === "dashboard") {
-			return {
-				type: "Dashboard",
-				dashboard_name: route[1],
-				url: window.location.href,
-			};
-		} else if (route && route[0] === "print") {
-			return {
-				type: "Print",
-				doctype: route[1],
-				name: route[2],
-				print_format: route[3],
-				url: window.location.href,
-			};
-		} else if (route && frappe.pages && frappe.pages[route[0]]) {
-			return {
-				type: "Custom Page",
-				page_name: route[0],
-				url: window.location.href,
-			};
-		} else if (window.cur_page && window.cur_page.page) {
-			return {
-				type: "Page",
-				page_name: window.cur_page.page.page_name || route[0] || "Unknown",
-				url: window.location.href,
-			};
-		} else {
-			return {
-				type: "General",
-				route: route,
-				url: window.location.href,
-				page_title: document.title,
-			};
-		}
-	},
-
-	/**
-	 * Get context description text
-	 * @param {Object} context - Context object
-	 * @returns {string} Human-readable context description
-	 */
-	get_context_text(context) {
-		if (!context || context.type === "General") return "";
-
-		switch (context.type) {
-			case "Form":
-				return __("Viewing {0}: {1}", [context.doctype, context.name]);
-			case "List":
-				return __("Viewing {0} list", [context.doctype]);
-			case "Report":
-				return __("Viewing report: {0}", [context.name]);
-			case "Tree":
-				return __("Viewing {0} tree", [context.doctype]);
-			case "Workspace":
-				return __("Workspace: {0}", [context.workspace_name]);
-			case "Dashboard":
-				return __("Dashboard: {0}", [context.dashboard_name]);
-			case "Print":
-				return __("Print: {0} - {1}", [context.doctype, context.name]);
-			case "Custom Page":
-			case "Page":
-				return __("Page: {0}", [context.page_name]);
-			default:
-				return "";
-		}
-	},
 };
 
 /**
@@ -632,12 +358,7 @@ window.PAOCore = {
 window.PAOPanel = (function () {
 	const stack = [];
 	let seq = 0;
-	const esc = (s) =>
-		String(s == null ? "" : s)
-			.replace(/&/g, "&amp;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;")
-			.replace(/"/g, "&quot;");
+	const esc = (s) => window.PAOCore.escape_html(s);
 	const FOCUSABLE =
 		'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 	let scrollLock = null;

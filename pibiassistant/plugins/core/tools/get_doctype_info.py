@@ -25,6 +25,7 @@ import frappe
 from frappe import _
 
 from pibiassistant.core.base_tool import BaseTool
+from pibiassistant.plugins.core.tools.metadata_tools import DOCTYPE_INFO_PROPERTIES
 
 
 class GetDoctypeInfo(BaseTool):
@@ -40,12 +41,15 @@ class GetDoctypeInfo(BaseTool):
     def __init__(self):
         super().__init__()
         self.name = "get_doctype_info"
-        self.description = "Get DocType metadata and field information"
+        self.description = (
+            "Get DocType metadata: compact list of fillable fields (required ones first in required_fields), "
+            "child tables with their fields, and permissions. Use child_table or fieldnames for full detail."
+        )
         self.requires_permission = None  # Permission checked dynamically per DocType
 
         self.inputSchema = {
             "type": "object",
-            "properties": {"doctype": {"type": "string", "description": "DocType name"}},
+            "properties": DOCTYPE_INFO_PROPERTIES,
             "required": ["doctype"],
         }
 
@@ -56,7 +60,12 @@ class GetDoctypeInfo(BaseTool):
             from .metadata_tools import MetadataTools
 
             # Execute metadata retrieval using existing implementation
-            return MetadataTools.get_doctype_metadata(doctype=arguments.get("doctype"))
+            return MetadataTools.get_doctype_metadata(
+                doctype=arguments.get("doctype"),
+                include_layout=bool(arguments.get("include_layout")),
+                child_table=arguments.get("child_table"),
+                fieldnames=arguments.get("fieldnames"),
+            )
 
         except Exception as e:
             frappe.log_error(

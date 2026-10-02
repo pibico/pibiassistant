@@ -25,6 +25,7 @@ import frappe
 from frappe import _
 
 from pibiassistant.core.base_tool import BaseTool
+from pibiassistant.plugins.query_errors import log_failure
 
 
 class RunWorkflow(BaseTool):
@@ -90,7 +91,7 @@ class RunWorkflow(BaseTool):
 
             # Validate document exists
             if not frappe.db.exists(doctype, name):
-                return {"success": False, "error": f"Document {doctype} '{name}' not found"}
+                return {"success": False, "error": _("Document {0} '{1}' not found").format(doctype, name)}
 
             # Get the document
             doc = frappe.get_doc(doctype, name)
@@ -103,11 +104,15 @@ class RunWorkflow(BaseTool):
                 workflow_name = get_workflow_name(doctype)
 
                 if not workflow_name:
+                    if doc.docstatus == 0:
+                        suggestion = _("Use the 'update_document' tool instead to modify document fields directly, or ask the administrator to configure a workflow for this document type.")
+                    else:
+                        suggestion = _("This document is already submitted or cancelled, so its fields cannot be edited directly. To change it, cancel it from the form (Menu > Cancel) and amend it; for invoices a credit note is the usual correction.")
                     return {
                         "success": False,
-                        "error": f"No workflow configured for {doctype}",
-                        "explanation": f"The {doctype} document type doesn't have any workflows set up. Workflows are used for business processes like approval flows.",
-                        "suggestion": "Use the 'update_document' tool instead to modify document fields directly, or ask the administrator to configure a workflow for this document type.",
+                        "error": _("No workflow configured for {0}").format(doctype),
+                        "explanation": _("The {0} document type doesn't have any workflows set up. Workflows are used for business processes like approval flows.").format(doctype),
+                        "suggestion": suggestion,
                     }
 
             # Get available transitions to provide helpful feedback
@@ -118,7 +123,7 @@ class RunWorkflow(BaseTool):
             if action not in available_actions:
                 return {
                     "success": False,
-                    "error": f"Action '{action}' is not available for document in state '{original_state}'",
+                    "error": _("Action '{0}' is not available for document in state '{1}'").format(action, original_state),
                     "explanation": f"The document is currently in '{original_state}' state. From this state, you can only perform certain actions based on the workflow configuration and your permissions.",
                     "current_state": original_state,
                     "available_actions": available_actions,
@@ -155,7 +160,7 @@ class RunWorkflow(BaseTool):
 
             return {
                 "success": True,
-                "message": f"Workflow action '{action}' executed successfully",
+                "message": _("Workflow action '{0}' executed successfully").format(action),
                 "changes": changes,
                 "document": {
                     "doctype": doctype,
@@ -196,13 +201,11 @@ class RunWorkflow(BaseTool):
             }
 
         except Exception as e:
-            frappe.log_error(
-                title=_("Workflow Execution Error"), message=f"Error executing workflow action: {str(e)}"
-            )
+            log_failure("Workflow Execution Error", e)
 
             return {
                 "success": False,
-                "error": f"Workflow execution failed: {str(e)}",
+                "error": _("Workflow execution failed: {0}").format(str(e)[:2000]),
                 "error_type": "ExecutionError",
             }
 
@@ -229,7 +232,7 @@ class RunWorkflow(BaseTool):
             return enhanced_transitions
 
         except Exception as e:
-            frappe.log_error(f"Error getting workflow transitions: {e}")
+            log_failure("Workflow Transitions Error", e)
             return []
 
     def _get_workflow_info(self, doc, workflow_name):
@@ -258,7 +261,7 @@ class RunWorkflow(BaseTool):
             }
 
         except Exception as e:
-            frappe.log_error(f"Error getting workflow info: {e}")
+            log_failure("Workflow Info Error", e)
             return {"workflow_name": workflow_name}
 
 
