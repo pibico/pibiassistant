@@ -197,28 +197,25 @@ class PluginPersistence:
         return self._read_enabled_plugins()
 
     def _read_enabled_plugins(self) -> Set[str]:
-        """Load enabled plugin names from database.
+        """Load enabled plugin names from the database.
 
-        Uses PA Plugin Configuration DocType for atomic reads.
-        Falls back to legacy JSON field if DocType doesn't exist yet.
+        PA Plugin Configuration rows are the source of truth (atomic, shared by every worker). A
+        plugin without a row (first run, or one that predates the DocType) falls back to the
+        legacy JSON list in PA Core Settings.
         """
         try:
-            # Check if the new DocType table exists
-            if frappe.db.table_exists("tabPA Plugin Configuration"):
-                # Use the new DocType-based approach (atomic, no JSON parsing)
-                enabled = frappe.get_all(
-                    PluginConfig.PLUGIN_CONFIG_DOCTYPE,
-                    filters={"enabled": 1},
-                    pluck="plugin_name",
-                )
-                return set(enabled)
-            else:
-                # Fallback to legacy JSON field during migration
+            if not frappe.db.table_exists(PluginConfig.PLUGIN_CONFIG_DOCTYPE):
                 return self._load_from_legacy_json()
+
+            rows = frappe.get_all(
+                PluginConfig.PLUGIN_CONFIG_DOCTYPE, fields=["plugin_name", "enabled"], limit_page_length=0
+            )
+            known = {row.plugin_name for row in rows}
+            enabled = {row.plugin_name for row in rows if row.enabled}
+            return enabled | {name for name in self._load_from_legacy_json() if name not in known}
 
         except Exception as e:
             self.logger.error(f"Failed to load enabled plugins: {e}")
-            # Fallback to legacy on error
             try:
                 return self._load_from_legacy_json()
             except Exception:
@@ -401,6 +398,9 @@ class PluginManager:
             if plugin_name not in self._discovered_plugins:
                 raise PluginNotFoundError(f"Plugin '{plugin_name}' not found")
 
+            # Another worker may have toggled a different plugin since this one loaded its state.
+            self._enabled_plugins = self._persistence._read_enabled_plugins()
+
             plugin_info = self._discovered_plugins[plugin_name]
             if plugin_info.state == PluginState.ERROR:
                 raise PluginValidationError(f"Plugin '{plugin_name}' has errors: {plugin_info.error_message}")
@@ -423,7 +423,7 @@ class PluginManager:
                     raise PluginError("Failed to persist plugin state")
 
                 # Also update legacy JSON for backward compatibility
-                self._persistence.save_enabled_plugins(self._enabled_plugins)
+                self._persistence.save_enabled_plugins(self._persistence._read_enabled_plugins())
 
                 # Update plugin state
                 plugin_info.state = PluginState.ENABLED
@@ -445,6 +445,7 @@ class PluginManager:
     def disable_plugin(self, plugin_name: str) -> bool:
         """Disable a plugin atomically using DocType-based persistence."""
         with self._lock:
+            self._enabled_plugins = self._persistence._read_enabled_plugins()
             if plugin_name not in self._enabled_plugins:
                 return True  # Already disabled
 
@@ -466,7 +467,7 @@ class PluginManager:
                     raise PluginError("Failed to persist plugin state")
 
                 # Also update legacy JSON for backward compatibility
-                self._persistence.save_enabled_plugins(self._enabled_plugins)
+                self._persistence.save_enabled_plugins(self._persistence._read_enabled_plugins())
 
                 self.logger.info(f"Plugin '{plugin_name}' disabled successfully")
                 return True

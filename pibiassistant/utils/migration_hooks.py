@@ -849,7 +849,7 @@ def _sync_plugin_configurations():
     """
     try:
         # Check if PA Plugin Configuration table exists
-        if not frappe.db.table_exists("tabPA Plugin Configuration"):
+        if not frappe.db.table_exists("PA Plugin Configuration"):
             frappe.logger("migration_hooks").info(
                 "PA Plugin Configuration table not yet created, skipping plugin sync"
             )
