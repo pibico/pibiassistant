@@ -1,0 +1,60 @@
+/* pibiCo brand tokens only (no resets), safe to load inside the Frappe Desk. Source: pibico-guidelines skill. */
+:root {
+  /* Primary */
+  --pibico-steel-blue: #4682B4;
+  --pibico-red-brick: #B33A2B;
+  --pibico-light-grey: #E8E8EA;
+
+  /* Steel Blue scale */
+  --pibico-steel-dark: #365F8A;
+  --pibico-steel-light: #6AABE0;
+  --pibico-steel-pale: #D6E8F5;
+
+  /* Red Brick scale */
+  --pibico-brick-dark: #8A2A1F;
+  --pibico-brick-light: #D4604F;
+  --pibico-brick-pale: #F5D6D2;
+
+  /* Neutrals */
+  --pibico-grey-mid: #C8C8CC;
+  --pibico-grey-dark: #6E6E76;
+  --pibico-white: #FFFFFF;
+  --pibico-near-black: #1A1A2E;
+
+  /* Gradients */
+  --pibico-grad-primary: linear-gradient(135deg, #4682B4 0%, #365F8A 100%);
+  --pibico-grad-accent: linear-gradient(135deg, #B33A2B 0%, #D4604F 100%);
+  --pibico-grad-surface: linear-gradient(180deg, #FFFFFF 0%, #E8E8EA 100%);
+  --pibico-grad-banner: linear-gradient(135deg, #4682B4 0%, #B33A2B 100%);
+
+  /* Typography */
+  --pibico-font-heading: 'Figtree', 'Poppins', Arial, sans-serif;
+  --pibico-font-body: 'Raleway', 'Poppins', Arial, sans-serif;
+  --pibico-font-button: 'Poppins', Arial, sans-serif;
+
+  /* Spacing & Radius */
+  --pibico-radius: 12px;
+  --pibico-radius-sm: 8px;
+  --pibico-radius-xs: 6px;
+
+  /* Shadows */
+  --pibico-card-shadow: 0 0 12px rgba(70, 130, 180, 0.15), 0 0 4px rgba(70, 130, 180, 0.08);
+  --pibico-card-shadow-hover: 0 0 20px rgba(70, 130, 180, 0.25), 0 0 8px rgba(70, 130, 180, 0.12);
+  --pibico-panel-shadow: -4px 0 24px rgba(26, 26, 46, 0.15);
+  /* Density (guideline: line-height 1.0-1.2, vertical padding 3px on cards) */
+  --pibico-lh: 1.1;
+  --pibico-lh-read: 1.2;
+  --pibico-card-pad-y: 3px;
+  --pibico-card-pad-x: 12px;
+  --pibico-text: #1A1A2E;
+  --pibico-text-muted: #6E6E76;
+  --pibico-focus: 0 0 0 2px #4682B4;
+}
+
+/* Dark surfaces keep the brand hues; backgrounds and text invert. */
+:root[data-theme="dark"], [data-theme="dark"] {
+  --pibico-text: #E8E8EA;
+  --pibico-text-muted: #B4B4BC;
+  --pibico-card-shadow: 0 0 12px rgba(106, 171, 224, 0.18), 0 0 4px rgba(106, 171, 224, 0.10);
+  --pibico-card-shadow-hover: 0 0 20px rgba(106, 171, 224, 0.28), 0 0 8px rgba(106, 171, 224, 0.14);
+}

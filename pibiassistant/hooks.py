@@ -370,6 +370,8 @@ def _file_asset(url: str, relative_path: str) -> str:
 # decides at runtime whether to mount any UI based on the chat gate.
 app_include_css = [
     _widget_asset("/assets/pibiassistant/vendor/phosphor/regular/style.css"),
+    _file_asset("/assets/pibiassistant/vendor/pibico/fonts.css", "public/vendor/pibico/fonts.css"),
+    _file_asset("/assets/pibiassistant/vendor/pibico/tokens.css", "public/vendor/pibico/tokens.css"),
     _widget_asset("/assets/pibiassistant/chat/widget/widget_base.css"),
     _widget_asset("/assets/pibiassistant/chat/widget/widget_robot.css"),
     _widget_asset("/assets/pibiassistant/chat/widget/widget_messages.css"),
