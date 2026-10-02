@@ -354,3 +354,14 @@
 .aida-approval__state { margin-top: var(--pad-y-sm); font-size: var(--aida-fs-xs); font-weight: 600; color: var(--aida-text-secondary); }
 .aida-approval__state.is-approved { color: var(--aida-success); }
 @media (prefers-reduced-motion: reduce) { .aida-tool .aida-spin { animation: none; } }
+
+/* Touch: approval buttons and the Details toggle are full 44px targets, not expanded pseudo-elements that overlap when rows wrap */
+@media (pointer: coarse) {
+  .aida-approval__actions .aida-btn { min-height: var(--aida-hit); }
+  .aida-approval__actions .aida-btn::after { display: none; }
+  .aida-approval__details summary { display: flex; align-items: center; min-height: var(--aida-hit); }
+}
+@media (max-width: 420px) {
+  .aida-approval__actions { flex-direction: column; align-items: stretch; }
+  .aida-approval__actions .aida-btn { width: 100%; justify-content: center; }
+}
