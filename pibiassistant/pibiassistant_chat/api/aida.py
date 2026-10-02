@@ -79,6 +79,35 @@ def _fetch_models(api_url, api_key):
     return data
 
 
+def default_chat_model(provider=""):
+    """(provider, model) for a turn that names no model, so the tool loop still runs.
+
+    The tool-aware endpoint needs an explicit model; with no default set in PA Core Settings the
+    first chat model of the default (or first available) provider is used. ("", "") when none.
+    """
+    api_url, api_key, _provider, _model = _get_aida_config()
+    if not api_url or not api_key:
+        return "", ""
+    cache = frappe.cache()
+    data = cache.get_value(f"pa_aida_models:{api_url}", expires=True) or cache.get_value(
+        f"pa_aida_models_stale:{api_url}", expires=True
+    )
+    if not data:
+        data = _fetch_models(api_url, api_key)
+    providers = (data or {}).get("providers") or {}
+
+    def chat_models(name):
+        info = providers.get(name) or {}
+        if info.get("available") is False:
+            return []
+        return [m for m in info.get("models") or [] if isinstance(m, str) and "embed" not in m.lower()]
+
+    for name in [provider, *providers]:
+        if name and chat_models(name):
+            return name, chat_models(name)[0]
+    return "", ""
+
+
 def refresh_models_cache():
     """Background job: refresh the model list after a stale answer was served."""
     api_url, api_key, _provider, _model = _get_aida_config()

@@ -105,6 +105,68 @@ def normalize_docstatus_filter(filters: Any) -> Any:
     return normalized
 
 
+def _date_range(value: str):
+    """('2026-01-01', '2026-12-31') for '2026', ('2026-05-01', '2026-05-31') for '2026-05'; else None."""
+    import calendar
+    import re
+
+    year = re.fullmatch(r"(\d{4})", value)
+    if year:
+        return f"{year.group(1)}-01-01", f"{year.group(1)}-12-31"
+    month = re.fullmatch(r"(\d{4})-(0[1-9]|1[0-2])", value)
+    if month:
+        last = calendar.monthrange(int(month.group(1)), int(month.group(2)))[1]
+        return f"{month.group(0)}-01", f"{month.group(0)}-{last:02d}"
+    return None
+
+
+def normalize_filter_shapes(doctype: str, filters: Any, fieldtype_of=None) -> Any:
+    """Repair filter shapes models commonly send, which Frappe reads as "no match" instead of failing.
+
+    ["between", a, b] -> ["between", [a, b]]; ["in", a, b] -> ["in", [a, b]];
+    [field, "between", a, b] -> [field, "between", [a, b]]; "2026" or "2026-05" on a Date field
+    -> the whole year or month.
+    """
+    if fieldtype_of is None:
+
+        def fieldtype_of(fieldname):
+            try:
+                field = frappe.get_meta(doctype).get_field(fieldname)
+                return field.fieldtype if field else None
+            except Exception:
+                return None
+
+    def fix_value(fieldname, value):
+        if isinstance(value, str) and fieldtype_of(fieldname) in ("Date", "Datetime"):
+            span = _date_range(value.strip())
+            if span:
+                return ["between", list(span)]
+        if isinstance(value, (list, tuple)) and len(value) == 3 and str(value[0]).lower() in ("between", "in", "not in"):
+            op = str(value[0]).lower()
+            if not isinstance(value[1], (list, tuple)):
+                return [op, [value[1], value[2]]]
+        if isinstance(value, (list, tuple)) and len(value) > 3 and str(value[0]).lower() in ("in", "not in"):
+            if not isinstance(value[1], (list, tuple)):
+                return [str(value[0]).lower(), list(value[1:])]
+        return value
+
+    if isinstance(filters, dict):
+        return {key: fix_value(key, value) for key, value in filters.items()}
+
+    if isinstance(filters, (list, tuple)):
+        conditions = []
+        for cond in filters:
+            if isinstance(cond, (list, tuple)) and len(cond) == 4 and str(cond[1]).lower() in ("between", "in", "not in") and not isinstance(cond[2], (list, tuple)):
+                cond = [cond[0], cond[1], [cond[2], cond[3]]]
+            elif isinstance(cond, (list, tuple)) and len(cond) == 3 and cond[1] == "=" and isinstance(cond[2], str):
+                fixed = fix_value(cond[0], cond[2])
+                if fixed is not cond[2]:
+                    cond = [cond[0], fixed[0], fixed[1]]
+            conditions.append(cond)
+        return conditions
+    return filters
+
+
 def apply_default_docstatus(doctype: str, filters: Any) -> tuple:
     """Default submittable DocTypes to submitted documents only.
 
@@ -114,6 +176,7 @@ def apply_default_docstatus(doctype: str, filters: Any) -> tuple:
 
     Returns (filters, applied) where `applied` says whether the default was added.
     """
+    filters = normalize_filter_shapes(doctype, filters)
     if not is_submittable(doctype):
         return filters, False
 
@@ -399,6 +462,7 @@ class DocumentList(BaseTool):
         if single_message:
             return {"success": False, "error": single_message, "doctype": doctype}
 
+        filters = normalize_filter_shapes(doctype, filters)
         invalid = invalid_filter_message(doctype, filters)
         if invalid:
             return {"success": False, "error": invalid, "doctype": doctype}

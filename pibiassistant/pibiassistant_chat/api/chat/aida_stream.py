@@ -226,6 +226,17 @@ def _relay_aida_stream(
     block_builder = BlockBuilder()
     message_id = continue_from_message_id or uuid.uuid4().hex[:10]
     full_response = ""
+    if not model:
+        # Without a model the tool loop is skipped and AIDA answers blind from its own knowledge.
+        try:
+            from .aida_tools import tools_enabled as _tools_on
+
+            if _tools_on():
+                from ..aida import default_chat_model
+
+                provider, model = default_chat_model(provider)
+        except Exception:
+            frappe.log_error(title="AIDA Default Model Error", message=frappe.get_traceback()[-500:])
     model_used = model or ""
     resp = None
     prefix = ""

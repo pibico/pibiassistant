@@ -75,5 +75,8 @@
         "icon": "fa-cogs",
         "color": "#7f8c8d",
         "is_group": 0
-    }
+    },
+    {"doctype": "Prompt Category", "category_id": "support", "category_name": "Support", "description": "Prompts for tickets, incident follow-up and customer support", "icon": "fa-headset", "color": "#e67e22", "is_group": 0, "parent_prompt_category": "data-analysis"},
+    {"doctype": "Prompt Category", "category_id": "project-management", "category_name": "Project Management", "description": "Prompts for projects, tasks, timesheets and progress tracking", "icon": "fa-tasks", "color": "#2980b9", "is_group": 0, "parent_prompt_category": "data-analysis"},
+    {"doctype": "Prompt Category", "category_id": "stock-inventory", "category_name": "Stock & Inventory", "description": "Prompts for items, stock levels, warehouses and inventory movements", "icon": "fa-boxes", "color": "#d35400", "is_group": 0, "parent_prompt_category": "data-analysis"}
 ]
