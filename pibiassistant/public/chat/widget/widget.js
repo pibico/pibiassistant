@@ -522,9 +522,6 @@ class PAOWidget {
 
 		// Update context (this also loads suggested prompts)
 		this.update_context();
-
-		// Update quota display
-		this.update_quota_display();
 	}
 
 	bind_events() {
@@ -768,9 +765,14 @@ class PAOWidget {
 				frappe.show_alert({ message: __("I did not understand, please try again."), indicator: "orange" });
 				return;
 			}
-			// Auto-send the transcribed text. send_message() takes the text
-			// directly; we don't push it through the textarea first.
-			this.send_message(data.text);
+			// Dictation never sends: the text lands in the box so it can be corrected or extended, and sending stays manual.
+			const $input = this.$widget.find(".pao-input");
+			const current = String($input.val() || "");
+			const joined = current && !/\s$/.test(current) ? `${current} ${data.text}` : `${current}${data.text}`;
+			$input.val(joined).trigger("input").trigger("focus");
+			const el = $input[0];
+			if (el && el.setSelectionRange) el.setSelectionRange(joined.length, joined.length);
+			frappe.show_alert({ message: __("Transcription added. Review it and press send."), indicator: "green" }, 3);
 		} catch (err) {
 			frappe.show_alert({ message: __("Couldn't transcribe — try again or type instead."), indicator: "red" });
 		} finally {
@@ -851,20 +853,6 @@ class PAOWidget {
 	async send_message(message) {
 		const $input = this.$widget.find(".pao-input");
 		const $sendBtn = this.$widget.find(".pao-send-btn");
-
-		// Refuse only when every credit is genuinely gone. PAOWidgetQuota
-		// owns that test so this surface cannot drift from AR's admission
-		// rule again — a tenant running on prepaid credits is admitted here,
-		// exactly as AR and the SPA admit them.
-		//
-		// Only intercept for admins; non-admins fall through and see the
-		// inline streaming error from the API ("Service temporarily
-		// unavailable, contact your administrator"). They have no upgrade
-		// path so a modal here would just block them with no recourse.
-		if (PAOWidgetQuota.is_blocked(this.quota_status) && this.quota_status.is_admin) {
-			this.show_quota_blocked_modal(this.quota_status.is_admin);
-			return;
-		}
 
 		// Clear input
 		$input.val("").trigger("input");
@@ -1230,16 +1218,6 @@ class PAOWidget {
 
 	get_assistant_avatar() {
 		return PAOCore.get_assistant_avatar();
-	}
-
-	// --- Quota/Billing — delegated to PAOWidgetQuota ---
-
-	async update_quota_display() {
-		return PAOWidgetQuota.fetch_quota_status(this);
-	}
-
-	show_quota_blocked_modal(is_admin) {
-		PAOWidgetQuota.show_quota_blocked_modal(this, is_admin);
 	}
 
 	scroll_to_bottom() {

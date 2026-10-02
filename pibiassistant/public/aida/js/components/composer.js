@@ -1,6 +1,6 @@
 import { h, isCoarse } from "../lib/dom.js";
 import { __ } from "../lib/i18n.js";
-import { store } from "../lib/store.js";
+import { store, setUi } from "../lib/store.js";
 import * as chat from "../lib/chat.js";
 import { createAttachments } from "./attachments.js";
 import { createMic } from "./mic.js";
@@ -12,7 +12,7 @@ const MAX_HEIGHT = 240;
 
 export function createComposer({ variant = "dock" } = {}) {
   const attachments = createAttachments({ onChange: refresh });
-  const mic = createMic({ onText: (text) => { setText(text); submit(); } });
+  const mic = createMic({ onText: appendDictation });
   const input = h("textarea", {
     class: "aida-composer__input", rows: "1", enterkeyhint: "send",
     "aria-label": __("Message"), onInput: () => { grow(); refresh(); }, onKeydown, onPaste,
@@ -112,6 +112,16 @@ export function createComposer({ variant = "dock" } = {}) {
     input.value = text;
     grow();
     refresh();
+  }
+
+  // Dictation never sends: it lands in the box so it can be corrected or extended, and sending stays manual
+  function appendDictation(text) {
+    const current = input.value;
+    const joined = current && !/\s$/.test(current) ? `${current} ${text}` : `${current}${text}`;
+    setText(joined.slice(0, MAX_CHARS));
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+    setUi({ announce: __("Transcription added. Review it and press send.") });
   }
 
   document.addEventListener("keydown", onShortcut);
