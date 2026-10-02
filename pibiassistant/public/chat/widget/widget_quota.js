@@ -165,36 +165,25 @@ window.PAOWidgetQuota = {
 		}
 		const balance = (widget.quota_status || {}).credit_balance || 0;
 
-		const dialog = new frappe.ui.Dialog({
+		window.PAOPanel.open({
 			title: __("Now using prepaid credits"),
-			indicator: "blue",
-			fields: [
-				{
-					fieldtype: "HTML",
-					options: `
+			html: `
 						<div class="pao-quota-overage-content">
 							<div class="pao-quota-overage-icon"><i class="ph ph-credit-card" aria-hidden="true"></i></div>
 							<h4>${__("Your monthly quota is used up")}</h4>
 							<p>${__("Requests now draw on your prepaid credits — {0} remaining.", [
 								this.format_credits(balance),
 							])}</p>
-							<p style="margin-top: 12px; color: var(--text-muted);">
+							<p style="margin-top: 12px; color: var(--pao-text-muted-on-white, #6E6E76);">
 								${__("Your quota resets at the start of next month.")}
 							</p>
 						</div>
 					`,
-				},
+			actions: [
+				{ label: __("View Billing"), kind: "outline", onClick: () => (window.location.href = "/aida/chat?tab=billing") },
+				{ label: __("Got it"), kind: "primary" },
 			],
-			primary_action_label: __("Got it"),
-			primary_action: () => dialog.hide(),
-			secondary_action_label: __("View Billing"),
-			secondary_action: () => {
-				dialog.hide();
-				window.location.href = "/aida/chat?tab=billing";
-			},
 		});
-
-		dialog.show();
 	},
 
 	/**
@@ -213,36 +202,25 @@ window.PAOWidgetQuota = {
 		const quota = widget.quota_status || {};
 		const remaining = quota.quota_remaining || 0;
 
-		const dialog = new frappe.ui.Dialog({
+		window.PAOPanel.open({
 			title: threshold >= 90 ? __("Low Quota Warning") : __("Quota Notice"),
-			indicator: threshold >= 90 ? "orange" : "yellow",
-			fields: [
-				{
-					fieldtype: "HTML",
-					options: `
+			html: `
 						<div class="pao-quota-warning-content">
 							<div class="pao-quota-warning-icon">
 								${threshold >= 90 ? '<i class="ph ph-warning" aria-hidden="true"></i>' : '<i class="ph ph-chart-bar" aria-hidden="true"></i>'}
 							</div>
 							<h4>${__("You've used {0}% of your monthly quota", [threshold])}</h4>
 							<p>${__("Remaining credits: {0}", [this.format_credits(remaining)])}</p>
-							<p style="margin-top: 12px; color: var(--text-muted);">
+							<p style="margin-top: 12px; color: var(--pao-text-muted-on-white, #6E6E76);">
 								${__("Upgrade your plan or purchase additional credits.")}
 							</p>
 						</div>
 					`,
-				},
+			actions: [
+				{ label: __("Maybe Later"), kind: "outline" },
+				{ label: __("Upgrade Now"), kind: "primary", onClick: () => (window.location.href = "/aida/chat?tab=billing") },
 			],
-			primary_action_label: __("Upgrade Now"),
-			primary_action: () => {
-				dialog.hide();
-				window.location.href = "/aida/chat?tab=billing";
-			},
-			secondary_action_label: __("Maybe Later"),
-			secondary_action: () => dialog.hide(),
 		});
-
-		dialog.show();
 	},
 
 	/**
@@ -259,13 +237,10 @@ window.PAOWidgetQuota = {
 		if (!is_admin) {
 			return;
 		}
-		const dialog = new frappe.ui.Dialog({
+		window.PAOPanel.open({
 			title: __("Quota Exceeded"),
-			indicator: "red",
-			fields: [
-				{
-					fieldtype: "HTML",
-					options: `
+			dismissible: false,
+			html: `
 						<div class="pao-quota-blocked-content">
 							<div class="pao-quota-blocked-icon"><i class="ph ph-prohibit" aria-hidden="true"></i></div>
 							<h4>${__("You've reached your monthly quota limit")}</h4>
@@ -275,17 +250,9 @@ window.PAOWidgetQuota = {
 							</p>
 						</div>
 					`,
-				},
+			actions: [
+				{ label: __("Upgrade Now"), kind: "primary", onClick: () => (window.location.href = "/aida/chat?tab=billing") },
 			],
-			primary_action_label: __("Upgrade Now"),
-			primary_action: () => {
-				dialog.hide();
-				window.location.href = "/aida/chat?tab=billing";
-			},
 		});
-
-		// Remove close button to enforce action
-		dialog.$wrapper.find(".modal-header .close").hide();
-		dialog.show();
 	},
 };

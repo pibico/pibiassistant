@@ -41,7 +41,6 @@ window.PAOWidgetTemplates = {
 			})
 			.join("");
 
-		const title = this.escape(template.title || template.name || "Template");
 		const subtitle = template.description
 			? `<div class="pao-template-modal-description">${this.escape(
 					template.description
@@ -49,26 +48,17 @@ window.PAOWidgetTemplates = {
 			: "";
 
 		const $modal = $(`
-			<div class="pao-template-modal">
-				<div class="pao-template-modal-content">
-					<div class="pao-template-modal-header">
-						<div>
-							<h4>${title}</h4>
-							<p class="pao-template-modal-subtitle">${this.escape(__("Fill in the details"))}</p>
-						</div>
-						<button class="pao-template-modal-close" type="button" aria-label="${this.escape(__("Close"))}">&times;</button>
+			<div class="pao-template-modal-content">
+				${subtitle}
+				<form class="pao-template-form">
+					<div class="pao-template-form-body">
+						${formHtml || `<p class="pao-arg-empty">${this.escape(__("This template has no parameters."))}</p>`}
 					</div>
-					${subtitle}
-					<form class="pao-template-form">
-						<div class="pao-template-form-body">
-							${formHtml || `<p class="pao-arg-empty">${this.escape(__("This template has no parameters."))}</p>`}
-						</div>
-						<div class="pao-template-modal-actions">
-							<button type="button" class="pao-template-cancel">${this.escape(__("Cancel"))}</button>
-							<button type="submit" class="pao-template-submit">${this.escape(__("Use"))}</button>
-						</div>
-					</form>
-				</div>
+					<div class="pao-template-modal-actions">
+						<button type="button" class="pao-template-cancel">${this.escape(__("Cancel"))}</button>
+						<button type="submit" class="pao-template-submit">${this.escape(__("Use"))}</button>
+					</div>
+				</form>
 			</div>
 		`);
 
@@ -80,20 +70,11 @@ window.PAOWidgetTemplates = {
 			}
 		});
 
-		// Close handlers
-		$modal
-			.find(".pao-template-modal-close, .pao-template-cancel")
-			.on("click", () => $modal.remove());
-		$modal.on("click", (e) => {
-			if ($(e.target).is(".pao-template-modal")) $modal.remove();
+		const panel = window.PAOPanel.open({
+			title: template.title || template.name || __("Template"),
+			node: $modal[0],
 		});
-		// Esc to close
-		$modal.on("keydown", (e) => {
-			if (e.key === "Escape") {
-				e.preventDefault();
-				$modal.remove();
-			}
-		});
+		$modal.find(".pao-template-cancel").on("click", () => panel.close());
 
 		// Submit
 		$modal.find(".pao-template-form").on("submit", async (e) => {
@@ -108,7 +89,7 @@ window.PAOWidgetTemplates = {
 				}
 			});
 
-			$modal.remove();
+			panel.close();
 
 			try {
 				const response = await frappe.call({
@@ -130,11 +111,6 @@ window.PAOWidgetTemplates = {
 				widget.send_message(this.fallback_prompt(template, values));
 			}
 		});
-
-		// Append to <body> so the modal covers the full viewport regardless of the
-		// widget's size/position. Mirrors the SPA's <Teleport to="body"> pattern.
-		$("body").append($modal);
-		$modal.find("input, select, textarea").first().focus();
 	},
 
 	/**

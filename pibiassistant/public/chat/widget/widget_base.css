@@ -10,9 +10,11 @@
 	--pao-orange: #B8791A;
 }
 
-/* Light Theme (default) - Quiet Ledger "Paper" */
+/* Light theme: pibiCo brand values (tokens come from vendor/pibico/tokens.css). */
 .pao-widget {
-	--pao-font: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	--pao-font: var(--pibico-font-body, 'Raleway', 'Poppins', Arial, sans-serif);
+	--pao-font-heading: var(--pibico-font-heading, 'Figtree', 'Poppins', Arial, sans-serif);
+	--pao-font-button: var(--pibico-font-button, 'Poppins', Arial, sans-serif);
 	--pad-y-xs: 2px;
 	--pad-y-sm: 4px;
 	--pad-y-md: 6px;
@@ -20,48 +22,54 @@
 	--pad-y-xl: 12px;
 	/* Backgrounds */
 	--pao-bg-primary: #FFFFFF;
-	--pao-bg-secondary: #FBFAF8;
-	--pao-bg-tertiary: #F5F3EF;
-	--pao-bg-input: #FFFFFF;
+	--pao-bg-secondary: #FFFFFF;
+	--pao-bg-tertiary: #E8E8EA;
+	--pao-bg-input: #E8E8EA;
 
-	/* Text */
-	--pao-text-primary: #1A1A17;
-	--pao-text-secondary: #57534C;
-	--pao-text-muted: #8A857C;
+	/* Text (muted #6E6E76 only on white; on grey use secondary) */
+	--pao-text-primary: #1A1A2E;
+	--pao-text-secondary: #4B4B53;
+	--pao-text-muted: #6E6E76;
 
-	/* Borders & Effects */
-	--pao-border-color: #ECE9E3;
-	--pao-hover: #F5F3EF;
-	--pao-code-bg: #F5F3EF;
-	--pao-shadow: rgba(0, 0, 0, 0.08);
+	/* Dividers & Effects */
+	--pao-border-color: #E8E8EA;
+	--pao-hover: #D6E8F5;
+	--pao-code-bg: #E8E8EA;
+	--pao-shadow: rgba(70, 130, 180, 0.15);
 
 	/* Primary - pibiCo steelblue */
 	--pao-primary: #4682B4;
-	--pao-primary-hover: #386890;
+	--pao-primary-hover: #365F8A;
+	--pao-btn-bg: #3C75A4;
+	--pao-btn-bg-hover: #365F8A;
+	--pao-btn-fg: #fff;
+	--pao-link: #3C75A4;
+	--pao-danger: #B33A2B;
+	--pao-danger-hover: #8A2A1F;
 }
 
-/* Dark Theme - Quiet Ledger "Ink Ledger" (warm charcoal) */
+/* Dark theme: same brand hues on dark surfaces */
 html[data-theme="dark"] .pao-widget {
-	/* Backgrounds */
-	--pao-bg-primary: #1E1D16;
-	--pao-bg-secondary: #16150F;
-	--pao-bg-tertiary: #26241B;
-	--pao-bg-input: #1E1D16;
+	--pao-bg-primary: #1E2330;
+	--pao-bg-secondary: #181C27;
+	--pao-bg-tertiary: #2A3040;
+	--pao-bg-input: #2A3040;
 
-	/* Text */
-	--pao-text-primary: #F2EFE6;
-	--pao-text-secondary: #B7B2A4;
-	--pao-text-muted: #8A857C;
+	--pao-text-primary: #E8E8EA;
+	--pao-text-secondary: #C8C8CC;
+	--pao-text-muted: #B4B4BC;
 
-	/* Borders & Effects */
-	--pao-border-color: #2E2C22;
-	--pao-hover: #26241B;
-	--pao-code-bg: #26241B;
-	--pao-shadow: rgba(0, 0, 0, 0.3);
+	--pao-border-color: #333A4D;
+	--pao-hover: #2A3A52;
+	--pao-code-bg: #2A3040;
+	--pao-shadow: rgba(106, 171, 224, 0.18);
 
-	/* Primary - pibiCo steelblue (brightened for dark) */
-	--pao-primary: #5BA3D9;
-	--pao-primary-hover: #7DB8E3;
+	--pao-primary: #6AABE0;
+	--pao-primary-hover: #8DC0EB;
+	--pao-btn-bg: #6AABE0;
+	--pao-btn-bg-hover: #8DC0EB;
+	--pao-btn-fg: #1A1A2E;
+	--pao-link: #6AABE0;
 }
 
 /* Widget Container */
@@ -176,7 +184,7 @@ html[data-theme="dark"] .pao-widget {
 .pao-tooltip {
 	position: fixed;
 	background: var(--pao-bg-primary, white);
-	border: 1px solid var(--pao-border-color, #d1d8dd);
+	border: none;
 	border-radius: 20px;
 	padding: 10px 16px;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -200,7 +208,9 @@ html[data-theme="dark"] .pao-widget {
 	position: absolute;
 	width: 0;
 	height: 0;
-	border: 6px solid transparent;
+	width: 12px;
+	height: 12px;
+	background: var(--pao-bg-primary, white);
 	top: 50%;
 	transform: translateY(-50%);
 }
@@ -208,13 +218,13 @@ html[data-theme="dark"] .pao-widget {
 /* Arrow points RIGHT (tooltip is on the left of button) */
 .pao-tooltip[data-arrow="right"]::before {
 	right: -12px;
-	border-left-color: var(--pao-bg-primary, white);
+	clip-path: polygon(0 0, 0 100%, 100% 50%);
 }
 
 /* Arrow points LEFT (tooltip is on the right of button) */
 .pao-tooltip[data-arrow="left"]::before {
 	left: -12px;
-	border-right-color: var(--pao-bg-primary, white);
+	clip-path: polygon(100% 0, 100% 100%, 0 50%);
 }
 
 .pao-tooltip-icon {
@@ -238,9 +248,9 @@ html[data-theme="dark"] .pao-widget {
 	height: 650px;
 	max-height: calc(100vh - 100px);
 	background: var(--pao-bg-primary, white);
-	border-radius: 8px;
-	border: 1px solid var(--pao-border-color, #d1d8dd);
-	box-shadow: 0 2px 8px var(--pao-shadow, rgba(0, 0, 0, 0.08));
+	border-radius: 12px;
+	border: none;
+	box-shadow: var(--pibico-card-shadow-hover, 0 0 20px rgba(70, 130, 180, 0.25));
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
@@ -368,7 +378,6 @@ html[data-theme="dark"] .pao-widget {
 /* Input Area */
 .pao-input-area {
 	background: #FBFAF8;
-	border-top: 1px solid var(--pao-border-color, #ECE9E3);
 	padding: var(--pad-y-lg) 12px;
 	display: flex;
 	flex-direction: column;
@@ -378,7 +387,6 @@ html[data-theme="dark"] .pao-widget {
 /* Dark theme input area */
 html[data-theme="dark"] .pao-widget .pao-input-area {
 	background: #1E1D16;
-	border-top-color: #2E2C22;
 }
 
 /* Context Row - indicator and toggle on same line */
@@ -458,15 +466,14 @@ html[data-theme="dark"] .pao-widget .pao-file-upload-btn:hover {
 	gap: 12px;
 	padding: 10px 12px;
 	background: var(--pao-bg-primary, white);
-	border: 2px solid var(--pao-border-color, #e5e7eb);
-	border-radius: 10px;
+	border: 0;
+	border-radius: 12px;
 	transition: all 0.2s;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	box-shadow: var(--pibico-card-shadow);
 }
 
 .pao-file-preview:hover {
-	border-color: var(--pao-primary, #4682B4);
-	box-shadow: 0 2px 6px rgba(70, 130, 180, 0.1);
+	box-shadow: var(--pibico-card-shadow-hover);
 }
 
 .pao-file-icon {
@@ -549,16 +556,16 @@ html[data-theme="dark"] .pao-widget .pao-file-remove:hover {
 	display: flex;
 	gap: 4px;
 	align-items: center;
-	background: white;
-	border: 1px solid var(--pao-border-color, #e5e7eb);
+	background: var(--pao-bg-input, #E8E8EA);
+	border: 0;
 	border-radius: 12px;
 	padding: var(--pad-y-xs) 8px;
-	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	transition: background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .pao-input-wrapper:focus-within {
-	border-color: var(--pao-primary, #4682B4);
-	box-shadow: 0 0 0 3px rgba(70, 130, 180, 0.12);
+	background: var(--pao-bg-primary, #fff);
+	box-shadow: 0 0 2px var(--pao-primary, #4682B4), 0 0 0 1px var(--pao-primary, #4682B4);
 }
 
 html[data-theme="dark"] .pao-widget .pao-input-wrapper {
@@ -618,13 +625,13 @@ html[data-theme="dark"] .pao-widget .pao-input::placeholder {
 
 /* Active (has text) — steelblue fill */
 .pao-send-btn.is-active {
-	background: var(--pao-primary, #4682B4);
-	color: #fff;
+	background: var(--pao-btn-bg, #3C75A4);
+	color: var(--pao-btn-fg, #fff);
 }
 
 .pao-send-btn.is-active:hover:not(:disabled) {
-	background: var(--pao-primary-hover, #386890);
-	color: #fff;
+	background: var(--pao-btn-bg-hover, #365F8A);
+	color: var(--pao-btn-fg, #fff);
 }
 
 .pao-send-btn:disabled {

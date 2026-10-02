@@ -624,3 +624,148 @@ window.PAOCore = {
 		}
 	},
 };
+
+/**
+ * PAOPanel - right slide panel (pibiCo guidelines) used instead of centered modals.
+ * open({title, html|node, actions:[{label, kind, onClick, keepOpen}], dismissible, onClose}) -> {el, body, close}
+ */
+window.PAOPanel = (function () {
+	const stack = [];
+	let seq = 0;
+	const esc = (s) =>
+		String(s == null ? "" : s)
+			.replace(/&/g, "&amp;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;")
+			.replace(/"/g, "&quot;");
+	const FOCUSABLE =
+		'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
+	function onKey(e) {
+		const top = stack[stack.length - 1];
+		if (!top) return;
+		if (e.key === "Escape" && top.dismissible) {
+			e.preventDefault();
+			e.stopPropagation();
+			top.close();
+		} else if (e.key === "Tab") {
+			const items = Array.from(top.panel.querySelectorAll(FOCUSABLE)).filter(
+				(n) => n.offsetParent !== null
+			);
+			if (!items.length) {
+				e.preventDefault();
+				top.panel.focus();
+				return;
+			}
+			const first = items[0];
+			const last = items[items.length - 1];
+			if (e.shiftKey && (document.activeElement === first || document.activeElement === top.panel)) {
+				e.preventDefault();
+				last.focus();
+			} else if (!e.shiftKey && document.activeElement === last) {
+				e.preventDefault();
+				first.focus();
+			}
+		}
+	}
+
+	function open(opts) {
+		opts = opts || {};
+		const id = `pao-panel-${++seq}`;
+		const dismissible = opts.dismissible !== false;
+		const prevFocus = document.activeElement;
+		const backdrop = document.createElement("div");
+		backdrop.className = "pao-panel-backdrop";
+		const panel = document.createElement("aside");
+		panel.className = "pao-panel";
+		panel.id = id;
+		panel.tabIndex = -1;
+		panel.setAttribute("role", "dialog");
+		panel.setAttribute("aria-modal", "true");
+		panel.setAttribute("aria-labelledby", `${id}-title`);
+		panel.innerHTML = `
+			<header class="pao-panel-header">
+				<h2 class="pao-panel-title" id="${id}-title">${esc(opts.title || "")}</h2>
+				${
+					dismissible
+						? `<button type="button" class="pao-panel-close" aria-label="${esc(
+								window.__ ? __("Close") : "Close"
+						  )}"><i class="ph ph-x" aria-hidden="true"></i></button>`
+						: ""
+				}
+			</header>
+			<div class="pao-panel-body"></div>
+			<footer class="pao-panel-footer"></footer>`;
+		const body = panel.querySelector(".pao-panel-body");
+		if (opts.node) body.appendChild(opts.node);
+		else body.innerHTML = opts.html || "";
+		const footer = panel.querySelector(".pao-panel-footer");
+
+		let closed = false;
+		const entry = { panel, dismissible, close };
+		function close() {
+			if (closed) return;
+			closed = true;
+			const i = stack.indexOf(entry);
+			if (i >= 0) stack.splice(i, 1);
+			panel.classList.remove("active");
+			backdrop.classList.remove("active");
+			if (!stack.length) {
+				document.removeEventListener("keydown", onKey, true);
+				document.body.classList.remove("pao-panel-open");
+			}
+			const done = () => {
+				panel.remove();
+				backdrop.remove();
+			};
+			const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+			if (reduce) done();
+			else setTimeout(done, 320);
+			if (prevFocus && prevFocus.focus && document.contains(prevFocus)) {
+				try {
+					prevFocus.focus({ preventScroll: true });
+				} catch (e) {
+					/* element gone */
+				}
+			}
+			if (typeof opts.onClose === "function") opts.onClose();
+		}
+
+		(opts.actions || []).forEach((a) => {
+			const b = document.createElement("button");
+			b.type = "button";
+			b.className = `pao-panel-btn pao-panel-btn-${a.kind || "outline"}`;
+			b.textContent = a.label;
+			b.addEventListener("click", () => {
+				if (!a.keepOpen) close();
+				if (typeof a.onClick === "function") a.onClick(entry);
+			});
+			footer.appendChild(b);
+		});
+		if (!footer.children.length) footer.remove();
+
+		if (dismissible) {
+			backdrop.addEventListener("click", close);
+			panel.querySelector(".pao-panel-close").addEventListener("click", close);
+		}
+		document.body.appendChild(backdrop);
+		document.body.appendChild(panel);
+		if (!stack.length) document.addEventListener("keydown", onKey, true);
+		stack.push(entry);
+		document.body.classList.add("pao-panel-open");
+		requestAnimationFrame(() => {
+			panel.classList.add("active");
+			backdrop.classList.add("active");
+			const target =
+				panel.querySelector("[autofocus]") ||
+				panel.querySelector(".pao-panel-body " + FOCUSABLE) ||
+				panel.querySelector(".pao-panel-footer button") ||
+				panel.querySelector(".pao-panel-close") ||
+				panel;
+			target.focus({ preventScroll: true });
+		});
+		return { el: panel, body, close };
+	}
+
+	return { open, escape: esc };
+})();

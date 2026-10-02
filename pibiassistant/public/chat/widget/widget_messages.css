@@ -159,8 +159,9 @@ html[data-theme="dark"] .pao-widget .pao-message-content a[href^="/app/"] {
 	gap: 8px;
 	padding: 6px 10px;
 	background: rgba(0, 0, 0, 0.03);
-	border: 1px solid rgba(0, 0, 0, 0.08);
-	border-radius: 6px;
+	border: 0;
+	border-radius: 12px;
+	box-shadow: var(--pibico-card-shadow);
 	font-size: 12px;
 	color: var(--pao-text-secondary, #6b7280);
 }
@@ -168,7 +169,7 @@ html[data-theme="dark"] .pao-widget .pao-message-content a[href^="/app/"] {
 /* User message attachments - use hover color like Vue app */
 .pao-message-user .pao-attachment-item {
 	background: var(--pao-hover, #f3f4f6);
-	border: 1px solid var(--pao-border, #e5e7eb);
+	border: 0;
 	color: var(--pao-text-secondary, #6b7280);
 }
 
@@ -208,13 +209,11 @@ html[data-theme="dark"] .pao-widget .pao-message-content a[href^="/app/"] {
 /* Dark theme attachments */
 html[data-theme="dark"] .pao-widget .pao-attachment-item {
 	background: rgba(255, 255, 255, 0.05);
-	border-color: rgba(255, 255, 255, 0.1);
 	color: #B7B2A4;
 }
 
 html[data-theme="dark"] .pao-widget .pao-message-user .pao-attachment-item {
 	background: var(--pao-hover, #374151);
-	border-color: var(--pao-border, #4b5563);
 	color: var(--pao-text-secondary, #d1d5db);
 }
 
@@ -316,8 +315,8 @@ html[data-theme="dark"] .pao-widget .pao-message-assistant .pao-message-text h4 
 /* Markdown code blocks */
 .pao-message-assistant .pao-message-text pre {
 	background: var(--pao-code-bg, #f3f4f6);
-	border: 1px solid var(--pao-border-color, #e5e7eb);
-	border-radius: 6px;
+	border: 0;
+	border-radius: 12px;
 	padding: 12px;
 	margin: 8px 0;
 	overflow-x: auto;
@@ -343,57 +342,58 @@ html[data-theme="dark"] .pao-widget .pao-message-assistant .pao-message-text h4 
 
 /* Markdown blockquotes */
 .pao-message-assistant .pao-message-text blockquote {
-	border-left: 3px solid var(--pao-indigo);
-	padding-left: 12px;
+	background: var(--pao-code-bg, #E8E8EA);
+	border-radius: 8px;
+	padding: 3px 12px;
 	margin: 8px 0;
 	color: #57534C;
 	font-style: italic;
 }
 
 html[data-theme="dark"] .pao-widget .pao-message-assistant .pao-message-text blockquote {
-	color: #8A857C;
-	border-left-color: #5BA3D9;
+	color: #B4B4BC;
 }
 
 /* Markdown links */
 .pao-message-assistant .pao-message-text a {
-	color: var(--pao-indigo);
+	color: var(--pao-link, #3C75A4);
 	text-decoration: underline;
 }
 
 .pao-message-assistant .pao-message-text a:hover {
-	color: var(--pao-purple);
+	color: var(--pao-btn-bg-hover, #365F8A);
 }
 
 html[data-theme="dark"] .pao-widget .pao-message-assistant .pao-message-text a {
-	color: #5BA3D9;
+	color: #6AABE0;
 }
 
 html[data-theme="dark"] .pao-widget .pao-message-assistant .pao-message-text a:hover {
-	color: #D9B84A;
+	color: #8DC0EB;
 }
 
 /* Markdown horizontal rules */
 .pao-message-assistant .pao-message-text hr {
 	border: none;
-	border-top: 1px solid #ECE9E3;
+	height: 1px;
+	background: #E8E8EA;
 	margin: 12px 0;
 }
 
 html[data-theme="dark"] .pao-widget .pao-message-assistant .pao-message-text hr {
-	border-top-color: #2E2C22;
+	background: #333A4D;
 }
 
 /* Markdown tables wrapper for horizontal scrolling */
 .pao-message-assistant .pao-message-text .table-wrapper {
 	overflow-x: auto;
 	margin: 16px 0;
-	border: 1px solid #ECE9E3;
-	border-radius: 6px;
+	border: 0;
+	border-radius: 12px;
+	box-shadow: var(--pibico-card-shadow);
 }
 
 html[data-theme="dark"] .pao-widget .pao-message-assistant .pao-message-text .table-wrapper {
-	border-color: #2E2C22;
 }
 
 /* Markdown tables */
@@ -406,14 +406,15 @@ html[data-theme="dark"] .pao-widget .pao-message-assistant .pao-message-text .ta
 
 .pao-message-assistant .pao-message-text table th,
 .pao-message-assistant .pao-message-text table td {
-	border: 1px solid #ECE9E3;
+	border: 0;
+	border-bottom: 1px solid #E8E8EA;
 	padding: 6px 8px;
 	text-align: left;
 }
 
 html[data-theme="dark"] .pao-widget .pao-message-assistant .pao-message-text table th,
 html[data-theme="dark"] .pao-widget .pao-message-assistant .pao-message-text table td {
-	border-color: #2E2C22;
+	border-bottom-color: #333A4D;
 }
 
 .pao-message-assistant .pao-message-text table th {
@@ -459,17 +460,17 @@ html[data-theme="dark"] .pao-widget .pao-message-assistant .pao-message-text str
 }
 
 .pao-message-error .pao-message-text {
-	background: #fef2f2;
-	color: #991b1b;
-	border: 1px solid #fecaca;
-	border-radius: 8px;
+	background: #F5D6D2;
+	color: #8A2A1F;
+	border: 0;
+	border-radius: 12px;
+	box-shadow: var(--pibico-card-shadow);
 }
 
 /* Dark mode error message */
 html[data-theme="dark"] .pao-widget .pao-message-error .pao-message-text {
 	background: rgba(153, 27, 27, 0.15);
 	color: #fca5a5;
-	border-color: rgba(248, 113, 113, 0.3);
 }
 
 /* Screenshot capture overlay */
@@ -506,7 +507,7 @@ html[data-theme="dark"] .pao-widget .pao-message-error .pao-message-text {
 }
 
 .pao-message-text a {
-	color: inherit;
+	color: var(--pao-link, inherit);
 	text-decoration: underline;
 }
 
@@ -628,8 +629,8 @@ html[data-theme="dark"] .pao-widget .pao-tool-indicator {
 	right: 0;
 	bottom: calc(100% + 6px);
 	background: var(--pao-bg, #ffffff);
-	border: 1px solid var(--pao-border-color, #e5e7eb);
-	border-radius: 10px;
+	border: 0;
+	border-radius: 12px;
 	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
 	max-height: 280px;
 	display: flex;
@@ -660,7 +661,6 @@ html[data-theme="dark"] .pao-widget .pao-tool-indicator {
 }
 
 .pao-slash-section-label + .pao-slash-section-label {
-	border-top: 1px solid var(--pao-border-color, #e5e7eb);
 	margin-top: 4px;
 	padding-top: 8px;
 }
@@ -742,7 +742,6 @@ html[data-theme="dark"] .pao-widget .pao-tool-indicator {
 	align-items: center;
 	gap: 10px;
 	padding: 6px 10px;
-	border-top: 1px solid var(--pao-border-color, #e5e7eb);
 	background: var(--pao-bg-secondary, #f9fafb);
 	font-size: 10px;
 	color: var(--pao-text-secondary, #6b7280);
@@ -753,96 +752,24 @@ html[data-theme="dark"] .pao-widget .pao-tool-indicator {
 	display: inline-block;
 	padding: 1px 4px;
 	margin-right: 2px;
-	background: var(--pao-bg, #ffffff);
-	border: 1px solid var(--pao-border-color, #e5e7eb);
+	background: var(--pao-bg-tertiary, #E8E8EA);
+	border: 0;
 	border-radius: 3px;
 	font-family: inherit;
 	font-size: 10px;
 	line-height: 1;
 }
 
-/* Template Argument Modal (full-viewport overlay, parity with SPA ParameterModal) */
-.pao-template-modal {
-	position: fixed;
-	inset: 0;
-	background: rgba(0, 0, 0, 0.5);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	z-index: 10001;
-	padding: 16px;
-	animation: pao-modal-fade-in 0.15s ease;
-}
-
-@keyframes pao-modal-fade-in {
-	from { opacity: 0; }
-	to { opacity: 1; }
-}
-
+/* Template parameters render inside a PAOPanel slide panel (see pao_core.js) */
 .pao-template-modal-content {
-	background: var(--pao-bg-primary, #ffffff);
-	border-radius: 12px;
-	width: 100%;
-	max-width: 32rem;
-	max-height: 85vh;
 	display: flex;
 	flex-direction: column;
-	overflow: hidden;
-	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-	animation: pao-modal-slide-up 0.2s ease;
-}
-
-@keyframes pao-modal-slide-up {
-	from { transform: translateY(20px); opacity: 0; }
-	to { transform: translateY(0); opacity: 1; }
-}
-
-.pao-template-modal-header {
-	display: flex;
-	align-items: flex-start;
-	justify-content: space-between;
-	gap: 16px;
-	padding: 20px 24px;
-	border-bottom: 1px solid var(--pao-border-color, #e5e7eb);
-}
-
-.pao-template-modal-header h4 {
-	margin: 0;
-	font-size: 16px;
-	font-weight: 600;
-	color: var(--pao-text-primary, #111827);
-	line-height: 1.3;
-}
-
-.pao-template-modal-subtitle {
-	margin: 4px 0 0;
-	font-size: 12px;
-	color: var(--pao-text-muted, #6b7280);
-}
-
-.pao-template-modal-close {
-	background: none;
-	border: none;
-	font-size: 22px;
-	color: var(--pao-text-muted, #9ca3af);
-	cursor: pointer;
-	padding: 0;
-	line-height: 1;
-	flex-shrink: 0;
-	transition: color 0.15s;
-}
-
-.pao-template-modal-close:hover {
-	color: var(--pao-text-primary, #374151);
 }
 
 .pao-template-modal-description {
-	padding: 14px 24px;
-	background: var(--pao-bg-secondary, #f9fafb);
-	border-bottom: 1px solid var(--pao-border-color, #e5e7eb);
 	font-size: 13px;
 	color: var(--pao-text-secondary, #4b5563);
-	line-height: 1.5;
+	margin-bottom: 8px;
 }
 
 .pao-template-form {
@@ -853,12 +780,12 @@ html[data-theme="dark"] .pao-widget .pao-tool-indicator {
 }
 
 .pao-template-form-body {
-	padding: 20px 24px;
+	padding: 0;
 	overflow-y: auto;
 	flex: 1;
 	display: flex;
 	flex-direction: column;
-	gap: 18px;
+	gap: 8px;
 }
 
 .pao-arg-field {
@@ -898,20 +825,20 @@ html[data-theme="dark"] .pao-widget .pao-tool-indicator {
 .pao-arg-input {
 	width: 100%;
 	padding: 9px 12px;
-	border: 1px solid var(--pao-border-color, #d1d5db);
+	border: 0;
 	border-radius: 8px;
 	font-size: 13px;
 	font-family: inherit;
-	background: var(--pao-bg-primary, #ffffff);
+	background: var(--pao-bg-input, #E8E8EA);
 	color: var(--pao-text-primary, #111827);
-	transition: border-color 0.15s, box-shadow 0.15s;
+	transition: background-color 0.15s, box-shadow 0.15s;
 	box-sizing: border-box;
 }
 
 .pao-arg-input:focus {
 	outline: none;
-	border-color: var(--pao-blue, #4682B4);
-	box-shadow: 0 0 0 3px rgba(70, 130, 180, 0.1);
+	background: var(--pao-bg-primary, #fff);
+	box-shadow: 0 0 2px var(--pao-primary, #4682B4), 0 0 0 1px var(--pao-primary, #4682B4);
 }
 
 .pao-arg-input::placeholder {
@@ -932,7 +859,6 @@ html[data-theme="dark"] .pao-widget .pao-tool-indicator {
 	justify-content: flex-end;
 	gap: 10px;
 	padding: 14px 24px;
-	border-top: 1px solid var(--pao-border-color, #e5e7eb);
 	background: var(--pao-bg-secondary, #f9fafb);
 	flex-shrink: 0;
 }
@@ -949,7 +875,8 @@ html[data-theme="dark"] .pao-widget .pao-tool-indicator {
 
 .pao-template-cancel {
 	background: transparent;
-	border: 1px solid var(--pao-border-color, #d1d5db);
+	border: 0;
+	box-shadow: inset 0 0 0 1.5px var(--pao-btn-bg);
 	color: var(--pao-text-primary, #111827);
 }
 
@@ -958,9 +885,9 @@ html[data-theme="dark"] .pao-widget .pao-tool-indicator {
 }
 
 .pao-template-submit {
-	background: linear-gradient(135deg, #4682B4 0%, #386890 100%);
+	background: var(--pao-btn-bg, #3C75A4);
 	border: none;
-	color: white;
+	color: var(--pao-btn-fg, #fff);
 }
 
 .pao-template-submit:hover {
@@ -969,9 +896,6 @@ html[data-theme="dark"] .pao-widget .pao-tool-indicator {
 
 /* Responsive — stack actions on narrow screens */
 @media (max-width: 640px) {
-	.pao-template-modal-content {
-		max-height: 92vh;
-	}
 	.pao-template-modal-actions {
 		flex-direction: column-reverse;
 	}
@@ -1040,8 +964,7 @@ html[data-theme="dark"] .pao-widget .pao-tool-indicator {
 	font-size: 13px;
 	color: var(--pao-text-muted, #9ca3af);
 	padding-left: 16px;
-	border-left: 2px solid var(--pao-border-color, #e5e7eb);
-	line-height: 1.5;
+	line-height: var(--pibico-lh-read, 1.2);
 	animation: pao-fade-in 0.3s ease forwards;
 }
 
@@ -1071,23 +994,20 @@ html[data-theme="dark"] .pao-widget .pao-processing-tip {
 	color: var(--pao-text-muted, #9ca3af);
 }
 
-html[data-theme="dark"] .pao-widget .pao-processing-tip {
-	border-left-color: var(--pao-border-color, #4b5563);
-}
 
 /* ===== HITL Interaction Cards ===== */
 
 .pao-interaction-card {
 	margin: 8px 0;
 	padding: 10px 12px;
-	border-radius: 8px;
-	border: 1px solid rgba(156, 163, 175, 0.2);
+	border-radius: 12px;
+	border: 0;
+	box-shadow: var(--pibico-card-shadow);
 	background: #fff;
 }
 
 .pao-interaction-approval {
-	border-color: rgba(245, 158, 11, 0.25);
-	background: rgba(245, 158, 11, 0.03);
+	background: #FFF6E0;
 }
 
 .pao-interaction-header {
@@ -1135,15 +1055,14 @@ html[data-theme="dark"] .pao-widget .pao-processing-tip {
 	border-radius: 6px;
 	font-size: 13px;
 	font-weight: 500;
-	border: 1px solid transparent;
+	border: 0;
 	cursor: pointer;
 	transition: all 0.15s ease;
 }
 
 .pao-btn-approve {
-	background: var(--pao-primary, #4682B4);
-	color: #fff;
-	border-color: var(--pao-primary, #4682B4);
+	background: var(--pao-btn-bg, #3C75A4);
+	color: var(--pao-btn-fg, #fff);
 }
 
 .pao-btn-approve:hover { opacity: 0.9; }
@@ -1155,25 +1074,25 @@ html[data-theme="dark"] .pao-widget .pao-processing-tip {
 
 .pao-btn-reject {
 	background: transparent;
-	color: var(--pao-text-muted, #9ca3af);
-	border-color: rgba(156, 163, 175, 0.3);
+	color: var(--pao-text-secondary, #4B4B53);
+	box-shadow: inset 0 0 0 1.5px rgba(75, 75, 83, 0.35);
 }
 
 .pao-btn-reject:hover {
-	color: #ef4444;
-	border-color: rgba(239, 68, 68, 0.3);
+	color: #B33A2B;
+	box-shadow: inset 0 0 0 1.5px #B33A2B;
 	background: rgba(239, 68, 68, 0.04);
 }
 
 .pao-btn-trust {
 	background: transparent;
-	color: var(--pao-text-muted, #6b7280);
-	border-color: rgba(156, 163, 175, 0.3);
+	color: var(--pao-text-secondary, #4B4B53);
+	box-shadow: inset 0 0 0 1.5px rgba(75, 75, 83, 0.35);
 }
 
 .pao-btn-trust:hover {
-	color: var(--pao-primary, #4682B4);
-	border-color: rgba(70, 130, 180, 0.3);
+	color: var(--pao-link, #3C75A4);
+	box-shadow: inset 0 0 0 1.5px var(--pao-btn-bg);
 }
 
 /* Pill buttons (single select) */
@@ -1190,15 +1109,16 @@ html[data-theme="dark"] .pao-widget .pao-processing-tip {
 	font-size: 13px;
 	font-weight: 500;
 	background: transparent;
-	color: var(--pao-primary, #4682B4);
-	border: 1px solid rgba(70, 130, 180, 0.25);
+	color: var(--pao-link, #3C75A4);
+	border: 0;
+	box-shadow: inset 0 0 0 1.5px rgba(60, 117, 164, 0.4);
 	cursor: pointer;
 	transition: all 0.15s ease;
 }
 
 .pao-pill:hover {
 	background: rgba(70, 130, 180, 0.08);
-	border-color: rgba(70, 130, 180, 0.45);
+	box-shadow: inset 0 0 0 1.5px var(--pao-btn-bg);
 }
 
 /* Multi select */
@@ -1241,15 +1161,16 @@ html[data-theme="dark"] .pao-widget .pao-processing-tip {
 	flex: 1;
 	padding: 6px 10px;
 	border-radius: 6px;
-	border: 1px solid rgba(156, 163, 175, 0.3);
+	border: 0;
 	font-size: 13px;
 	color: var(--pao-text-color, #1f2937);
-	background: transparent;
+	background: var(--pao-bg-input, #E8E8EA);
 	outline: none;
 }
 
 .pao-text-field:focus {
-	border-color: var(--pao-primary, #4682B4);
+	background: var(--pao-bg-primary, #fff);
+	box-shadow: 0 0 2px var(--pao-primary, #4682B4), 0 0 0 1px var(--pao-primary, #4682B4);
 }
 
 /* Resolved indicator */
@@ -1278,12 +1199,10 @@ html[data-theme="dark"] .pao-widget .pao-processing-tip {
 /* Dark mode */
 html[data-theme="dark"] .pao-widget .pao-interaction-card {
 	background: rgba(255, 255, 255, 0.03);
-	border-color: rgba(156, 163, 175, 0.15);
 }
 
 html[data-theme="dark"] .pao-widget .pao-interaction-approval {
-	background: rgba(245, 158, 11, 0.05);
-	border-color: rgba(245, 158, 11, 0.15);
+	background: rgba(245, 158, 11, 0.12);
 }
 
 html[data-theme="dark"] .pao-widget .pao-interaction-title,
@@ -1300,7 +1219,6 @@ html[data-theme="dark"] .pao-widget .pao-interaction-description {
 
 html[data-theme="dark"] .pao-widget .pao-text-field {
 	color: #F2EFE6;
-	border-color: rgba(156, 163, 175, 0.2);
 }
 
 /* Routing chip — L0. Non-interactive text on purpose: an identical-looking
@@ -1310,4 +1228,29 @@ html[data-theme="dark"] .pao-widget .pao-text-field {
 	color: var(--pao-text-muted, #8a8a8a);
 	font-size: 0.7rem;
 	cursor: default;
+}
+
+/* AIDA answers only fade in: a 10px slide while the first chunks grow the bubble and the list scrolls to the end reads as a wobble.
+   Same animation name before and after streaming ends, so removing the streaming class never restarts it. */
+.pao-message-assistant {
+	animation: pao-fade-in 0.2s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+	.pao-message { animation: none; }
+}
+
+.pao-interaction-expired-banner {
+	padding: 6px 12px;
+	border: 0;
+	border-radius: 12px;
+	background: #FFF6E0;
+	color: #7A3E00;
+	font-size: 13px;
+	line-height: var(--pibico-lh, 1.1);
+	box-shadow: var(--pibico-card-shadow);
+}
+
+html[data-theme="dark"] .pao-widget .pao-interaction-expired-banner {
+	background: rgba(245, 158, 11, 0.14);
+	color: #FCD9A0;
 }

@@ -45,7 +45,7 @@
 	font-weight: 500;
 	border-radius: 8px;
 	border: none;
-	background: var(--pao-primary, #4682B4);
+	background: #365F8A;
 	color: white;
 	cursor: pointer;
 	transition: all 0.2s ease;
@@ -53,7 +53,7 @@
 }
 
 .pao-setup-btn:hover:not(:disabled) {
-	background: var(--pao-primary-hover, #386890);
+	background: #284A6E;
 	transform: translateY(-1px);
 	box-shadow: 0 4px 12px rgba(70, 130, 180, 0.4);
 }
@@ -78,9 +78,10 @@
 .pao-contact-admin {
 	margin-top: 12px;
 	padding: 8px 12px;
-	background: #fef3c7;
-	border: 1px solid #fcd34d;
-	border-radius: 8px;
+	background: #FFF6E0;
+	border: 0;
+	border-radius: 12px;
+	box-shadow: var(--pibico-card-shadow);
 	max-width: 280px;
 }
 
@@ -98,7 +99,6 @@ html[data-theme="dark"] .pao-widget .pao-onboarding-header h2 {
 
 html[data-theme="dark"] .pao-widget .pao-contact-admin {
 	background: #78350f;
-	border-color: #92400e;
 }
 
 html[data-theme="dark"] .pao-widget .pao-contact-admin p {
@@ -173,25 +173,24 @@ html[data-theme="dark"] .pao-widget .pao-contact-admin p {
 	position: relative;
 	padding: 20px 16px;
 	background: white;
-	border: 2px solid var(--border-color, #e5e7eb);
+	border: 0;
+	box-shadow: var(--pibico-card-shadow);
 	border-radius: 12px;
 	text-align: center;
 	transition: all 0.2s ease;
 }
 
 .pao-plan-card:hover {
-	border-color: #4682B4;
-	box-shadow: 0 4px 12px rgba(70, 130, 180, 0.15);
+	box-shadow: var(--pibico-card-shadow-hover);
 }
 
 .pao-plan-card.pao-plan-current {
-	border-color: #1E7A52;
-	background: rgba(30, 122, 82, 0.04);
+	background: #E3F3EB;
 }
 
 .pao-plan-card.pao-plan-popular {
-	border-color: #4682B4;
-	box-shadow: 0 4px 12px rgba(70, 130, 180, 0.2);
+	background: #D6E8F5;
+	box-shadow: var(--pibico-card-shadow-hover);
 }
 
 .pao-plan-badge {
@@ -294,7 +293,6 @@ html[data-theme="dark"] .pao-widget .pao-contact-admin p {
 .pao-payment-info {
 	text-align: center;
 	padding-top: 16px;
-	border-top: 1px solid var(--border-color, #e5e7eb);
 }
 
 .pao-payment-info p {

@@ -627,9 +627,7 @@ window.PAOWidgetStreaming = {
 		// Replace card body with a warning banner. Match the SPA's amber tone
 		// (#f59e0b, the codebase's `--pao-warning`).
 		$card.html(
-			`<div class="pao-interaction-expired-banner" style="padding:8px 12px;
-        border:1px solid #f59e0b;border-radius:6px;background:#fffbeb;
-        color:#92400e;font-size:13px;">${__("Approval expired — resend to continue")}</div>`
+			`<div class="pao-interaction-expired-banner" >${__("Approval expired — resend to continue")}</div>`
 		);
 		// The banner says "resend", so the composer has to accept one. It was
 		// disabled when the card rendered and only resolve_interaction re-enables
@@ -1405,18 +1403,19 @@ window.PAOWidgetStreaming = {
 		widget.$widget.find(".pao-send-btn").prop("disabled", false);
 
 		if (data.action_required === "re_authorize") {
-			frappe.msgprint({
+			window.PAOPanel.open({
 				title: __("Re-authorization Required"),
-				indicator: "orange",
-				message: __(
-					"Your AIDA session has expired. Please contact your administrator to re-authorize the connection."
-				),
-				primary_action: {
-					label: __("Go to Settings"),
-					action: () => {
-						frappe.set_route("Form", "PA Chat Settings");
+				html: `<p>${window.PAOPanel.escape(
+					__("Your AIDA session has expired. Please contact your administrator to re-authorize the connection.")
+				)}</p>`,
+				actions: [
+					{ label: __("Close"), kind: "outline" },
+					{
+						label: __("Go to Settings"),
+						kind: "primary",
+						onClick: () => frappe.set_route("Form", "PA Chat Settings"),
 					},
-				},
+				],
 			});
 		} else {
 			widget.add_message_to_ui("assistant", __("Error: {0}", [data.error || __("Unknown error")]), true);
