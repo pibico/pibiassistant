@@ -74,14 +74,13 @@ function previewHtml(d) {
 		? d.arguments.map((a) =>
 			`<span class="pa-tool-badge" title="${esc(a.description || '')}">${esc(a.argument_name)}${a.is_required ? '*' : ''}</span>`
 		).join(' ')
-		: `<em style="color:var(--text-muted);">${esc(__('No arguments'))}</em>`;
-	const label = 'font-size:11px;color:var(--text-muted);text-transform:uppercase;';
+		: `<em class="pa-muted">${esc(__('No arguments'))}</em>`;
 	return `
-		<div style="margin-bottom:10px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-			<span><strong style="${label}">${esc(__('Engine'))}:</strong> ${esc(d.rendering_engine || '')}</span>
-			<span><strong style="${label}">${esc(__('Arguments'))}:</strong> ${args}</span>
+		<div class="pa-preview-meta">
+			<span><strong class="pa-preview-label">${esc(__('Engine'))}:</strong> ${esc(d.rendering_engine || '')}</span>
+			<span><strong class="pa-preview-label">${esc(__('Arguments'))}:</strong> ${args}</span>
 		</div>
-		<div class="pa-preview-content" style="font-size:13px;">${renderSafeMarkdown(d.template_content || '')}</div>`;
+		<div class="pa-preview-content">${renderSafeMarkdown(d.template_content || '')}</div>`;
 }
 
 export function showTemplatePreview(ctx, name) {
@@ -91,12 +90,12 @@ export function showTemplatePreview(ctx, name) {
 			d = await call('pibiassistant.api.admin_api.preview_prompt_template', { name }, { silent: true });
 		} catch (err) {
 			log.error('preview_prompt_template', err);
-			if (ctx.scope.alive) setHtml(panel, `<div style="color:var(--red-500);">${esc(__('Error loading preview'))}</div>`);
+			if (ctx.scope.alive) setHtml(panel, `<div class="pa-error-block" role="alert">${esc(__('Error loading preview'))}</div>`);
 			return;
 		}
 		if (!ctx.scope.alive) return;
 		if (d && d.success) setHtml(panel, previewHtml(d));
-		else setHtml(panel, `<div style="color:var(--red-500);">${esc(d?.message || __('Failed to load preview'))}</div>`);
+		else setHtml(panel, `<div class="pa-error-block" role="alert">${esc(d?.message || __('Failed to load preview'))}</div>`);
 	});
 }
 

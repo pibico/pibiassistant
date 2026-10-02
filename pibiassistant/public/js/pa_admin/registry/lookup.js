@@ -12,7 +12,7 @@ export function registryHost(ctx) {
 }
 
 export function failedHtml(message) {
-  return `<div style="padding: 20px; text-align: center; color: var(--red-500);">${message}</div>`;
+  return `<div role="alert" class="pa-error-block">${message}</div>`;
 }
 
 export function withTimeout(promise, ms = 20000) {

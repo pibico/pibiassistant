@@ -63,7 +63,9 @@ export function bulkToggleByCategory(ctx, category, plugin, enabled) {
       n === 1
         ? __('Disable 1 tool? Users will no longer be able to invoke it via MCP.')
         : __('Disable {0} tools? Users will no longer be able to invoke them via MCP.', [n]),
-      doBulk
+      doBulk,
+      null,
+      { title: __('Disable tools'), confirmLabel: __('Disable') }
     );
   } else {
     doBulk();

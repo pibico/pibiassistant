@@ -4,6 +4,7 @@ import { state, resetState } from './state.js';
 import { emit, on as busOn, clearBus } from './bus.js';
 import { call, log, guard } from './api.js';
 import * as toast from './toast.js';
+import { closeAll as closePanels } from './panel.js';
 import * as utils from './utils.js';
 import { createScope } from './lifecycle.js';
 import { renderLayout } from './layout.js';
@@ -21,6 +22,7 @@ export function unmount() {
     if (!current) return;
     const { scope, unmounts } = current;
     current = null;
+    closePanels();
     for (const fn of unmounts.reverse()) {
         try {
             fn();

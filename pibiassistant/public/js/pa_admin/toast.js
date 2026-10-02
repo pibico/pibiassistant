@@ -20,10 +20,4 @@ export function info(msg, seconds = 5) {
     alert(msg, 'blue', seconds);
 }
 
-export function msgprint(opts) {
-    return frappe.msgprint(opts);
-}
-
-export function confirm(message, onYes, onNo) {
-    return frappe.confirm(esc(message), onYes, onNo);
-}
+export { msgprint, confirm } from './panel.js';

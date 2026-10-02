@@ -14,7 +14,7 @@ function pluginItemHtml(plugin, isToggling) {
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="switch" style="margin: 0;">
+                                        <label class="switch">
                                             <input type="checkbox" class="pa-plugin-toggle"
                                                    data-plugin="${esc(plugin.plugin_id)}"
                                                    aria-label="${__('Enable plugin')} ${esc(plugin.name)}"

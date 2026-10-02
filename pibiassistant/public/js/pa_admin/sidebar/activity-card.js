@@ -34,7 +34,7 @@ function emptyHtml() {
 }
 
 function failureHtml() {
-	return `<div style="padding: 20px; text-align: center; color: var(--red-500);">${esc(__('Failed to load activity'))}</div>`;
+	return `<div role="alert" class="pa-error-block">${esc(__('Failed to load activity'))}</div>`;
 }
 
 export async function loadRecentActivity(ctx) {

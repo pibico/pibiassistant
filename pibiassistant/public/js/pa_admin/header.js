@@ -114,7 +114,9 @@ async function toggleServer(ctx) {
     if (newState === 0) {
         toast.confirm(
             __('Disable the AIDA server? All MCP clients will lose access until it is re-enabled.'),
-            doToggle
+            doToggle,
+            null,
+            { title: __('Disable AIDA server'), confirmLabel: __('Disable') }
         );
     } else {
         doToggle();

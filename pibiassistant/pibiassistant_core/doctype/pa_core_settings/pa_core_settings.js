@@ -1,3 +1,40 @@
+// Our Desk form dialogs are right-edge slide panels (pibiCo rule: no centered modals).
+// The PA Admin panel module and stylesheet load on demand through the server's versioned URLs.
+window.pibiassistant_panel = window.pibiassistant_panel || async function () {
+    if (!document.getElementById('pa-admin-importmap')) {
+        const versions = await frappe.xcall('pibiassistant.api.admin_api.get_import_map');
+        const map = document.createElement('script');
+        map.type = 'importmap';
+        map.id = 'pa-admin-importmap';
+        map.textContent = JSON.stringify({ imports: versions.imports });
+        document.head.appendChild(map);
+        if (!document.getElementById('pa-admin-css')) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.id = 'pa-admin-css';
+            link.href = versions.css;
+            await new Promise((resolve) => {
+                link.onload = link.onerror = resolve;
+                setTimeout(resolve, 3000);
+                document.head.appendChild(link);
+            });
+        }
+    }
+    let host = document.getElementById('pa-desk-panel-host');
+    if (!host) {
+        host = document.createElement('div');
+        host.id = 'pa-desk-panel-host';
+        host.className = 'pa-admin-container';
+        document.body.appendChild(host);
+    }
+    const mod = await import('/assets/pibiassistant/js/pa_admin/panel.js');
+    return {
+        open: (o) => mod.openPanel({ root: host, ...o }),
+        confirm: (...a) => mod.confirm(...a),
+        msgprint: (...a) => mod.msgprint(...a),
+    };
+};
+
 function load_aida_models(frm, show_message) {
     frappe.call({
         method: 'pibiassistant.pibiassistant_chat.api.aida.get_models',
@@ -65,10 +102,11 @@ function show_aida_test_results(results) {
         let detail = info.ok ? info.detail : info.error;
         return `<p>${icon} <b>${frappe.utils.escape_html(name)}</b>: ${frappe.utils.escape_html(detail || '')}</p>`;
     });
-    frappe.msgprint({
-        title: __('AIDA API Test Results'),
-        message: `<div style="font-size: 13px; overflow-wrap: anywhere;">${rows.join('')}</div>`,
-        indicator: 'blue'
+    window.pibiassistant_panel().then(function(panels) {
+        const body = document.createElement('div');
+        body.className = 'pa-panel-text';
+        body.innerHTML = rows.join('');
+        panels.open({ title: __('AIDA API Test Results'), body: body });
     });
 }
 

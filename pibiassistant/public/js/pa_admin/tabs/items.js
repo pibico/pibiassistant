@@ -1,12 +1,13 @@
-import { qs, qsa, setHtml, addClass, removeClass, hasClass, toggleClass } from '../dom.js';
+import { qs, qsa, setHtml, addClass, removeClass } from '../dom.js';
 import { call, log } from '../api.js';
 import { state, beginToggle, endToggle } from '../state.js';
 import { loadStats } from './counts.js';
+import { openPanel } from '../panel.js';
 
 const esc = (s) => frappe.utils.escape_html(String(s ?? ''));
 
 export function errorBlockHtml(text) {
-	return `<div role="alert" style="padding:20px;text-align:center;color:var(--red-500);">${esc(text)}</div>`;
+	return `<div role="alert" class="pa-error-block">${esc(text)}</div>`;
 }
 
 export function emptyStateHtml({ icon, title, subtitle, action }) {
@@ -57,7 +58,7 @@ export function cardHtml(cfg, item) {
 					   title="${esc(__('Open in DocType'))}">
 						<i class="ph ph-arrow-square-out" aria-hidden="true"></i>
 					</a>
-					<label class="switch" style="margin:0;" title="${esc(isPublished ? __('Click to unpublish') : __('Click to publish'))}">
+					<label class="switch" title="${esc(isPublished ? __('Click to unpublish') : __('Click to publish'))}">
 						<input type="checkbox" class="${cfg.toggleClass}"
 							   data-name="${esc(item.name)}"
 							   aria-label="${esc(cfg.publishLabel)} ${title}"
@@ -69,7 +70,6 @@ export function cardHtml(cfg, item) {
 			</div>
 			<div class="pa-item-subtitle">${esc(item[cfg.idField] || item.name)}</div>
 			<div class="pa-item-meta">${cfg.metaHtml(item, lastUsed)}</div>
-			<div class="pa-expand-panel" id="${cfg.panelPrefix}${esc(item.name)}"></div>
 		</div>`;
 }
 
@@ -135,15 +135,7 @@ export async function toggleStatus(ctx, cfg, name, publish) {
 		publish ? ctx.toast.success(msg.message) : ctx.toast.warning(msg.message);
 		const item = (state[cfg.dataKey] || []).find((x) => x.name === name);
 		if (item) item.status = msg.new_status;
-		const openPanels = qsa('.pa-expand-panel.open', ctx.root).map((el) => ({ id: el.id, html: el.innerHTML }));
 		renderList(ctx, cfg);
-		for (const { id, html } of openPanels) {
-			const panel = document.getElementById(id);
-			if (!panel) continue;
-			addClass(panel, 'open');
-			setHtml(panel, html);
-			addClass(qs(`.${cfg.actionBtnClass}`, panel.closest('.pa-item-card')), 'active');
-		}
 		const again = qs(`.${cfg.toggleClass}`, findCard(ctx.root, name));
 		if (again) again.focus();
 		loadStats(ctx);
@@ -153,16 +145,15 @@ export async function toggleStatus(ctx, cfg, name, publish) {
 }
 
 export async function togglePanel(ctx, cfg, name, fill) {
-	const panel = document.getElementById(`${cfg.panelPrefix}${name}`);
-	const btn = qs(`.${cfg.actionBtnClass}`, findCard(ctx.root, name));
-	if (!panel) return;
-	if (hasClass(panel, 'open')) {
-		removeClass(panel, 'open');
-		removeClass(btn, 'active');
-		return;
-	}
-	addClass(panel, 'open');
-	setHtml(panel, `<div style="color:var(--text-muted);font-size:12px;"><i class="ph ph-spinner ph-spin" aria-hidden="true"></i> ${esc(cfg.loadingText())}</div>`);
-	toggleClass(btn, 'active', true);
-	await fill(panel);
+	const item = (state[cfg.dataKey] || []).find((x) => x.name === name);
+	const btn = () => qs(`.${cfg.actionBtnClass}`, findCard(ctx.root, name));
+	const panel = openPanel({
+		title: item?.title || name,
+		root: ctx.root,
+		body: `<div class="pa-muted"><i class="ph ph-spinner ph-spin" aria-hidden="true"></i> ${esc(cfg.loadingText())}</div>`,
+		returnFocus: btn,
+		onClose: () => removeClass(btn(), 'active'),
+	});
+	addClass(btn(), 'active');
+	await fill(panel.bodyEl);
 }

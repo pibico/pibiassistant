@@ -6,6 +6,42 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
+// Our Desk form dialogs are right-edge slide panels (pibiCo rule: no centered modals).
+// The PA Admin panel module and stylesheet load on demand through the server's versioned URLs.
+window.pibiassistant_panel = window.pibiassistant_panel || async function () {
+    if (!document.getElementById('pa-admin-importmap')) {
+        const versions = await frappe.xcall('pibiassistant.api.admin_api.get_import_map');
+        const map = document.createElement('script');
+        map.type = 'importmap';
+        map.id = 'pa-admin-importmap';
+        map.textContent = JSON.stringify({ imports: versions.imports });
+        document.head.appendChild(map);
+        if (!document.getElementById('pa-admin-css')) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.id = 'pa-admin-css';
+            link.href = versions.css;
+            await new Promise((resolve) => {
+                link.onload = link.onerror = resolve;
+                setTimeout(resolve, 3000);
+                document.head.appendChild(link);
+            });
+        }
+    }
+    let host = document.getElementById('pa-desk-panel-host');
+    if (!host) {
+        host = document.createElement('div');
+        host.id = 'pa-desk-panel-host';
+        host.className = 'pa-admin-container';
+        document.body.appendChild(host);
+    }
+    const mod = await import('/assets/pibiassistant/js/pa_admin/panel.js');
+    return {
+        open: (o) => mod.openPanel({ root: host, ...o }),
+        confirm: (...a) => mod.confirm(...a),
+    };
+};
+
 frappe.ui.form.on('Prompt Template', {
     refresh: function(frm) {
         // Add Preview button
@@ -70,15 +106,13 @@ frappe.ui.form.on('Prompt Template', {
                 arguments: args
             },
             callback: function(r) {
-                if (r.message) {
-                    let preview_html = `<pre style="white-space: pre-wrap; background: #f5f5f5; padding: 15px; border-radius: 4px; max-height: 500px; overflow-y: auto;">${frappe.utils.escape_html(r.message)}</pre>`;
-
-                    frappe.msgprint({
-                        title: __('Template Preview'),
-                        message: preview_html,
-                        wide: true
-                    });
-                }
+                if (!r.message) return;
+                window.pibiassistant_panel().then(function(panels) {
+                    const pre = document.createElement('pre');
+                    pre.className = 'pa-desk-pre';
+                    pre.textContent = r.message;
+                    panels.open({ title: __('Template Preview'), body: pre });
+                });
             }
         });
     },
@@ -88,75 +122,78 @@ frappe.ui.form.on('Prompt Template', {
             method: 'pibiassistant.pibiassistant_core.doctype.prompt_template.prompt_template.get_version_history',
             args: { prompt_name: frm.doc.name },
             callback: function(r) {
-                if (r.message && r.message.length > 0) {
-                    let html = '<div class="version-history" style="max-height: 400px; overflow-y: auto;">';
-
-                    r.message.forEach((v, idx) => {
-                        let changes_html = '';
-                        if (v.changes && v.changes.length > 0) {
-                            changes_html = v.changes.map(c =>
-                                `<span class="badge badge-light" style="margin: 2px;">${c[0]}</span>`
-                            ).join(' ');
-                        } else {
-                            changes_html = `<span class="text-muted">${__('No field changes recorded')}</span>`;
-                        }
-
-                        html += `
-                            <div class="version-entry mb-3 p-3" style="border: 1px solid #ddd; border-radius: 4px;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <strong>${frappe.datetime.str_to_user(v.modified_at)}</strong>
-                                    <span class="text-muted">${v.modified_by}</span>
-                                </div>
-                                <div class="mt-2">
-                                    <small class="text-muted">${__('Changed fields:')}</small><br>
-                                    ${changes_html}
-                                </div>
-                                <button class="btn btn-xs btn-default mt-2"
-                                        onclick="pibiassistant_restore_version('${frm.doc.name}', '${v.version_id}')">
-                                    <i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i> Restore
-                                </button>
+                window.pibiassistant_panel().then(function(panels) {
+                    const esc = frappe.utils.escape_html;
+                    const body = document.createElement('div');
+                    const versions = r.message || [];
+                    if (!versions.length) {
+                        body.className = 'pa-panel-text';
+                        body.textContent = __('No version history available');
+                        panels.open({ title: __('Version History'), body: body });
+                        return;
+                    }
+                    body.className = 'pa-desk-versions';
+                    versions.forEach(function(v) {
+                        let changes_html = (v.changes && v.changes.length)
+                            ? v.changes.map(c => `<span class="pa-desk-chip">${esc(String(c[0]))}</span>`).join(' ')
+                            : `<span class="pa-desk-muted">${__('No field changes recorded')}</span>`;
+                        const entry = document.createElement('div');
+                        entry.className = 'pa-desk-version';
+                        entry.innerHTML = `
+                            <div class="pa-desk-version-head">
+                                <strong>${esc(frappe.datetime.str_to_user(v.modified_at))}</strong>
+                                <span class="pa-desk-muted">${esc(v.modified_by)}</span>
                             </div>
-                        `;
+                            <div class="pa-desk-version-fields">
+                                <span class="pa-desk-muted">${__('Changed fields:')}</span> ${changes_html}
+                            </div>
+                            <button type="button" class="btn btn-xs btn-default pa-desk-restore">
+                                <i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i> ${__('Restore')}
+                            </button>`;
+                        entry.querySelector('.pa-desk-restore').addEventListener('click', function() {
+                            restore_version(panels, historyPanel, frm.doc.name, v.version_id);
+                        });
+                        body.appendChild(entry);
                     });
-
-                    html += '</div>';
-
-                    frappe.msgprint({
-                        title: __('Version History'),
-                        message: html,
-                        wide: true
-                    });
-                } else {
-                    frappe.msgprint(__('No version history available'));
-                }
+                    const historyPanel = panels.open({ title: __('Version History'), body: body });
+                });
             }
         });
     },
 
     create_version: function(frm) {
-        frappe.prompt([
-            {
-                fieldname: 'notes',
-                fieldtype: 'Small Text',
-                label: __('Version Notes'),
-                description: __('Describe what changed in this version')
-            }
-        ], function(values) {
-            frappe.call({
-                method: 'create_version',
-                doc: frm.doc,
-                args: { notes: values.notes },
-                callback: function(r) {
-                    if (r.message) {
-                        frappe.show_alert({
-                            message: __('New version created'),
-                            indicator: 'green'
-                        });
-                        frappe.set_route('Form', 'Prompt Template', r.message);
+        window.pibiassistant_panel().then(function(panels) {
+            const body = document.createElement('div');
+            body.innerHTML = `
+                <label class="pa-desk-label" for="pa-desk-notes">${__('Version Notes')}</label>
+                <textarea id="pa-desk-notes" class="pa-desk-input" rows="4"></textarea>
+                <p class="pa-desk-muted">${__('Describe what changed in this version')}</p>`;
+            const footer = document.createElement('div');
+            footer.className = 'pa-panel-actions';
+            footer.innerHTML = `
+                <button type="button" class="btn btn-default pa-panel-cancel">${__('Cancel')}</button>
+                <button type="button" class="btn btn-primary pa-panel-confirm">${__('Create')}</button>`;
+            const panel = panels.open({ title: __('Create New Version'), body: body, footer: footer });
+            footer.querySelector('.pa-panel-cancel').addEventListener('click', () => panel.close('cancel'));
+            footer.querySelector('.pa-panel-confirm').addEventListener('click', function() {
+                const notes = body.querySelector('textarea').value;
+                panel.close('confirm');
+                frappe.call({
+                    method: 'create_version',
+                    doc: frm.doc,
+                    args: { notes: notes },
+                    callback: function(r) {
+                        if (r.message) {
+                            frappe.show_alert({
+                                message: __('New version created'),
+                                indicator: 'green'
+                            });
+                            frappe.set_route('Form', 'Prompt Template', r.message);
+                        }
                     }
-                }
+                });
             });
-        }, __('Create New Version'), __('Create'));
+        });
     },
 
     duplicate_private: function(frm) {
@@ -241,23 +278,25 @@ frappe.ui.form.on('Prompt Template', {
     visibility: function(frm) {
         // Clear shared_with_roles when changing from Shared to other visibility
         if (frm.doc.visibility !== 'Shared' && frm.doc.shared_with_roles && frm.doc.shared_with_roles.length > 0) {
-            frappe.confirm(
-                __('Changing visibility will clear the shared roles. Continue?'),
-                function() {
-                    frm.clear_table('shared_with_roles');
-                    frm.refresh_field('shared_with_roles');
-                },
-                function() {
-                    frm.set_value('visibility', 'Shared');
-                }
-            );
+            window.pibiassistant_panel().then(function(panels) {
+                panels.confirm(
+                    __('Changing visibility will clear the shared roles. Continue?'),
+                    function() {
+                        frm.clear_table('shared_with_roles');
+                        frm.refresh_field('shared_with_roles');
+                    },
+                    function() {
+                        frm.set_value('visibility', 'Shared');
+                    },
+                    { title: __('Confirm'), confirmLabel: __('Continue') }
+                );
+            });
         }
     }
 });
 
-// Global function for restore version button
-window.pibiassistant_restore_version = function(prompt_name, version_id) {
-    frappe.confirm(
+function restore_version(panels, historyPanel, prompt_name, version_id) {
+    panels.confirm(
         __('Are you sure you want to restore this version? Current content will be overwritten.'),
         function() {
             frappe.call({
@@ -272,19 +311,16 @@ window.pibiassistant_restore_version = function(prompt_name, version_id) {
                             message: __('Version restored successfully'),
                             indicator: 'green'
                         });
-                        // Close dialog and reload form
-                        frappe.msgprint().hide();
-                        // Use frappe.ui.form.get_open_docs to get the form and reload
-                        let frm = frappe.get_doc('Prompt Template', prompt_name);
-                        if (frm) {
-                            frappe.set_route('Form', 'Prompt Template', prompt_name);
-                        }
+                        historyPanel.close('restored');
+                        frappe.set_route('Form', 'Prompt Template', prompt_name);
                     }
                 }
             });
-        }
+        },
+        null,
+        { title: __('Restore'), confirmLabel: __('Restore') }
     );
-};
+}
 
 // Child table events
 frappe.ui.form.on('Prompt Template Argument', {

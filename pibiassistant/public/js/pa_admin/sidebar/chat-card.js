@@ -79,7 +79,9 @@ export function toggleChat(ctx) {
 	if (newState === 0) {
 		ctx.toast.confirm(
 			__('Disable AIDA Chat? The in-Frappe chat widget and /aida SPA will become unavailable to users.'),
-			() => doToggle(ctx, newState)
+			() => doToggle(ctx, newState),
+			null,
+			{ title: __('Disable AIDA Chat'), confirmLabel: __('Disable') }
 		);
 	} else {
 		doToggle(ctx, newState);

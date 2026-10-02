@@ -212,7 +212,7 @@ export function layoutHtml() {
                             </div>
                             <div class="pa-analytics-cell">
                                 <div class="pa-analytics-label">${__("Model")}</div>
-                                <div class="pa-analytics-value" id="analytics-model" style="font-size:13px;word-break:break-all;">–</div>
+                                <div class="pa-analytics-value" id="analytics-model" >–</div>
                             </div>
                         </div>
                         <div class="pa-analytics-spark" id="analytics-spark" aria-label="${__('Daily messages, last 30 days')}"></div>
@@ -237,7 +237,7 @@ export function layoutHtml() {
                             <a href="/app/pa-audit-log" class="pa-view-all">${__("View all")} <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
                         </div>
                         <div id="recent-activity" class="pa-activity-list">
-                            <div style="padding: 12px 0; text-align: center; color: var(--text-muted);">
+                            <div class="pa-empty-state pa-empty-state--compact">
                                 <i class="ph ph-spinner ph-spin" aria-hidden="true"></i> ${__("Loading...")}
                             </div>
                         </div>

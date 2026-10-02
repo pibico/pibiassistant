@@ -5,9 +5,7 @@ import { loadToolsView } from './tools-view.js';
 import { renderToolsList, clearToolFilters } from './tools-list.js';
 import { updateBulkScopeCount, bulkToggleByCategory } from './bulk.js';
 import { togglePlugin, toggleTool } from './toggles.js';
-import {
-  toggleConfigPanel, showAddRoleDialog, removeRole, saveToolConfig,
-} from './config-panel.js';
+import { toggleConfigPanel } from './config-panel.js';
 
 function loadToolRegistry(ctx) {
   return ctx.state.viewMode === 'plugins' ? loadPluginView(ctx) : loadToolsView(ctx);
@@ -74,17 +72,6 @@ function wireRegistryEvents(ctx) {
   d('change', '.pa-plugin-toggle', (e, el) => togglePlugin(ctx, el.dataset.plugin, el.checked));
   d('change', '.pa-tool-toggle', (e, el) => toggleTool(ctx, el.dataset.tool, el.checked));
   d('click', '.pa-tool-settings-btn', (e, el) => toggleConfigPanel(ctx, el.dataset.tool));
-  d('change', '.pa-role-mode-select', (e, sel) => {
-    const section = qsa('.pa-roles-section', host).find((s) => s.dataset.tool === sel.dataset.tool);
-    if (sel.value === 'Restrict to Listed Roles') show(section); else hide(section);
-  });
-  d('click', '.pa-add-role-btn', (e, el) => showAddRoleDialog(ctx, el.dataset.tool));
-  d('click', '.pa-role-remove-btn', (e, el) => removeRole(ctx, el.dataset.tool, el.dataset.role));
-  d('click', '.pa-config-cancel', (e, el) => {
-    toggleConfigPanel(ctx, el.dataset.tool, false);
-    renderToolsList(ctx);
-  });
-  d('click', '.pa-config-save', (e, el) => saveToolConfig(ctx, el.dataset.tool));
   d('click', '.pa-clear-filters-btn', () => clearToolFilters(ctx));
 }
 

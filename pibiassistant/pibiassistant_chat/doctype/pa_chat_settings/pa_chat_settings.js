@@ -1,3 +1,40 @@
+// Our Desk form dialogs are right-edge slide panels (pibiCo rule: no centered modals).
+// The PA Admin panel module and stylesheet load on demand through the server's versioned URLs.
+window.pibiassistant_panel = window.pibiassistant_panel || async function () {
+    if (!document.getElementById('pa-admin-importmap')) {
+        const versions = await frappe.xcall('pibiassistant.api.admin_api.get_import_map');
+        const map = document.createElement('script');
+        map.type = 'importmap';
+        map.id = 'pa-admin-importmap';
+        map.textContent = JSON.stringify({ imports: versions.imports });
+        document.head.appendChild(map);
+        if (!document.getElementById('pa-admin-css')) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.id = 'pa-admin-css';
+            link.href = versions.css;
+            await new Promise((resolve) => {
+                link.onload = link.onerror = resolve;
+                setTimeout(resolve, 3000);
+                document.head.appendChild(link);
+            });
+        }
+    }
+    let host = document.getElementById('pa-desk-panel-host');
+    if (!host) {
+        host = document.createElement('div');
+        host.id = 'pa-desk-panel-host';
+        host.className = 'pa-admin-container';
+        document.body.appendChild(host);
+    }
+    const mod = await import('/assets/pibiassistant/js/pa_admin/panel.js');
+    return {
+        open: (o) => mod.openPanel({ root: host, ...o }),
+        confirm: (...a) => mod.confirm(...a),
+        msgprint: (...a) => mod.msgprint(...a),
+    };
+};
+
 // pibiAssistant - AI Assistant integration for Frappe Framework
 // Copyright (C) 2025 Paul Clinton
 //
@@ -90,43 +127,38 @@ frappe.ui.form.on("PA Chat Settings", {
 		// tenant — the old subscription, credits and history stay behind.
 		const pa_cloud_url = frm.doc.pa_cloud_url || __("(not configured)");
 
-		frappe.warn(
-			__("Reset cloud registration?"),
-			__(
+		const fail = (message) =>
+			window.pibiassistant_panel().then((panels) =>
+				panels.msgprint({ title: __("Reset Failed"), message })
+			);
+		const run = () => {
+			frappe.call({
+				method: "pibiassistant.pibiassistant_chat.api.reset_registration",
+				freeze: true,
+				freeze_message: __("Clearing registration..."),
+				callback: (r) => {
+					if (r.message && r.message.success) {
+						frappe.show_alert({ message: r.message.message, indicator: "green" }, 7);
+						frm.reload_doc();
+					} else {
+						fail(frappe.utils.escape_html(r.message?.error || __("Unknown error occurred")));
+					}
+				},
+				error: () => fail(__("Could not reach the reset endpoint.")),
+			});
+		};
+
+		window.pibiassistant_panel().then((panels) => {
+			const body = document.createElement("p");
+			body.className = "pa-panel-text";
+			body.innerHTML = __(
 				"This clears the tenant credentials this site signs its requests with. PA Chat stops working until the site is registered again.<br><br>Re-registration goes to <b>{0}</b> and creates a <b>new tenant</b> there. Any subscription, credits and history belonging to the current tenant stay where they are and are not carried over.",
 				[frappe.utils.escape_html(pa_cloud_url)]
-			),
-			() => {
-				frappe.call({
-					method: "pibiassistant.pibiassistant_chat.api.reset_registration",
-					freeze: true,
-					freeze_message: __("Clearing registration..."),
-					callback: (r) => {
-						if (r.message && r.message.success) {
-							frappe.show_alert(
-								{ message: r.message.message, indicator: "green" },
-								7
-							);
-							frm.reload_doc();
-						} else {
-							frappe.msgprint({
-								title: __("Reset Failed"),
-								indicator: "red",
-								message: r.message?.error || __("Unknown error occurred"),
-							});
-						}
-					},
-					error: () => {
-						frappe.msgprint({
-							title: __("Reset Failed"),
-							indicator: "red",
-							message: __("Could not reach the reset endpoint."),
-						});
-					},
-				});
-			},
-			__("Reset Registration"),
-			false
-		);
+			);
+			panels.confirm(body, run, null, {
+				title: __("Reset cloud registration?"),
+				confirmLabel: __("Reset Registration"),
+			});
+		});
 	},
 });

@@ -82,12 +82,12 @@ export function showSkillContent(ctx, name) {
 			}, { silent: true });
 		} catch (err) {
 			log.error('PA Skill get_value', err);
-			if (ctx.scope.alive) setHtml(panel, `<div style="color:var(--red-500);">${esc(__('Error loading content'))}</div>`);
+			if (ctx.scope.alive) setHtml(panel, `<div class="pa-error-block" role="alert">${esc(__('Error loading content'))}</div>`);
 			return;
 		}
 		if (!ctx.scope.alive) return;
-		if (msg && msg.content) setHtml(panel, `<div style="font-size:13px;">${renderSafeMarkdown(msg.content)}</div>`);
-		else setHtml(panel, `<div style="color:var(--text-muted);">${esc(__('No content available'))}</div>`);
+		if (msg && msg.content) setHtml(panel, `<div class="pa-preview-content">${renderSafeMarkdown(msg.content)}</div>`);
+		else setHtml(panel, `<div class="pa-muted">${esc(__('No content available'))}</div>`);
 	});
 }
 
