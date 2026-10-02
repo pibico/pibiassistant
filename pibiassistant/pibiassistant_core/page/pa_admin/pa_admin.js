@@ -15,7 +15,17 @@ frappe.pages['pa-admin'].on_page_load = function (wrapper) {
         map.id = 'pa-admin-importmap';
         map.textContent = JSON.stringify({ imports: versions.imports });
         document.head.appendChild(map);
-        frappe.require(versions.css);
+        // frappe.require tells CSS from JS by the file extension, so a ?v= query would run it as a script
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.id = 'pa-admin-css';
+        link.href = versions.css;
+        const loaded = new Promise((resolve) => {
+            link.onload = link.onerror = resolve;
+            setTimeout(resolve, 3000);
+        });
+        document.head.appendChild(link);
+        await loaded;
     }
     const host = () => page.main.get(0);
     let mod = null;
