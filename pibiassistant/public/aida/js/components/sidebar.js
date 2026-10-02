@@ -16,12 +16,19 @@ export function mountSidebar(aside, scrim) {
   const conversations = createConversations();
   const userMenu = createUserMenu();
 
+  const closeBtn = h(
+    "button",
+    { type: "button", class: "aida-icon-btn aida-sidebar__close", "aria-label": __("Close menu"), title: __("Close menu") },
+    icon("x", 20),
+  );
+
   aside.replaceChildren(
     h(
       "div",
       { class: "aida-sidebar__header" },
       h("img", { class: "aida-logo", src: LOGO_SRC, alt: "", width: 32, height: 32 }),
       h("span", { class: "aida-wordmark" }, __("AIDA")),
+      closeBtn,
     ),
     h("nav", { class: "aida-nav", "aria-label": __("Navigation") }, chatLink, deskLink),
     conversations.el,
@@ -79,6 +86,7 @@ export function mountSidebar(aside, scrim) {
   };
 
   scrim.addEventListener("click", close);
+  closeBtn.addEventListener("click", close);
   deskLink.addEventListener("click", onDesk);
   document.addEventListener("keydown", onKeydown);
   mq.addEventListener("change", onViewport);
@@ -89,6 +97,7 @@ export function mountSidebar(aside, scrim) {
   return () => {
     unsubs.forEach((u) => u());
     scrim.removeEventListener("click", close);
+    closeBtn.removeEventListener("click", close);
     document.removeEventListener("keydown", onKeydown);
     mq.removeEventListener("change", onViewport);
     if (release) release();

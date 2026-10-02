@@ -132,12 +132,12 @@
     position: fixed;
     top: 0;
     bottom: 0;
-    left: 0;
+    right: 0;
     z-index: var(--aida-z-drawer);
-    width: min(var(--aida-nav-width), 85vw);
-    padding: var(--aida-safe-top) 0 0 var(--aida-safe-left);
+    width: max(var(--aida-nav-width), 45vw);
+    padding: var(--aida-safe-top) var(--aida-safe-right) 0 0;
     box-sizing: border-box;
-    transform: translateX(-100%);
+    transform: translateX(100%);
     visibility: hidden;
     transition: transform var(--aida-dur-drawer) var(--aida-ease), visibility 0s linear var(--aida-dur-drawer);
   }
@@ -153,6 +153,7 @@
 
 @media (max-width: 767.98px) {
   .aida-welcome { padding-top: var(--aida-s-4); }
+  .aida-sidebar { width: 100%; }
 }
 
 @media (max-width: 719.98px) {

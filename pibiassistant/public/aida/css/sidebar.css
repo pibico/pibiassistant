@@ -226,3 +226,14 @@
 .aida-user__who p { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .aida-user__who-name { font-size: var(--aida-fs-base); font-weight: 600; }
 .aida-user__who-id { font-size: var(--aida-fs-sm); color: var(--aida-text-muted); }
+
+/* The close button only exists for the slide-in drawer (below 1024px) */
+.aida-sidebar__close { display: none; margin-left: auto; }
+@media (max-width: 1023.98px) {
+  .aida-sidebar__close { display: inline-flex; }
+  .aida-sidebar__header { padding-right: var(--aida-s-2); }
+}
+@media (pointer: coarse) {
+  .aida-sidebar__close { width: var(--aida-hit); height: var(--aida-hit); }
+  .aida-sidebar__close::after { display: none; }
+}
