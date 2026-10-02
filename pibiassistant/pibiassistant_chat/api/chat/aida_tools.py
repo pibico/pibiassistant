@@ -64,6 +64,7 @@ WRITE_TOOLS = frozenset(
         "update_document",
         "submit_document",
         "delete_document",
+        "rename_document",
         "send_email",
         "run_workflow",
         "generate_document",
@@ -335,18 +336,38 @@ def _trust(session_id: str, tool_name: str) -> None:
     frappe.cache().set_value(_trust_key(session_id), json.dumps(sorted(trusted)), expires_in_sec=TRUST_TTL_SECONDS)
 
 
+def _rename_preview(arguments: dict) -> str:
+    """What the rename would do, shown on the approval card: old and new name and how many documents refer to it."""
+    try:
+        from pibiassistant.plugins.core.tools.rename_document import check_rename, count_references
+
+        doctype, name, new_name = arguments.get("doctype"), arguments.get("name"), arguments.get("new_name")
+        problem = check_rename(doctype, name, new_name)
+        if problem:
+            return f"{doctype} '{name}' -> '{new_name}'. Will be refused: {problem}"
+        return (
+            f"{doctype}: '{name}' -> '{str(new_name).strip()}'. "
+            f"{count_references(doctype, name)} reference(s) in other documents will be updated."
+        )
+    except Exception:
+        return ""
+
+
 def _approval_card(call: dict) -> dict:
     labels = {
         "create_document": _("Create a document"),
         "update_document": _("Update a document"),
         "submit_document": _("Submit a document"),
         "delete_document": _("Delete a document"),
+        "rename_document": _("Rename a document"),
         "send_email": _("Send an email"),
         "run_workflow": _("Run a workflow action"),
         "generate_document": _("Generate a document"),
         "attach_file": _("Attach a file"),
     }
     summary = json.dumps(call["arguments"], ensure_ascii=False, default=str)
+    if call["name"] == "rename_document":
+        summary = _rename_preview(call["arguments"]) or summary
     action = labels.get(call["name"], call["name"])
     target = " · ".join(str(call["arguments"][k]) for k in ("doctype", "name", "docname") if call["arguments"].get(k))
     return {

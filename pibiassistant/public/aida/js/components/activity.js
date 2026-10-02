@@ -72,6 +72,9 @@ export function approvalCard(approval, { onDecide, disabled = false }) {
     "section",
     { class: ["aida-approval", `aida-approval--${approval.status}`], role: "group", "aria-label": approval.action || approval.toolName },
     head,
+    pending && approval.description && !approval.description.startsWith("{")
+      ? h("p", { class: "aida-approval__summary" }, approval.description)
+      : null,
     pending ? h("p", { class: "aida-approval__why" }, __("AIDA wants to run this action on your behalf. Check it before approving.")) : null,
     details,
     foot,

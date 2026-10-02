@@ -782,6 +782,7 @@ window.PAOWidgetStreaming = {
 				create_document: __("Create Document"),
 				update_document: __("Update Document"),
 				delete_document: __("Delete Document"),
+				rename_document: __("Rename Document"),
 				submit_document: __("Submit Document"),
 			};
 			const title = titleMap[toolName] || toolName.replace(/_/g, " ");

@@ -1218,3 +1218,5 @@ Failed to cleanup assistant logs,No se pudieron limpiar los registros del asiste
 "New: AIDA by pibiCo","Novedad: AIDA de pibiCo"
 "PA Cloud was retired. AIDA now runs natively, this endpoint no longer does anything.",PA Cloud se ha retirado. AIDA funciona ahora de forma nativa y este endpoint ya no hace nada.
 AIDA is not configured on this site.,AIDA no está configurado en este sitio.
+Rename a document,Renombrar un documento
+Rename Document,Renombrar documento

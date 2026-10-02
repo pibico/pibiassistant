@@ -352,6 +352,7 @@
 .aida-approval--rejected, .aida-approval--expired { background: var(--aida-subtle); }
 .aida-approval__head { font-family: var(--aida-font-heading); display: flex; align-items: center; flex-wrap: wrap; gap: var(--pad-y-sm); font-size: var(--aida-fs-base); }
 .aida-approval__tool { font-size: var(--aida-fs-xs); color: var(--aida-text-muted); }
+.aida-approval__summary { margin: var(--pad-y-sm) 0 0; font-size: var(--aida-fs-sm, var(--aida-fs-base)); line-height: var(--aida-lh-read); overflow-wrap: anywhere; }
 .aida-approval__why { margin: var(--pad-y-sm) 0 0; font-size: var(--aida-fs-sm, var(--aida-fs-base)); line-height: var(--aida-lh-read); color: var(--aida-text-secondary); }
 .aida-approval__details { display: inline-flex; align-items: center; gap: var(--pad-y-sm); min-height: 24px; margin-top: var(--pad-y-xs); padding: 0 var(--pad-y-sm); font-size: var(--aida-fs-xs); }
 .aida-approval__args {
