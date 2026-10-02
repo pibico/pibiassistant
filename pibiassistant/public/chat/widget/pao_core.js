@@ -640,6 +640,27 @@ window.PAOPanel = (function () {
 			.replace(/"/g, "&quot;");
 	const FOCUSABLE =
 		'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+	let scrollLock = null;
+
+	// Frappe reserves a scrollbar gutter on <html> (scrollbar-gutter: stable), which keeps a fixed layer 15px short of the edge
+	function lockScroll() {
+		if (scrollLock) return;
+		const root = document.documentElement;
+		const gutter = Math.max(0, Math.round(window.innerWidth - document.body.getBoundingClientRect().width));
+		scrollLock = { overflow: root.style.overflow, pad: root.style.paddingRight, gutter: root.style.scrollbarGutter };
+		root.style.scrollbarGutter = "auto";
+		root.style.overflow = "hidden";
+		if (gutter > 0) root.style.paddingRight = gutter + "px";
+	}
+
+	function unlockScroll() {
+		if (!scrollLock) return;
+		const root = document.documentElement;
+		root.style.overflow = scrollLock.overflow;
+		root.style.paddingRight = scrollLock.pad;
+		root.style.scrollbarGutter = scrollLock.gutter;
+		scrollLock = null;
+	}
 
 	function onKey(e) {
 		const top = stack[stack.length - 1];
@@ -713,6 +734,7 @@ window.PAOPanel = (function () {
 			if (!stack.length) {
 				document.removeEventListener("keydown", onKey, true);
 				document.body.classList.remove("pao-panel-open");
+				unlockScroll();
 			}
 			const done = () => {
 				panel.remove();
@@ -750,7 +772,10 @@ window.PAOPanel = (function () {
 		}
 		document.body.appendChild(backdrop);
 		document.body.appendChild(panel);
-		if (!stack.length) document.addEventListener("keydown", onKey, true);
+		if (!stack.length) {
+			document.addEventListener("keydown", onKey, true);
+			lockScroll();
+		}
 		stack.push(entry);
 		document.body.classList.add("pao-panel-open");
 		requestAnimationFrame(() => {

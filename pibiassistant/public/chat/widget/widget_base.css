@@ -1003,10 +1003,6 @@ html[data-theme="dark"] .pao-widget .pao-send-btn:hover:not(:disabled) {
 		position: relative;
 	}
 
-	.pao-widget .pao-header-actions button::before,
-	.pao-widget .pao-file-upload-btn::before,
-	.pao-widget .pao-send-btn::before,
-	.pao-widget .pao-mic-btn::before,
 	.pao-widget .pao-interaction-btn::before,
 	.pao-widget .pao-file-remove::before {
 		content: "";
@@ -1017,6 +1013,23 @@ html[data-theme="dark"] .pao-widget .pao-send-btn:hover:not(:disabled) {
 		height: max(100%, 44px);
 		transform: translate(-50%, -50%);
 	}
+
+	/* Adjacent controls are real 44px targets: invisible 44px extensions of 28px buttons 4px apart overlap each other */
+	.pao-widget .pao-header-actions { gap: 0; }
+	.pao-widget .pao-header-actions button,
+	.pao-widget .pao-file-upload-btn,
+	.pao-widget .pao-send-btn,
+	.pao-widget .pao-mic-btn {
+		min-width: 44px;
+		min-height: 44px;
+		height: 44px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.pao-widget .pao-file-upload-btn,
+	.pao-widget .pao-send-btn { width: 44px; }
+	.pao-widget .pao-header-actions .pao-expand-prominent { padding-inline: 12px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
