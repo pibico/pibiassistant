@@ -1296,3 +1296,11 @@ Only files stored in Frappe can be attached by URL.,Solo se pueden adjuntar por 
 File not found: {0},Archivo no encontrado: {0}
 This upload link is invalid or has expired.,Este enlace de subida no es válido o ha caducado.
 No file was sent.,No se envió ningún archivo.
+Template,Plantilla
+Confirm,Confirmar
+Disable AIDA server,Desactivar el servidor AIDA
+Disable tools,Desactivar herramientas
+Disable AIDA Chat,Desactivar el chat de AIDA
+Archive this conversation?,¿Archivar esta conversación?
+Restore,Restaurar
+Continue,Continuar
