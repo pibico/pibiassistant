@@ -6,37 +6,22 @@ const esc = (s) => frappe.utils.escape_html(String(s ?? ''));
 function rowHtml(a) {
 	const ok = a.status === 'Success';
 	const icon = ok ? 'ph-check-circle' : 'ph-x-circle';
+	const tool = a.tool_name && a.tool_name !== a.action ? ` · ${esc(a.tool_name)}` : '';
 	return `
-		<tr>
-			<td>${esc(a.action)}</td>
-			<td>${esc(a.tool_name || '-')}</td>
-			<td>${esc(a.user)}</td>
-			<td>
+		<li class="pa-act">
+			<div class="pa-act__top">
+				<span class="pa-act__name">${esc(a.action)}</span>
 				<span class="indicator-pill ${ok ? 'green' : 'red'}">
 					<i class="ph ${icon}" aria-hidden="true"></i>
 					${esc(a.status)}
 				</span>
-			</td>
-			<td style="color: var(--text-muted);">
-				${esc(frappe.datetime.str_to_user(a.timestamp))}
-			</td>
-		</tr>`;
+			</div>
+			<div class="pa-act__meta">${esc(a.user)}${tool} · ${esc(frappe.datetime.str_to_user(a.timestamp))}</div>
+		</li>`;
 }
 
 function tableHtml(activities) {
-	return `
-		<table class="pa-table">
-			<thead>
-				<tr>
-					<th>${esc(__('Action'))}</th>
-					<th>${esc(__('Tool'))}</th>
-					<th>${esc(__('User'))}</th>
-					<th>${esc(__('Status'))}</th>
-					<th>${esc(__('Time'))}</th>
-				</tr>
-			</thead>
-			<tbody>${activities.slice(0, 5).map(rowHtml).join('')}</tbody>
-		</table>`;
+	return `<ul class="pa-act-list">${activities.slice(0, 5).map(rowHtml).join('')}</ul>`;
 }
 
 function emptyHtml() {

@@ -268,20 +268,66 @@
     color: var(--pa-accent);
 }
 
-/* Compact activity list (no thead, no table border) */
+/* Compact activity list: two lines per call, status pill on the right */
 .pa-activity-list {
     max-height: 320px;
     overflow-y: auto;
     font-size: 12px;
 }
-.pa-activity-list .pa-table {
-    font-size: 12px;
+.pa-act-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
 }
-.pa-activity-list .pa-table th {
-    display: none;
+.pa-act {
+    padding: var(--pad-y-md) 0;
+    border-bottom: 1px solid var(--border-color);
 }
-.pa-activity-list .pa-table td {
-    padding: 6px 4px;
+.pa-act:last-child { border-bottom: none; }
+.pa-act__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.pa-act__name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+    color: var(--heading-color);
+}
+.pa-act__meta {
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-muted);
+}
+
+/* AIDA services: pill and URL on one line, left aligned */
+.pa-svc-list {
+    list-style: none;
+    margin: 0 0 var(--pad-y-md);
+    padding: 0;
+}
+.pa-svc {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 8px;
+    min-height: 28px;
+    padding: var(--pad-y-xs) 0;
+    line-height: 1.4;
+    text-align: left;
+}
+.pa-svc .pa-status-pill { margin-left: 0; min-width: 92px; }
+.pa-svc .svc-detail {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 [data-theme="dark"] .pa-analytics-cell {
     background: rgba(255, 255, 255, 0.04);
@@ -950,6 +996,7 @@ input:checked + .slider:before {
     gap: 8px;
     flex: 1;
     min-width: 0;
+    flex-wrap: wrap;
 }
 .pa-item-actions {
     display: flex;
@@ -1433,19 +1480,6 @@ mark.pa-hl {
     }
 }
 
-/* AIDA services card: one service per row, status pill above its URL */
-#pa-aida-services li {
-    text-align: left; justify-content: flex-start;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    padding: var(--pad-y-sm) 0;
-}
-#pa-aida-services .svc-detail {
-    max-width: 100%;
-    overflow-wrap: break-word;
-}
 #pa-aida-model {
     margin: 6px 0 8px;
     overflow-wrap: break-word;
@@ -1465,12 +1499,6 @@ mark.pa-hl {
     font-family: var(--font-stack, "Inter", -apple-system, "Segoe UI", Roboto, sans-serif);
 }
 .pa-admin-container .ph { line-height: 1; vertical-align: -0.125em; }
-#pa-aida-services li {
-    text-align: left; justify-content: flex-start;
-    display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; row-gap: 0;
-    min-height: 28px; padding: var(--pad-y-xs) 0; line-height: 1.4;
-}
-#pa-aida-services .pa-sidebar-subtle { margin-bottom: 0; overflow-wrap: anywhere; }
 .pa-admin-container .pa-card-header .btn, .pa-admin-container .pa-card-header .btn-xs { position: relative; }
 @media (pointer: coarse) {
     .pa-view-all { min-height: 44px; padding: 0 8px; margin: 0 -8px; }
@@ -1516,8 +1544,4 @@ mark.pa-hl {
     align-items: center;
     justify-content: center;
     gap: 6px;
-}
-.pa-item-title {
-    flex-wrap: wrap;
-    min-width: 0;
 }

@@ -156,7 +156,7 @@ export function layoutHtml() {
                                 <i class="ph ph-plugs" aria-hidden="true"></i> ${__("AIDA services")}
                             </div>
                         </div>
-                        <ul class="pa-quick-list" id="pa-aida-services">
+                        <ul class="pa-svc-list" id="pa-aida-services">
                             <li><span class="pa-sidebar-subtle">${__("Loading...")}</span></li>
                         </ul>
                         <div class="pa-sidebar-subtle" id="pa-aida-model"></div>

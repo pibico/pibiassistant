@@ -5,11 +5,10 @@ function renderServices(list, services) {
 	empty(list);
 	Object.keys(services || {}).forEach((name) => {
 		const s = services[name];
-		list.appendChild(h('li', { dataset: { svc: `${name} API` } },
+		list.appendChild(h('li', { class: 'pa-svc', dataset: { svc: `${name} API` } },
 			h('span', { class: s.configured ? 'pa-status-pill' : 'pa-status-pill pa-status-pill--stopped' },
 				h('span', { class: 'pa-status-dot', aria: { hidden: 'true' } }),
 				` ${name}`),
-			' ',
 			h('span', { class: 'pa-sidebar-subtle svc-detail' }, s.configured ? s.url : __('Not configured'))));
 	});
 }
