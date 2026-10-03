@@ -84,6 +84,7 @@ class CorePlugin(BasePlugin):
             "get_account_balance",
             "get_overdue_invoices",
             "get_stock_balance",
+            "create_journal_entry",
             # Skills
             "get_skill",
             # AIDA health

@@ -77,6 +77,7 @@ WRITE_TOOLS = frozenset(
         "delete_document",
         "rename_document",
         "export_data",
+        "create_journal_entry",
         "cancel_document",
         "amend_document",
         "create_from_document",
@@ -210,7 +211,9 @@ def _abilities_prompt() -> str:
             "document from a file the user attached, afterwards attach that file to the new document with attach_file. "
             "To turn a Quotation into a Sales Order, an order into an invoice or a payment, and similar, use "
             "create_from_document instead of copying lines by hand; to correct a submitted document use "
-            "cancel_document then amend_document. To email a document attach it with send_email "
+            "cancel_document then amend_document. For a manual accounting entry use create_journal_entry (balanced "
+            "debit/credit lines, saved as a draft; submit_document posts it; leave company out unless the user names "
+            "one). To email a document attach it with send_email "
             "attach_documents, and for a spreadsheet of a list use export_data. "
         )
     return (
@@ -375,7 +378,7 @@ def _trust(session_id: str, tool_name: str) -> None:
 
 _PREVIEW_MODULES = {
     name: f"pibiassistant.plugins.core.tools.{name}"
-    for name in ("rename_document", "cancel_document", "amend_document", "create_from_document", "assign_document", "add_comment", "export_data")
+    for name in ("rename_document", "cancel_document", "amend_document", "create_from_document", "assign_document", "add_comment", "export_data", "create_journal_entry")
 }
 _PREVIEW_MODULES["send_email"] = "pibiassistant.plugins.pao.tools.send_email"
 
@@ -392,6 +395,17 @@ def _tool_preview(name: str, arguments: dict) -> str:
         return ""
 
 
+REFUSED_MARK = "Will be refused: "
+
+
+def _refusal(name: str, arguments: dict) -> str | None:
+    """Why a write would be refused anyway (its own pre-check, same one the card preview uses), else None."""
+    text = _tool_preview(name, arguments)
+    if REFUSED_MARK not in text:
+        return None
+    return text.split(REFUSED_MARK, 1)[1].strip() or None
+
+
 def _approval_card(call: dict) -> dict:
     labels = {
         "create_document": _("Create a document"),
@@ -400,6 +414,7 @@ def _approval_card(call: dict) -> dict:
         "delete_document": _("Delete a document"),
         "rename_document": _("Rename a document"),
         "export_data": _("Export data to a file"),
+        "create_journal_entry": _("Create a journal entry"),
         "cancel_document": _("Cancel a document"),
         "amend_document": _("Amend a document"),
         "create_from_document": _("Create a document from another"),
@@ -469,13 +484,17 @@ def _run_tool(name: str, arguments: dict) -> tuple[str, str]:
     return status, _fit_result(text)
 
 
-def _execute_call(ctx: dict, call: dict) -> None:
-    """Run one call, emit its card events and store the result on the call."""
+def _execute_call(ctx: dict, call: dict, refused: str | None = None) -> None:
+    """Run one call, emit its card events and store the result on the call. ``refused`` records a call that was
+    not run because its own pre-check already knows it cannot succeed (same events, error status)."""
     tool_id = call["tool_id"]
     started = time.monotonic()
     ctx["block_builder"].add_tool_call_start(tool_id, call["name"], call["arguments"])
     ctx["emit"]({"event": "tool_call_start", "tool_name": call["name"], "tool_id": tool_id, "input": call["arguments"]})
-    status, text = _run_tool(call["name"], call["arguments"])
+    if refused is not None:
+        status, text = "error", json.dumps({"success": False, "error": refused}, ensure_ascii=False)
+    else:
+        status, text = _run_tool(call["name"], call["arguments"])
     try:
         result_obj = json.loads(text)
     except ValueError:
@@ -531,11 +550,22 @@ def _finish_value(state: dict, text: str = "") -> dict:
 def _summarize_results(state: dict) -> str:
     """Deterministic answer from the collected tool results, for when the model never produced one."""
     lines = []
+    last_error = None
     for m in state["messages"]:
-        if m.get("role") == "tool":
-            lines.append(f"- {m.get('tool_name')}: {(m.get('content') or '')[:300]}")
+        if m.get("role") != "tool":
+            continue
+        lines.append(f"- {m.get('tool_name')}: {(m.get('content') or '')[:300]}")
+        try:
+            body = json.loads(m.get("content") or "")
+        except ValueError:
+            body = None
+        failed = isinstance(body, dict) and body.get("success") is False and body.get("error")
+        last_error = (m.get("tool_name"), str(body["error"])[:400]) if failed else None
     if not lines:
         return ""
+    if last_error:
+        # The last thing that happened was a failure: say so plainly instead of dumping raw results.
+        return _("The action failed ({0}): {1}").format(*last_error)
     return _("I ran the lookups but could not compose an answer. These are the raw results:") + "\n\n" + "\n".join(lines[-6:])
 
 
@@ -689,6 +719,11 @@ def _loop(ctx: dict) -> dict:
                 if not write_tools_enabled():
                     call["result_text"] = json.dumps({"error": "Changing data from the chat is not enabled on this site."})
                     call["result_status"] = "error"
+                    continue
+                refusal = _refusal(call["name"], call["arguments"])
+                if refusal:
+                    # No card for a change that cannot happen: the model gets the reason and can correct itself.
+                    _execute_call(ctx, call, refused=refusal)
                     continue
                 if not _is_trusted(session_id, call["name"]):
                     call["pending"] = True

@@ -99,6 +99,8 @@ WRITE_TOOLS = {
     "submit_document",
     # Changes a document's name/ID; Frappe rewrites the references to it
     "rename_document",
+    # Writes a draft accounting entry
+    "create_journal_entry",
     # Render and store a private File (PDF of a document, spreadsheet of a list)
     "get_document_pdf",
     "export_data",

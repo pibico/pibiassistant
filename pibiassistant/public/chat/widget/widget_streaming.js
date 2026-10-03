@@ -789,6 +789,7 @@ window.PAOWidgetStreaming = {
 				assign_document: __("Assign Document"),
 				add_comment: __("Add Comment"),
 				export_data: __("Export Data"),
+				create_journal_entry: __("Create Journal Entry"),
 				send_email: __("Send Email"),
 				submit_document: __("Submit Document"),
 			};
