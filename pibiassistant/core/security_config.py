@@ -240,6 +240,7 @@ PRIVILEGE_DOCTYPES = frozenset(
     {
         "Role", "Custom Role", "Role Permission", "Custom DocPerm", "DocPerm", "User Permission",
         "DocShare", "Module Profile", "Role Profile", "Has Role", "OAuth Client", "OAuth Bearer Token",
+        "PA LLM Provider",
     }
 )
 PRIVILEGE_FIELDS = {
@@ -250,6 +251,8 @@ PRIVILEGE_FIELDS = {
             "restrict_ip", "login_after", "login_before", "social_logins", "allowed_in_mentions",
         }
     ),
+    # Retargeting a provider row would send its stored key to another host.
+    "PA Core Settings": frozenset({"llm_providers", "llm_backend_mode"}),
 }
 
 # Permission types treated as mutating for the purposes of WRITE_PROTECTED_DOCTYPES.

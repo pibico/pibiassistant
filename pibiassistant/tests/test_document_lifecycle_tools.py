@@ -36,6 +36,9 @@ class TestLifecycleTools(unittest.TestCase):
         frappe.set_user("Administrator")
         self._lang = frappe.local.lang
         frappe.local.lang = "en"  # the card labels are translated; assert on the English source
+        # assigning, commenting and deleting assignments notify people by email: never from a test
+        self._mute = frappe.flags.mute_emails
+        frappe.flags.mute_emails = True
         self.quotation = _make_quotation()
         if not self.quotation:
             self.skipTest("the site has no customer, item and company to build a quotation")
@@ -43,6 +46,7 @@ class TestLifecycleTools(unittest.TestCase):
 
     def tearDown(self):
         frappe.local.lang = self._lang
+        frappe.flags.mute_emails = self._mute
         frappe.set_user("Administrator")
         for dt in ("Sales Order", "Quotation"):
             for name in self.created.get(dt, []) + frappe.get_all(dt, filters={"amended_from": ["in", self.created.get(dt, [])]}, pluck="name"):
@@ -117,14 +121,38 @@ class TestLifecycleTools(unittest.TestCase):
         self.assertEqual(frappe.db.get_value("Quotation", self.quotation, "docstatus"), 1)
 
     def test_assign_and_unassign(self):
-        user = frappe.db.get_value("User", {"enabled": 1, "name": ["not in", ["Administrator", "Guest"]], "user_type": "System User"}, "name")
-        self.assertTrue(user)
-        added = DocumentAssign().execute({"doctype": "Quotation", "name": self.quotation, "assign_to": [user], "description": "ZZ test"})
+        # A throwaway assignee with every notification off: assigning and unassigning email people, and a test
+        # must never reach a real mailbox (muting the flag does not stop the queue rows being created).
+        email = "zz-assign-test@example.invalid"
+        if frappe.db.exists("User", email):
+            frappe.delete_doc("User", email, force=True, ignore_permissions=True)
+        user = frappe.get_doc(
+            {"doctype": "User", "email": email, "first_name": "ZZ Assign Test", "send_welcome_email": 0, "enabled": 1,
+             "user_type": "System User", "roles": [{"role": "System Manager"}, {"role": "Sales Manager"}]}
+        ).insert(ignore_permissions=True)
+        settings = frappe.get_doc("Notification Settings", email)
+        settings.enabled = 0
+        settings.save(ignore_permissions=True)
+        frappe.db.commit()
+        self.addCleanup(self._drop_user, email)
+        if not frappe.has_permission("Quotation", "read", doc=self.quotation, user=email):
+            self.skipTest("the throwaway user cannot read quotations on this site")
+        added = DocumentAssign().execute({"doctype": "Quotation", "name": self.quotation, "assign_to": [email], "description": "ZZ test"})
         self.assertTrue(added["success"], added)
-        self.assertIn(user, added["assigned_now"])
-        removed = DocumentAssign().execute({"doctype": "Quotation", "name": self.quotation, "assign_to": [user], "action": "remove"})
+        self.assertIn(email, added["assigned_now"])
+        removed = DocumentAssign().execute({"doctype": "Quotation", "name": self.quotation, "assign_to": [email], "action": "remove"})
         self.assertTrue(removed["success"], removed)
-        self.assertNotIn(user, removed["assigned_now"])
+        self.assertNotIn(email, removed["assigned_now"])
+
+    @staticmethod
+    def _drop_user(email):
+        for name in frappe.get_all("ToDo", filters={"allocated_to": email}, pluck="name"):
+            frappe.delete_doc("ToDo", name, force=True, ignore_permissions=True)
+        for name in frappe.get_all("Notification Log", filters={"for_user": email}, pluck="name"):
+            frappe.delete_doc("Notification Log", name, force=True, ignore_permissions=True)
+        if frappe.db.exists("User", email):
+            frappe.delete_doc("User", email, force=True, ignore_permissions=True)
+        frappe.db.commit()
 
     def test_assign_refuses_unknown_and_disabled_users(self):
         self.assertIn("not found", DocumentAssign().execute({"doctype": "Quotation", "name": self.quotation, "assign_to": ["nobody@example.invalid"]})["error"])

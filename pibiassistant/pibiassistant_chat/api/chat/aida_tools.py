@@ -30,6 +30,10 @@ from ..block_builder import truncate_result_for_emit
 from ..chat.cancel import is_cancelled
 
 MAX_ROUNDS = 6
+# Largest Anthropic thinking replay (opaque content blocks) kept in the turn state.
+RAW_MAX_CHARS = 200000
+# total replayed thinking blocks per turn (they sit in the pause state and in every request)
+RAW_TURN_MAX_CHARS = 300000
 MAX_TOOL_RESULT_CHARS = 12000
 HISTORY_MESSAGES = 20
 HISTORY_MESSAGE_CHARS = 1500
@@ -45,6 +49,9 @@ READ_TOOLS = frozenset(
         "get_document",
         "get_linked_documents",
         "get_pending_approvals",
+        "get_document_history",
+        "get_account_balance",
+        "get_overdue_invoices",
         "get_skill",
         "aggregate_documents",
         "get_document_pdf",
@@ -146,7 +153,7 @@ def aida_status(user: str) -> dict:
 
     write = write_tools_enabled()
     roles = sorted({"PA User", "PA Admin", "System Manager"} & set(frappe.get_roles(user)))
-    return {
+    status = {
         "tools_enabled": tools_enabled(),
         "write_tools_enabled": write,
         "changes_need_approval": write,
@@ -154,6 +161,18 @@ def aida_status(user: str) -> dict:
         "user_roles": roles,
         "connections": cached_connection_status() or "not checked recently",
     }
+    try:
+        from ..llm_config import backend_mode, llm_providers
+
+        mode = backend_mode()
+        if mode != "aida":
+            status["backend_mode"] = mode
+            status["direct_providers"] = [
+                {"label": r["label"], "enabled": r["enabled"], "configured": r["has_key"]} for r in llm_providers()
+            ]
+    except Exception:
+        pass
+    return status
 
 
 def _site_context() -> str:
@@ -211,6 +230,8 @@ def _system_prompt(user: str) -> str:
         "submitted Sales/Purchase Invoices (outstanding_amount); use search to resolve a customer, item or "
         "company name before filtering by it, and look for an existing document before creating a duplicate; for the PDF of a document "
         "use get_document_pdf, not generate_document. "
+        "History of a document (who changed what): get_document_history; balance of an account or of a "
+        "customer/supplier: get_account_balance; unpaid overdue invoices and ageing: get_overdue_invoices. "
         "For multi-step ERP tasks (invoices, orders, payments, reports) call get_skill first to load the "
         "proven procedure, then follow it. "
         "Attached files can be read again with extract_file_content using the file URL. "
@@ -524,8 +545,9 @@ def _execute_call(ctx: dict, call: dict) -> None:
 
 # ── the loop ──────────────────────────────────────────────────────────────
 
-def _new_state(user, message_id, provider, model, messages) -> dict:
+def _new_state(user, message_id, provider, model, messages, backend=None) -> dict:
     return {
+        "backend": backend,
         "user": user,
         "message_id": message_id,
         "provider": provider,
@@ -567,13 +589,93 @@ _ANSWER_NOW = (
 )
 
 
-def _loop(ctx: dict) -> dict:
-    state = ctx["state"]
-    session_id = ctx["session_id"]
+def _chat_round(ctx: dict, state: dict, force_answer) -> dict | None:
+    """One model call; None means "state['force_answer'] was set, go around again"."""
+    if ctx.get("backend") is None:
+        return _chat_round_aida(ctx, state, force_answer)
+    return _chat_round_direct(ctx, state, force_answer)
+
+
+def _chat_round_aida(ctx: dict, state: dict, force_answer) -> dict | None:
     headers = {"X-API-Key": ctx["api_key"], "Content-Type": "application/json"}
     url = f"{ctx['api_url']}/api/v1/llm/chat"
     http = ctx["http"]
+    body = {
+        "provider": state["provider"] or "ollama",
+        "model": state["model"],
+        "messages": state["messages"],
+        "max_tokens": 4096,
+    }
+    if not force_answer:
+        body["tools"] = ctx["specs"]
+    resp = http.post(url, json=body, headers=headers, timeout=_TIMEOUT)
+    if resp.status_code >= 500 and not force_answer:
+        # The model sometimes emits a malformed tool call (upstream 502): try once more, then
+        # make it answer from what the tools already returned instead of failing the whole turn.
+        resp = http.post(url, json=body, headers=headers, timeout=_TIMEOUT)
+        if resp.status_code >= 500 and state["collected"]:
+            state["force_answer"] = True
+            return None
+    if resp.status_code != 200:
+        frappe.log_error(title="AIDA Tool Chat Error", message=f"HTTP {resp.status_code}: {resp.text[:500]}")
+        raise requests.exceptions.HTTPError(response=resp)
+    return resp.json()
 
+
+def _chat_round_direct(ctx: dict, state: dict, force_answer) -> dict | None:
+    """One round through a direct provider adapter, returned in the AIDA /llm/chat response shape."""
+    from .providers.errors import (
+        ProviderCancelled,
+        ProviderOverloadedError,
+        ProviderServerError,
+        ProviderTimeoutError,
+        ProviderUnsupportedError,
+        log_provider_error,
+    )
+
+    session_id = ctx["session_id"]
+    while True:
+        extra = {"_thinking_disabled": True} if state.get("raw_dropped") else {}
+        try:
+            res = ctx["adapter"].chat(
+                state["messages"],
+                tools=None if force_answer or ctx.get("no_tools") else ctx["specs"],
+                model=state["model"],
+                max_tokens=None,
+                cancel=lambda: is_cancelled(session_id),
+                **extra,
+            )
+            break
+        except ProviderCancelled:
+            return {"message": {"content": "", "tool_calls": []}, "model": "", "usage": {}, "_aborted": True}
+        except ProviderUnsupportedError as e:
+            if getattr(e, "feature", "") == "tools" and not ctx.get("no_tools"):
+                ctx["no_tools"] = True
+                continue
+            raise
+        except (ProviderServerError, ProviderOverloadedError, ProviderTimeoutError) as e:
+            if state["collected"] and not force_answer:
+                log_provider_error(e)
+                state["force_answer"] = True
+                return None
+            raise
+    return {
+        "message": {
+            "content": res.get("content") or "",
+            "tool_calls": [
+                {"function": {"name": c["name"], "arguments": c.get("arguments") or {}}}
+                for c in res.get("tool_calls") or []
+            ],
+        },
+        "model": res.get("model") or "",
+        "usage": res.get("usage") or {},
+        "_raw": res.get("raw"),
+    }
+
+
+def _loop(ctx: dict) -> dict:
+    state = ctx["state"]
+    session_id = ctx["session_id"]
     while state["round"] <= MAX_ROUNDS:
         if is_cancelled(session_id):
             return {"aborted": True}
@@ -581,26 +683,11 @@ def _loop(ctx: dict) -> dict:
         if force_answer and not state.get("nudged"):
             state["messages"].append({"role": "user", "content": _ANSWER_NOW})
             state["nudged"] = True
-        body = {
-            "provider": state["provider"] or "ollama",
-            "model": state["model"],
-            "messages": state["messages"],
-            "max_tokens": 4096,
-        }
-        if not force_answer:
-            body["tools"] = ctx["specs"]
-        resp = http.post(url, json=body, headers=headers, timeout=_TIMEOUT)
-        if resp.status_code >= 500 and not force_answer:
-            # The model sometimes emits a malformed tool call (upstream 502): try once more, then
-            # make it answer from what the tools already returned instead of failing the whole turn.
-            resp = http.post(url, json=body, headers=headers, timeout=_TIMEOUT)
-            if resp.status_code >= 500 and state["collected"]:
-                state["force_answer"] = True
-                continue
-        if resp.status_code != 200:
-            frappe.log_error(title="AIDA Tool Chat Error", message=f"HTTP {resp.status_code}: {resp.text[:500]}")
-            raise requests.exceptions.HTTPError(response=resp)
-        data = resp.json()
+        data = _chat_round(ctx, state, force_answer)
+        if data is None:
+            continue
+        if data.get("_aborted"):
+            return {"aborted": True}
         pin, pout = _usage(data)
         state["tokens_in"] += pin
         state["tokens_out"] += pout
@@ -621,13 +708,20 @@ def _loop(ctx: dict) -> dict:
                 continue
             return _finish_value(state, text or _summarize_results(state))
 
-        state["messages"].append(
-            {
-                "role": "assistant",
-                "content": reply.get("content") or "",
-                "tool_calls": [{"function": {"name": c["name"], "arguments": c["arguments"]}} for c in calls],
-            }
-        )
+        assistant_msg = {
+            "role": "assistant",
+            "content": reply.get("content") or "",
+            "tool_calls": [{"function": {"name": c["name"], "arguments": c["arguments"]}} for c in calls],
+        }
+        raw = data.get("_raw")
+        if raw:
+            size = len(json.dumps(raw, default=str))
+            if size <= RAW_MAX_CHARS and state.get("raw_chars", 0) + size <= RAW_TURN_MAX_CHARS:
+                assistant_msg["_raw"] = raw
+                state["raw_chars"] = state.get("raw_chars", 0) + size
+            else:
+                state["raw_dropped"] = True
+        state["messages"].append(assistant_msg)
         state["calls"] = [
             {**c, "tool_id": uuid.uuid4().hex[:12], "interrupt_id": uuid.uuid4().hex[:12], "pending": False}
             for c in calls
@@ -673,9 +767,31 @@ def _append_results(state: dict) -> None:
     state["calls"] = []
 
 
+def _backend_ctx(ctx: dict, backend) -> bool:
+    """Wire the transport into ctx: an AIDA HTTP session, or a direct adapter. False if the provider is gone."""
+    ctx["backend"] = backend
+    ctx["http"] = None
+    if backend is None:
+        ctx["http"] = requests.Session()
+        return True
+    from ..llm_config import provider_by_slug
+    from .providers import get_provider
+
+    row = provider_by_slug(backend.get("slug") or "")
+    if not row:
+        return False
+    ctx["adapter"] = get_provider(row)
+    return True
+
+
+def _close_http(ctx: dict) -> None:
+    if ctx.get("http") is not None:
+        ctx["http"].close()
+
+
 def run_tool_turn(
     *, session_id, user, message, message_name, message_id, api_url, api_key, provider, model, specs, emit,
-    block_builder,
+    block_builder, backend=None,
 ):
     """Run one chat turn with tools. See the module docstring for the outcome keys."""
     messages = [{"role": "system", "content": _system_prompt(user)}]
@@ -688,16 +804,19 @@ def run_tool_turn(
         "specs": specs,
         "emit": emit,
         "block_builder": block_builder,
-        "state": _new_state(user, message_id, provider, model, messages),
-        "http": requests.Session(),
+        "state": _new_state(user, message_id, provider, model, messages, backend),
     }
+    if not _backend_ctx(ctx, backend):
+        return {"expired": True}
     try:
         return _loop(ctx)
     finally:
-        ctx["http"].close()
+        _close_http(ctx)
 
 
-def resume_tool_turn(*, session_id, user, responses, api_url, api_key, specs, emit, block_builder):
+def resume_tool_turn(
+    *, session_id, user, responses, api_url, api_key, specs, emit, block_builder, backend=None
+):
     """Continue a paused turn with the user's decisions; returns the same outcomes as run_tool_turn."""
     state = _take_pending(session_id, user)
     if not state:
@@ -711,12 +830,13 @@ def resume_tool_turn(*, session_id, user, responses, api_url, api_key, specs, em
         "emit": emit,
         "block_builder": block_builder,
         "state": state,
-        "http": requests.Session(),
     }
+    if not _backend_ctx(ctx, state.get("backend") or backend):
+        return {"expired": True}
     try:
         return _resume_calls(ctx, state, answers, session_id)
     finally:
-        ctx["http"].close()
+        _close_http(ctx)
 
 
 def _resume_calls(ctx, state, answers, session_id):

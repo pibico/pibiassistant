@@ -11,6 +11,6 @@ def boot_session(bootinfo):
     so ``chat_banner.js`` reads this flag and skips its ``should_show_banner``
     request on every Desk load.
     """
-    from pibiassistant.pibiassistant_chat.aida_mode import is_aida_mode
+    from pibiassistant.pibiassistant_chat.api.llm_config import llm_ready
 
-    bootinfo.pa_aida_mode = 1 if is_aida_mode() else 0
+    bootinfo.pa_aida_mode = 1 if llm_ready() else 0

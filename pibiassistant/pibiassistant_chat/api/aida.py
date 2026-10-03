@@ -156,7 +156,7 @@ def get_overview():
     chat_url, chat_key, provider, model = _get_aida_config()
     conv_url, conv_key = _get_convert_config()
     voice_url, voice_key = _get_voice_config()
-    return {
+    overview = {
         "provider": provider,
         "model": model,
         "services": {
@@ -165,6 +165,43 @@ def get_overview():
             "Voice": {"url": voice_url, "configured": bool(voice_url and voice_key)},
         },
     }
+    from .llm_config import backend_mode
+
+    mode = backend_mode()
+    if mode == "aida":
+        return overview
+    from .llm_config import default_backend_choice, display_label, llm_providers, provider_usable
+
+    overview["backend_mode"] = mode
+    if mode == "direct":
+        overview["services"].pop("Chat", None)
+    _kind, d_provider, d_model = default_backend_choice()
+    overview["provider"], overview["model"] = d_provider, d_model
+    for row in llm_providers(enabled_only=True):
+        overview["services"][display_label(row)] = {
+            "url": _public_origin(row),
+            "configured": provider_usable(row),
+        }
+    return overview
+
+
+def _public_origin(row):
+    """scheme://host of the provider endpoint (the registry default when the row has no base URL); never a path or credentials."""
+    from urllib.parse import urlsplit
+
+    url = row.get("base_url") or ""
+    if not url:
+        try:
+            from .chat.providers.registry import provider_def
+
+            url = provider_def(row["provider_id"]).base_url or ""
+        except Exception:
+            url = ""
+    parts = urlsplit(url)
+    if not parts.scheme or not parts.hostname:
+        return ""
+    host = parts.hostname + (f":{parts.port}" if parts.port else "")
+    return f"{parts.scheme}://{host}"
 
 
 _HEALTH_TIMEOUT = 4
@@ -198,9 +235,30 @@ def _health_cache_key(targets):
     return "pa_aida_health:" + "|".join(f"{u}:{bool(k)}" for _l, u, k in targets)
 
 
+def _combined_cache_key(mode):
+    """Cache key of the combined AIDA + provider check; plain AIDA key when only AIDA is in play."""
+    targets = _health_targets()
+    if mode == "direct":
+        targets = tuple(t for t in targets if t[0] != "Chat API")
+    key = _health_cache_key(targets)
+    if mode != "aida":
+        from .llm_config import llm_providers
+
+        key += f"|{mode}|" + ",".join(r["name"] for r in llm_providers(enabled_only=True))
+    return key
+
+
 def cached_connection_status():
     """The last test_connections result if it is still fresh, else None (never calls the network)."""
-    return frappe.cache().get_value(_health_cache_key(_health_targets()), expires=True)
+    from .llm_config import backend_mode
+
+    mode = backend_mode()
+    status = frappe.cache().get_value(_combined_cache_key(mode), expires=True)
+    if mode == "aida":
+        return status
+    from .llm_config import cached_provider_status
+
+    return {**(status or {}), **cached_provider_status()} or None
 
 
 @frappe.whitelist()
@@ -209,8 +267,13 @@ def test_connections(refresh=0):
     if "System Manager" not in frappe.get_roles():
         frappe.throw(_("Not permitted"), frappe.PermissionError)
 
+    from .llm_config import backend_mode
+
+    mode = backend_mode()
     targets = _health_targets()
-    cache_key = _health_cache_key(targets)
+    if mode == "direct":
+        targets = tuple(t for t in targets if t[0] != "Chat API")
+    cache_key = _combined_cache_key(mode)
     if not cint(refresh):
         cached = frappe.cache().get_value(cache_key, expires=True)
         if cached:
@@ -219,14 +282,44 @@ def test_connections(refresh=0):
     from concurrent.futures import ThreadPoolExecutor
 
     configured = [(label, url, key) for label, url, key in targets if url and key]
-    with ThreadPoolExecutor(max_workers=len(configured) or 1) as pool:
-        checked = dict(zip((t[0] for t in configured), pool.map(lambda t: _check_health(t[1], t[2]), configured)))
+    direct_jobs = _direct_health_jobs() if mode != "aida" else []
+    with ThreadPoolExecutor(max_workers=len(configured) + len(direct_jobs) or 1) as pool:
+        futures = [pool.submit(_check_health, t[1], t[2]) for t in configured]
+        direct_futures = [(label, name, pool.submit(job)) for label, name, job in direct_jobs]
+        checked = dict(zip((t[0] for t in configured), (f.result() for f in futures)))
+        direct_checked = {label: (name, f.result()) for label, name, f in direct_futures}
 
     results = {
         label: checked.get(label) or {"ok": False, "error": _("Not configured")} for label, _u, _k in targets
     }
+    if mode != "aida":
+        from .llm_config import display_label, llm_providers, store_provider_health
+
+        for row in llm_providers(enabled_only=True):
+            label = f"{display_label(row)} API"
+            if label in direct_checked:
+                res = direct_checked[label][1]
+                results[label] = {"ok": bool(res.get("ok")), "detail": res.get("detail") or "", "error": res.get("error") or ""}
+            else:
+                results[label] = {"ok": False, "error": _("Not configured")}
+            store_provider_health(row["name"], results[label])
     frappe.cache().set_value(cache_key, results, expires_in_sec=_HEALTH_CACHE_SECONDS)
     return results
+
+
+def _direct_health_jobs():
+    """(label, row name, callable) per usable enabled provider; keys are fetched here, in the request thread."""
+    from .llm_config import display_label, llm_providers, prepared_provider_test, provider_usable
+
+    jobs = []
+    for row in llm_providers(enabled_only=True):
+        if not provider_usable(row):
+            continue
+        try:
+            jobs.append((f"{display_label(row)} API", row["name"], prepared_provider_test(row)))
+        except Exception:
+            continue
+    return jobs
 
 
 _MAX_MESSAGE_CHARS = 20000
@@ -239,6 +332,15 @@ def _assert_can_use_aida():
     check = can_use_pao()
     if not check.get("can_use"):
         frappe.throw(check.get("reason") or _("Cannot use AIDA"), frappe.PermissionError)
+
+
+def _assert_chat_user():
+    """Role check only: conversion works with its own Convert API, whatever the chat backend is."""
+    user = frappe.session.user
+    if user == "Guest":
+        frappe.throw(_("You do not have permission to use AIDA."), frappe.PermissionError)
+    if user != "Administrator" and not {"PA User", "PA Admin", "System Manager"} & set(frappe.get_roles(user)):
+        frappe.throw(_("You do not have permission to use AIDA."), frappe.PermissionError)
 
 
 @frappe.whitelist()
@@ -399,7 +501,7 @@ def convert_bytes_to_markdown(content, filename):
     """Send file bytes to the AIDA Convert API. Returns (markdown, error)."""
     convert_url, convert_key = _get_convert_config()
     if not convert_url or not convert_key:
-        return "", _("AIDA Convert API is not configured")
+        return "", _("Document conversion is not configured. Ask your administrator to set the Convert API in PA Core Settings.")
     try:
         resp = requests.post(
             f"{convert_url}/api/v1/convert",
@@ -429,7 +531,7 @@ def convert_document(file_url=None):
     """Convert a PDF/image/office file to markdown via the AIDA Convert API."""
     if not file_url:
         frappe.throw(_("file_url is required"))
-    _assert_can_use_aida()
+    _assert_chat_user()
 
     file_doc = frappe.get_doc("File", {"file_url": file_url})
     file_doc.check_permission("read")
@@ -464,7 +566,7 @@ def transcribe_audio(file_url=None, language=None):
 
     voice_url, voice_key = _get_voice_config()
     if not voice_url or not voice_key:
-        frappe.throw(_("AIDA Voice API is not configured. Go to PA Core Settings > AIDA Chat."))
+        frappe.throw(_("Voice dictation is not configured. Ask your administrator to set the Voice API in PA Core Settings."))
 
     roles = frappe.get_roles(frappe.session.user)
     if not {"PA User", "PA Admin", "System Manager"} & set(roles):

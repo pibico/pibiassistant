@@ -70,6 +70,7 @@ class TestAidaRelayCarriesTheModel(unittest.TestCase):
         )
         with (
             patch("pibiassistant.pibiassistant_chat.api.aida._get_aida_config", return_value=("https://x", "k", "def", "defmodel")),
+            patch("pibiassistant.pibiassistant_chat.api.llm_config.backend_mode", return_value="aida"),
             patch.object(aida_tools, "tools_enabled", return_value=True),
             patch.object(aida_tools, "chat_tool_specs", return_value=[{"function": {"name": "t"}}]),
             patch.object(aida_tools, "run_tool_turn", run_tool_turn),

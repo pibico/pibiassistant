@@ -127,7 +127,12 @@ permission_query_conditions = {
 # Hook on document methods and events
 
 doc_events = {
-    "PA Core Settings": {"on_update": "pibiassistant.utils.cache.invalidate_settings_cache"},
+    "PA Core Settings": {
+        "on_update": [
+            "pibiassistant.utils.cache.invalidate_settings_cache",
+            "pibiassistant.pibiassistant_chat.api.llm_config.invalidate_llm_cache",
+        ]
+    },
 }
 
 # Scheduled Tasks

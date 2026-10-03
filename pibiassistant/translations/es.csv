@@ -1236,3 +1236,100 @@ Send Email,Enviar correo
 At most {0} documents can be attached.,Se pueden adjuntar como máximo {0} documentos.
 Each attached document needs a doctype and a name.,Cada documento adjunto necesita un doctype y un nombre.
 The attachments are larger than 15 MB.,Los adjuntos superan los 15 MB.
+Direct providers,Proveedores directos
+Chat backend,Motor del chat
+AIDA only,Solo AIDA
+Both,Ambos
+Providers,Proveedores
+Provider,Proveedor
+Slug,Identificador
+API key,Clave API
+Base URL,URL base
+Default model,Modelo por defecto
+Other models,Otros modelos
+Deployment,Despliegue
+API version,Versión de API
+Timeout (seconds),Tiempo de espera (segundos)
+Max output tokens,Máximo de tokens de salida
+Supports tools,Admite herramientas
+Test connection,Probar conexión
+Load models,Cargar modelos
+Use selected,Usar seleccionados
+Test direct providers,Probar proveedores directos
+Save the settings first.,Guarde primero la configuración.
+{0} (direct),{0} (directo)
+Models,Modelos
+Limits,Límites
+Label,Etiqueta
+Empty uses the provider name,Si está vacío se usa el nombre del proveedor
+One key for the whole site,Una clave para todo el sitio
+Leave empty to use the official endpoint,Déjelo vacío para usar el punto de acceso oficial
+One model (Azure: deployment) per line,Un modelo (Azure: despliegue) por línea
+0 uses the provider default,0 usa el valor por defecto del proveedor
+{0} rejected the API key. Ask your administrator to check the provider settings.,{0} ha rechazado la clave API. Pida a su administrador que revise la configuración del proveedor.
+{0} reports that the account has no credit or quota left. Ask your administrator to check billing.,{0} indica que la cuenta no tiene crédito ni cuota. Pida a su administrador que revise la facturación.
+{0} is receiving too many requests. Please wait a moment and try again.,{0} está recibiendo demasiadas solicitudes. Espere un momento e inténtelo de nuevo.
+{0} is overloaded right now. Please try again in a moment.,{0} está sobrecargado ahora mismo. Inténtelo de nuevo en un momento.
+{0} could not process the request: {1},{0} no ha podido procesar la solicitud: {1}
+{0} could not process the request.,{0} no ha podido procesar la solicitud.
+{0} does not know this model or deployment. Ask your administrator to check the model name.,{0} no conoce este modelo o despliegue. Pida a su administrador que revise el nombre del modelo.
+{0} blocked the answer with its content filter.,{0} ha bloqueado la respuesta con su filtro de contenido.
+{0} took too long to respond. Please try again.,{0} ha tardado demasiado en responder. Inténtelo de nuevo.
+Cannot connect to {0} right now. Please try again in a moment.,No se puede conectar con {0} ahora mismo. Inténtelo de nuevo en un momento.
+{0} had an internal error. Please try again.,{0} ha tenido un error interno. Inténtelo de nuevo.
+{0} does not support this feature with the selected model: {1},{0} no admite esta función con el modelo seleccionado: {1}
+The provider {0} is not configured correctly: {1},El proveedor {0} no está configurado correctamente: {1}
+The base URL must start with https://,La URL base debe empezar por https://
+The base URL must not contain credentials,La URL base no debe contener credenciales
+The base URL must not contain a query or a fragment,La URL base no debe contener consulta ni fragmento
+The base URL points to a private or reserved address,La URL base apunta a una dirección privada o reservada
+The base URL host could not be resolved,No se ha podido resolver el servidor de la URL base
+The Azure endpoint must be an address of your Azure OpenAI resource,El punto de acceso de Azure debe ser una dirección de su recurso de Azure OpenAI
+Enter the deployment name,Introduzca el nombre del despliegue
+Enter the API key,Introduzca la clave API
+No AI provider is configured. Ask your administrator to set it up in PA Core Settings.,No hay ningún proveedor de IA configurado. Pida a su administrador que lo configure en PA Core Settings.
+This AI provider is no longer available. Pick another model.,Este proveedor de IA ya no está disponible. Elija otro modelo.
+The assistant returned an empty answer. Please try again.,El asistente ha devuelto una respuesta vacía. Inténtelo de nuevo.
+The assistant could not answer right now. Please try again.,El asistente no ha podido responder ahora mismo. Inténtelo de nuevo.
+Document conversion is not configured. Ask your administrator to set the Convert API in PA Core Settings.,La conversión de documentos no está configurada. Pida a su administrador que configure la API de conversión en PA Core Settings.
+Voice dictation is not configured. Ask your administrator to set the Voice API in PA Core Settings.,El dictado por voz no está configurado. Pida a su administrador que configure la API de voz en PA Core Settings.
+"Save the settings first. If the table is not available yet, run migrate.","Guarde primero la configuración. Si la tabla aún no está disponible, ejecute migrate."
+Invalid provider row.,Fila de proveedor no válida.
+The connection test failed. Please try again.,La prueba de conexión ha fallado. Inténtelo de nuevo.
+The model list could not be loaded.,No se ha podido cargar la lista de modelos.
+Direct provider test results,Resultados de la prueba de proveedores directos
+Testing provider connections...,Probando las conexiones con los proveedores...
+Connected,Conectado
+Search,Buscar
+No models were returned.,No se ha devuelto ningún modelo.
+Save the settings to apply the selection.,Guarde la configuración para aplicar la selección.
+"No provider is enabled, so direct models will not be available.","Ningún proveedor está activado, por lo que los modelos directos no estarán disponibles."
+At most {0} providers can be configured.,Se pueden configurar como máximo {0} proveedores.
+Row {0}: choose a valid provider.,Fila {0}: elija un proveedor válido.
+Row {0}: Max output tokens must be 0 or between 256 and 200000.,Fila {0}: el máximo de tokens de salida debe ser 0 o estar entre 256 y 200000.
+Row {0}: the model name is not valid.,Fila {0}: el nombre del modelo no es válido.
+Row {0}: at most 100 other models are allowed.,Fila {0}: se permiten como máximo 100 otros modelos.
+Row {0}: enter the base URL.,Fila {0}: introduzca la URL base.
+One API key per provider for the whole site. Keys are stored encrypted and never shown again. Only administrators can see this table.,Una clave API por proveedor para todo el sitio. Las claves se guardan cifradas y no se vuelven a mostrar. Solo los administradores ven esta tabla.
+AIDA only keeps today's behaviour. Direct providers uses only the table below. Both mixes AIDA models and direct models in the model picker. Voice dictation and document conversion always use the AIDA Voice and Convert APIs.,Solo AIDA mantiene el comportamiento actual. Proveedores directos usa solo la tabla de abajo. Ambos mezcla modelos de AIDA y modelos directos en el selector. El dictado por voz y la conversión de documentos siempre usan las API de voz y conversión de AIDA.
+OpenAI: create a key at,OpenAI: cree una clave en
+Responses-only models are not supported.,Los modelos solo compatibles con la API Responses no están admitidos.
+Anthropic: create a key at,Anthropic: cree una clave en
+DeepSeek: create a key at,DeepSeek: cree una clave en
+Insufficient balance is reported as a billing error.,El saldo insuficiente se notifica como error de facturación.
+Qwen: keys are tied to a region.,Qwen: las claves están ligadas a una región.
+Leave Base URL empty for International.,Deje la URL base vacía para Internacional.
+xAI: create a key at,xAI: cree una clave en
+Azure OpenAI: Microsoft Copilot has no public chat API; use Azure OpenAI.,Azure OpenAI: Microsoft Copilot no tiene API pública de chat; use Azure OpenAI.
+Base URL is your resource endpoint,La URL base es el punto de acceso de su recurso
+Enter the deployment name; list other deployments one per line in Other models. API version defaults to 2024-10-21.,"Introduzca el nombre del despliegue; indique otros despliegues, uno por línea, en Otros modelos. La versión de API es 2024-10-21 por defecto."
+Compatible: any server with an OpenAI-style /v1 API:,Compatible: cualquier servidor con una API de estilo OpenAI /v1:
+Servers on a private network need the site flag pa_allow_private_llm_urls set by the server administrator.,Los servidores en una red privada requieren que el administrador del servidor active la opción de sitio pa_allow_private_llm_urls.
+Unexpected redirect from the provider.,Redirección inesperada del proveedor.
+Enter the default model,Introduzca el modelo por defecto
+The base URL is not valid,La URL base no es válida
+The AI provider,El proveedor de IA
+Output budget used by reasoning; raise Max output tokens,El presupuesto de salida se agotó razonando; aumente los tokens máximos de salida
+Row {0}: the provider cannot be changed. Remove the row and add a new one.,Fila {0}: no se puede cambiar el proveedor. Elimine la fila y añada una nueva.
+Row {0}: enter the API key again when you change the base URL or the deployment.,Fila {0}: vuelva a introducir la clave API al cambiar la URL base o el despliegue.
+Row {0}: {1},Fila {0}: {1}

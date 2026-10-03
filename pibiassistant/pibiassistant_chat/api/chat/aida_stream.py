@@ -19,7 +19,7 @@ import requests
 from frappe import _
 
 from .._untrusted import wrap_untrusted
-from .._helpers import is_aida_mode  # noqa: F401  (re-exported for messages/relay)
+from .._helpers import _aida_mode as is_aida_mode  # noqa: F401  (re-exported for messages/relay)
 from ..chat.cancel import append_abort_marker, is_cancelled
 from .aida_tools import recent_turns
 from ..chat.helpers import _emit_socket_event, _ensure_assistant_msg, _find_assistant_msg_by_message_id
@@ -207,10 +207,53 @@ def _relay_aida_stream(
     """Stream one AIDA turn to the SPA, persisting the assistant row unless restricted."""
     from ..block_builder import BlockBuilder
     from ..chat.relay import _handle_stream_aborted, _persist_partial_assistant_turn, _set_pao_message_with_retry
+    from ..llm_config import backend_mode, resolve_backend
+
+    if backend_mode() != "aida":
+        kind, prov, mdl = resolve_backend(model_id)
+        if resume_responses is not None:
+            # A resumed turn continues on the backend that paused it, whatever the picker says now.
+            from .aida_tools import peek_pending
+
+            paused = peek_pending(session_id, user)
+            if paused and (paused.get("backend") or {}).get("slug"):
+                kind, prov, mdl = "direct", paused["backend"]["slug"], paused.get("model") or ""
+            elif paused:
+                from ..llm_config import mode_allows_aida
+
+                # a pause made on AIDA must not call AIDA once the mode forbids it
+                if mode_allows_aida():
+                    kind, prov, mdl = "aida", paused.get("provider") or "", paused.get("model") or ""
+                else:
+                    kind, prov, mdl = "none", "", ""
+        if kind == "direct":
+            from .direct_stream import _relay_direct_stream
+
+            return _relay_direct_stream(
+                session_id,
+                message,
+                message_name,
+                user,
+                restricted=restricted,
+                system_prompt_addendum=system_prompt_addendum,
+                context=context,
+                continue_from_message_id=continue_from_message_id,
+                slug=prov,
+                model=mdl,
+                resume_responses=resume_responses,
+                extract_files=extract_files,
+            )
+        if kind == "none":
+            return _fail_no_provider(session_id, user, restricted, context, continue_from_message_id)
+        model_id = f"{prov}/{mdl}" if prov and mdl else (mdl or "")
+
     from ..aida import _get_aida_config
 
     api_url, api_key, provider, model = _get_aida_config()
     chosen = (model_id or "").strip()[:200]
+    if chosen.startswith("d:"):
+        # A direct-provider id kept by a browser after the site went back to AIDA only: use the AIDA default.
+        chosen = ""
     if chosen and chosen != "auto":
         # The selector sends "provider/model"; a bare name keeps the default provider.
         if "/" in chosen:
@@ -610,3 +653,38 @@ def _relay_aida_stream(
 def _abort_unpersisted(emit, message_id, full_response, block_builder):
     marked, blocks = append_abort_marker(full_response, block_builder.snapshot())
     emit({"event": "stream_aborted", "message_id": message_id, "partial_response": marked, "blocks": blocks})
+
+
+def _fail_no_provider(session_id, user, restricted, context, continue_from_message_id):
+    """Same failure path as "AIDA is not configured" for a turn with no usable backend at all."""
+    from ..chat.relay import _persist_partial_assistant_turn
+
+    text = _("No AI provider is configured. Ask your administrator to set it up in PA Core Settings.")
+    message_id = continue_from_message_id or uuid.uuid4().hex[:10]
+    try:
+        if not restricted and not continue_from_message_id:
+            _ensure_assistant_msg(session_id, message_id, context)
+        refresh_turn(session_id)
+        _emit_socket_event(
+            session_id,
+            {
+                "session_id": session_id,
+                "event": "stream_error",
+                "error": text,
+                "message_id": message_id,
+                "blocks": [],
+                "partial_response": "",
+            },
+        )
+        if not restricted:
+            _persist_partial_assistant_turn(
+                session_id,
+                message_id,
+                text,
+                [{"type": "text", "id": f"err-{message_id}", "content": text}],
+                [],
+                "",
+                "errored",
+            )
+    finally:
+        release_turn(session_id)

@@ -151,3 +151,16 @@
 [data-theme="dark"] .pa-chat-banner__icon { color: #6AABE0; }
 [data-theme="dark"] .pa-chat-banner__btn--ghost { color: #E8E8EA; }
 [data-theme="dark"] .pa-chat-banner__btn--ghost:hover { background: rgba(232, 232, 234, 0.12); }
+
+/* Direct providers: help text under the mode selector and the model picker panel */
+.pa-ps-llm-help { font-family: var(--pibico-font-body); font-size: 0.9rem; line-height: 1.2; color: var(--pibico-text); overflow-wrap: anywhere; }
+.pa-ps-llm-help p { margin: 0 0 8px; }
+.pa-ps-llm-help ul { margin: 0; padding-left: 18px; }
+.pa-ps-llm-help li { margin-bottom: 4px; }
+.pa-ps-llm-models { display: flex; flex-direction: column; gap: 8px; font-family: var(--pibico-font-body); line-height: 1.2; }
+.pa-ps-llm-search { width: 100%; }
+.pa-ps-llm-list { display: flex; flex-direction: column; gap: 4px; max-height: 60vh; overflow-y: auto; padding: 6px; border-radius: 12px; box-shadow: 0 0 12px rgba(70, 130, 180, 0.18); }
+.pa-ps-llm-item { display: flex; align-items: center; gap: 8px; margin: 0; padding: 4px 6px; border-radius: 8px; cursor: pointer; overflow-wrap: anywhere; line-height: 1.2; }
+.pa-ps-llm-item:hover { background: rgba(70, 130, 180, 0.12); }
+.pa-ps-llm-item[hidden] { display: none; }
+.pa-ps-llm-use { align-self: flex-start; }

@@ -27,6 +27,10 @@
   "aida_voice_url",
   "aida_voice_column_break",
   "aida_voice_api_key",
+  "llm_providers_section",
+  "llm_backend_mode",
+  "llm_providers_help",
+  "llm_providers",
   "plugins_tab",
   "plugins_section",
   "enabled_plugins_list",
@@ -188,6 +192,29 @@
    "fieldtype": "Password",
    "label": "Voice API Key",
    "description": "API key for the voice transcription service (X-API-Key header)"
+  },
+  {
+   "fieldname": "llm_providers_section",
+   "fieldtype": "Section Break",
+   "label": "Direct providers"
+  },
+  {
+   "fieldname": "llm_backend_mode",
+   "fieldtype": "Select",
+   "label": "Chat backend",
+   "options": "AIDA only\nDirect providers\nBoth",
+   "default": "AIDA only"
+  },
+  {
+   "fieldname": "llm_providers_help",
+   "fieldtype": "HTML",
+   "options": "<div class=\"pa-ps-llm-help\"><p>One API key per provider for the whole site. Keys are stored encrypted and never shown again. Only administrators can see this table.</p><p>AIDA only keeps today's behaviour. Direct providers uses only the table below. Both mixes AIDA models and direct models in the model picker. Voice dictation and document conversion always use the AIDA Voice and Convert APIs.</p><ul><li>OpenAI: create a key at <a href=\"https://platform.openai.com/api-keys\" target=\"_blank\" rel=\"noopener\">platform.openai.com/api-keys</a>. Responses-only models are not supported.</li><li>Anthropic: create a key at <a href=\"https://console.anthropic.com/settings/keys\" target=\"_blank\" rel=\"noopener\">console.anthropic.com/settings/keys</a>.</li><li>DeepSeek: create a key at <a href=\"https://platform.deepseek.com/api_keys\" target=\"_blank\" rel=\"noopener\">platform.deepseek.com/api_keys</a>. Insufficient balance is reported as a billing error.</li><li>Qwen: keys are tied to a region. International: https://dashscope-intl.aliyuncs.com/compatible-mode/v1 (console <a href=\"https://modelstudio.console.alibabacloud.com/\" target=\"_blank\" rel=\"noopener\">modelstudio.console.alibabacloud.com</a>). China: https://dashscope.aliyuncs.com/compatible-mode/v1 (console <a href=\"https://bailian.console.aliyun.com/\" target=\"_blank\" rel=\"noopener\">bailian.console.aliyun.com</a>). Leave Base URL empty for International.</li><li>xAI: create a key at <a href=\"https://console.x.ai\" target=\"_blank\" rel=\"noopener\">console.x.ai</a>.</li><li>Azure OpenAI: Microsoft Copilot has no public chat API; use Azure OpenAI. Base URL is your resource endpoint (https://&lt;resource&gt;.openai.azure.com). Enter the deployment name; list other deployments one per line in Other models. API version defaults to 2024-10-21.</li><li>Compatible: any server with an OpenAI-style /v1 API: OpenRouter (https://openrouter.ai/api/v1), Mistral (https://api.mistral.ai/v1), Groq (https://api.groq.com/openai/v1), vLLM, Ollama, LM Studio. Servers on a private network need the site flag pa_allow_private_llm_urls set by the server administrator.</li></ul></div>"
+  },
+  {
+   "fieldname": "llm_providers",
+   "fieldtype": "Table",
+   "label": "Providers",
+   "options": "PA LLM Provider"
   },
   {
    "fieldname": "plugins_tab",
@@ -418,7 +445,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-01-21 10:00:00.000000",
+ "modified": "2026-10-03 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "pibiAssistant Core",
  "name": "PA Core Settings",

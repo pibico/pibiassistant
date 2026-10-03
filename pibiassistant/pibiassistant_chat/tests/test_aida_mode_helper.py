@@ -15,8 +15,11 @@ PW = "frappe.utils.password.get_decrypted_password"
 
 class TestAidaModeHelper(unittest.TestCase):
     def test_aliases_point_to_one_function(self):
-        self.assertIs(_helpers._aida_mode, _helpers.is_aida_mode)
-        self.assertIs(aida_stream.is_aida_mode, _helpers.is_aida_mode)
+        from pibiassistant.pibiassistant_chat.api.llm_config import llm_ready
+
+        # The chat gate is llm_ready (AIDA key or a usable direct provider); the key check stays is_aida_mode.
+        self.assertIs(_helpers._aida_mode, llm_ready)
+        self.assertIs(aida_stream.is_aida_mode, _helpers._aida_mode)
 
     def test_key_set_and_unset(self):
         with patch(PW, return_value="secret"):
@@ -40,7 +43,10 @@ class TestAidaModeHelper(unittest.TestCase):
             import pibiassistant.www.aida as www
 
             self.assertTrue(www.get_boot()["aida_mode"])
-        with patch(PW, return_value=None):
+        # pinned: on a site in Direct/Both mode direct providers keep the chat ready without a key
+        with patch(PW, return_value=None), patch(
+            "pibiassistant.pibiassistant_chat.api.llm_config.backend_mode", return_value="aida"
+        ):
             import pibiassistant.www.aida as www
 
             self.assertFalse(www.get_boot()["aida_mode"])

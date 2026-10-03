@@ -79,6 +79,10 @@ class CorePlugin(BasePlugin):
             # Workflow tools
             "run_workflow",
             "get_pending_approvals",
+            # Read-only history, balances and ageing
+            "get_document_history",
+            "get_account_balance",
+            "get_overdue_invoices",
             # Skills
             "get_skill",
             # AIDA health

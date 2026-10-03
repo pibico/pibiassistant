@@ -77,6 +77,10 @@ READ_ONLY_TOOLS = {
     "list_user_dashboards",  # Only lists dashboards
     # Approval tools
     "get_pending_approvals",  # Reads the workflow approval queue, no mutation
+    # History, balances and ageing (read-only)
+    "get_document_history",
+    "get_account_balance",
+    "get_overdue_invoices",
     # Browser tools (read the page or move the user's view; no data mutation)
     "browser_get_form_data",  # Reads form field values
     "browser_get_page_context",  # Reads page type/doctype/DOM

@@ -41,3 +41,17 @@ class TestAdminCoreSettingsStatic(unittest.TestCase):
     def test_vendor_dead_files_gone(self):
         self.assertFalse(os.path.exists(os.path.join(BASE, "public", "vendor", "pibico", "pibico.css")))
         self.assertNotIn("--pibico-grad-banner", _read("public", "vendor", "pibico", "tokens.css"))
+
+    def test_llm_form_js_rules(self):
+        js = _read("pibiassistant_core", "doctype", "pa_core_settings", "pa_core_settings.js")
+        self.assertIn('frappe.ui.form.on("PA LLM Provider"', js)
+        self.assertIn("pibiassistant_panel()", js)
+        self.assertNotIn("frappe.msgprint(r.message", js)
+
+    def test_llm_css_has_no_accent_borders(self):
+        css = _read("public", "css", "pa_core_settings.css")
+        for line in css.splitlines():
+            if ".pa-ps-llm" in line:
+                self.assertNotRegex(line, r"border-(left|top)\s*:")
+                self.assertNotIn("font-family: serif", line)
+

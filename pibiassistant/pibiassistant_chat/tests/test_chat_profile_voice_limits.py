@@ -40,12 +40,12 @@ class TestTranscriptionLanguage(unittest.TestCase):
         self.assertEqual(post.call_args.kwargs["data"]["language"], "en")
 
     def test_convert_document_requires_access_and_size_cap(self):
-        with patch.object(aida, "_assert_can_use_aida", side_effect=frappe.PermissionError):
+        with patch.object(aida, "_assert_chat_user", side_effect=frappe.PermissionError):
             with self.assertRaises(frappe.PermissionError):
                 aida.convert_document("/files/a.pdf")
         file_doc = MagicMock(file_name="a.pdf")
         file_doc.get_full_path.return_value = __file__
-        with patch.object(aida, "_assert_can_use_aida"), patch.object(aida.frappe, "get_doc", return_value=file_doc), patch.object(
+        with patch.object(aida, "_assert_chat_user"), patch.object(aida.frappe, "get_doc", return_value=file_doc), patch.object(
             aida.os.path, "getsize", return_value=aida._AUDIO_MAX_BYTES + 1
         ):
             with self.assertRaises(frappe.ValidationError):

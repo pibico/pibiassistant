@@ -69,6 +69,13 @@ def can_use_pao() -> dict:
         user_roles = frappe.get_roles(user)
         is_admin = "System Manager" in user_roles or user == "Administrator"
         settings = frappe.get_single("PA Chat Settings")
+        from pibiassistant.pibiassistant_chat.api.llm_config import backend_mode
+
+        no_backend = (
+            _("AIDA is not configured on this site.")
+            if backend_mode() == "aida"
+            else _("No AI provider is configured. Ask your administrator to set it up in PA Core Settings.")
+        )
         return {
             "show_widget": True,
             "is_admin": is_admin,
@@ -77,7 +84,7 @@ def can_use_pao() -> dict:
             "enable_browser_diagnostics": bool(getattr(settings, "enable_browser_diagnostics", True)),
             "can_use": False,
             "status": "not_registered",
-            "reason": _("AIDA is not configured on this site."),
+            "reason": no_backend,
         }
 
     except Exception as e:

@@ -38,7 +38,7 @@ class TestAidaStatusTool(unittest.TestCase):
 
     def test_status_reports_flags_tools_roles_and_cached_connections(self):
         health = {"Chat API": {"ok": True}}
-        with patch(f"{MOD}.write_tools_enabled", return_value=False), patch(
+        with patch(f"{MOD}.write_tools_enabled", return_value=False), patch("pibiassistant.pibiassistant_chat.api.llm_config.backend_mode", return_value="aida"), patch(
             "pibiassistant.pibiassistant_chat.api.aida.cached_connection_status", return_value=health
         ):
             status, text = aida_tools._run_tool(aida_tools.STATUS_TOOL, {})

@@ -60,4 +60,4 @@ def transcribe(duration_ms: int = 0, language: str | None = None) -> dict:
             frappe.throw(error)
         return {"text": text, "duration_seconds": duration_ms / 1000}
 
-    frappe.throw(_("AIDA Voice API is not configured. Go to PA Core Settings > AIDA Chat."))
+    frappe.throw(_("Voice dictation is not configured. Ask your administrator to set the Voice API in PA Core Settings."))

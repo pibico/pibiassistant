@@ -9,7 +9,8 @@ import re
 import frappe
 from frappe import _
 
-from pibiassistant.pibiassistant_chat.aida_mode import is_aida_mode
+from pibiassistant.pibiassistant_chat.aida_mode import is_aida_mode  # noqa: F401
+from pibiassistant.pibiassistant_chat.api.llm_config import llm_ready
 
 
 _SESSION_ID_RE = re.compile(r"[A-Za-z0-9_.:-]{1,100}")
@@ -27,7 +28,8 @@ def _require_system_manager():
         frappe.throw(_("Only System Managers can access billing features"), frappe.PermissionError)
 
 
-_aida_mode = is_aida_mode
+# The chat gate: AIDA key set or a usable direct provider (see llm_config.llm_ready).
+_aida_mode = llm_ready
 
 
 def _not_registered_error() -> str:
