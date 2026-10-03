@@ -47,6 +47,7 @@ READ_TOOLS = frozenset(
         "get_pending_approvals",
         "get_skill",
         "aggregate_documents",
+        "get_document_pdf",
         "extract_file_content",
         "list_documents",
         "generate_report",
@@ -56,8 +57,9 @@ READ_TOOLS = frozenset(
         "search_documents",
     }
 )
-# Read-only by construction (PA Skill text), but the category detector files it under read_write.
-_TRUSTED_READ_TOOLS = frozenset({"get_skill"})
+# Safe to run without a card though the category detector files them under write: get_skill is PA Skill
+# text, get_document_pdf only stores a private PDF of a document the user may already read and print.
+_TRUSTED_READ_TOOLS = frozenset({"get_skill", "get_document_pdf"})
 WRITE_TOOLS = frozenset(
     {
         "create_document",
@@ -65,6 +67,7 @@ WRITE_TOOLS = frozenset(
         "submit_document",
         "delete_document",
         "rename_document",
+        "export_data",
         "cancel_document",
         "amend_document",
         "create_from_document",
@@ -186,7 +189,8 @@ def _abilities_prompt() -> str:
             "document from a file the user attached, afterwards attach that file to the new document with attach_file. "
             "To turn a Quotation into a Sales Order, an order into an invoice or a payment, and similar, use "
             "create_from_document instead of copying lines by hand; to correct a submitted document use "
-            "cancel_document then amend_document. "
+            "cancel_document then amend_document. To email a document attach it with send_email "
+            "attach_documents, and for a spreadsheet of a list use export_data. "
         )
     return (
         "You can query the site with the provided read-only tools; they run with the user's own permissions. "
@@ -205,7 +209,8 @@ def _system_prompt(user: str) -> str:
         f"{_abilities_prompt()}"
         "Hints: stock levels are in the Bin doctype (item_code, warehouse, actual_qty), outstanding amounts in "
         "submitted Sales/Purchase Invoices (outstanding_amount); use search to resolve a customer, item or "
-        "company name before filtering by it, and look for an existing document before creating a duplicate. "
+        "company name before filtering by it, and look for an existing document before creating a duplicate; for the PDF of a document "
+        "use get_document_pdf, not generate_document. "
         "For multi-step ERP tasks (invoices, orders, payments, reports) call get_skill first to load the "
         "proven procedure, then follow it. "
         "Attached files can be read again with extract_file_content using the file URL. "
@@ -344,19 +349,21 @@ def _trust(session_id: str, tool_name: str) -> None:
     frappe.cache().set_value(_trust_key(session_id), json.dumps(sorted(trusted)), expires_in_sec=TRUST_TTL_SECONDS)
 
 
-_PREVIEW_TOOLS = frozenset(
-    {"rename_document", "cancel_document", "amend_document", "create_from_document", "assign_document", "add_comment"}
-)
+_PREVIEW_MODULES = {
+    name: f"pibiassistant.plugins.core.tools.{name}"
+    for name in ("rename_document", "cancel_document", "amend_document", "create_from_document", "assign_document", "add_comment", "export_data")
+}
+_PREVIEW_MODULES["send_email"] = "pibiassistant.plugins.pao.tools.send_email"
 
 
 def _tool_preview(name: str, arguments: dict) -> str:
     """What a write would do, shown on the approval card; the tool module owns the wording and the checks."""
-    if name not in _PREVIEW_TOOLS:
+    if name not in _PREVIEW_MODULES:
         return ""
     try:
         import importlib
 
-        return importlib.import_module(f"pibiassistant.plugins.core.tools.{name}").preview(arguments) or ""
+        return importlib.import_module(_PREVIEW_MODULES[name]).preview(arguments) or ""
     except Exception:
         return ""
 
@@ -368,6 +375,7 @@ def _approval_card(call: dict) -> dict:
         "submit_document": _("Submit a document"),
         "delete_document": _("Delete a document"),
         "rename_document": _("Rename a document"),
+        "export_data": _("Export data to a file"),
         "cancel_document": _("Cancel a document"),
         "amend_document": _("Amend a document"),
         "create_from_document": _("Create a document from another"),
@@ -606,6 +614,10 @@ def _loop(ctx: dict) -> dict:
             text = (reply.get("content") or "").strip()
             if not text and state["collected"] and not force_answer:
                 state["force_answer"] = True
+                continue
+            if not text and not state["collected"] and not force_answer and not state.get("empty_retry"):
+                # The model sometimes returns nothing at all (no text, no tool call): ask once more.
+                state["empty_retry"] = True
                 continue
             return _finish_value(state, text or _summarize_results(state))
 

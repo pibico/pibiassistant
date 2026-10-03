@@ -32,6 +32,15 @@ from pibiassistant.core.base_tool import BaseTool
 from pibiassistant.plugins.query_errors import log_failure
 
 MAX_RECIPIENTS = 50
+MAX_ATTACHED_DOCUMENTS = 3
+
+
+def preview(arguments: dict[str, Any]) -> str:
+    recipients = arguments.get("recipients") or []
+    recipients = [recipients] if isinstance(recipients, str) else [r for r in recipients if isinstance(r, str)]
+    docs = [f"{d.get('doctype')} {d.get('name')}" for d in (arguments.get("attach_documents") or []) if isinstance(d, dict)]
+    text = f"Send an email to {', '.join(recipients[:5])}{' and others' if len(recipients) > 5 else ''}: \"{str(arguments.get('subject') or '')[:100]}\"."
+    return text + (f" Attaches the PDF of {', '.join(docs)}." if docs else "")
 
 
 class SendEmail(BaseTool):
@@ -48,7 +57,9 @@ class SendEmail(BaseTool):
         self.description = (
             "Send an email from the Frappe site's configured email account. "
             "Use this when a workflow or agent needs to notify someone by email. "
-            "The email is queued for delivery using the site's SMTP settings."
+            "The email is queued for delivery using the site's SMTP settings. To send an invoice, quotation or any "
+            "document by email, pass it in attach_documents: it is attached as a PDF with its print format. "
+            "Needs the user's approval."
         )
         self.source_app = "pibiassistant"
         self.category = "Communication"
@@ -79,6 +90,23 @@ class SendEmail(BaseTool):
                     "type": "boolean",
                     "default": True,
                     "description": "If true, the message is sent as HTML. If false, plain text.",
+                },
+                "attach_documents": {
+                    "type": "array",
+                    "maxItems": MAX_ATTACHED_DOCUMENTS,
+                    "description": (
+                        "Documents to attach as PDF with their print format, e.g. the invoice being sent. "
+                        "Each needs permission to read and print it. Up to 3."
+                    ),
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "doctype": {"type": "string"},
+                            "name": {"type": "string"},
+                            "print_format": {"type": "string", "description": "Optional Print Format name"},
+                        },
+                        "required": ["doctype", "name"],
+                    },
                 },
             },
             "required": ["recipients", "subject", "message"],
@@ -128,12 +156,34 @@ class SendEmail(BaseTool):
                 "invalid_recipients": invalid,
             }
 
+        attachments = []
+        attached = arguments.get("attach_documents") or []
+        if attached:
+            if not isinstance(attached, list) or len(attached) > MAX_ATTACHED_DOCUMENTS:
+                return {"success": False, "error": _("At most {0} documents can be attached.").format(MAX_ATTACHED_DOCUMENTS)}
+            from pibiassistant.plugins.core.doc_actions import print_pdf
+
+            total = 0
+            for item in attached:
+                if not isinstance(item, dict):
+                    return {"success": False, "error": _("Each attached document needs a doctype and a name.")}
+                try:
+                    pdf, _used = print_pdf(item.get("doctype"), item.get("name"), item.get("print_format"))
+                except ValueError as e:
+                    return {"success": False, "error": str(e)}
+                total += len(pdf)
+                if total > 15 * 1024 * 1024:
+                    return {"success": False, "error": _("The attachments are larger than 15 MB.")}
+                safe = "".join(ch if ch.isalnum() or ch in "-_." else "_" for ch in f"{item['doctype']}-{item['name']}")[:120]
+                attachments.append({"fname": f"{safe}.pdf", "fcontent": pdf})
+
         try:
             frappe.sendmail(
                 recipients=recipients,
                 cc=cc or None,
                 subject=subject,
                 message=message,
+                attachments=attachments or None,
                 delayed=True,
             )
             return {
@@ -141,6 +191,7 @@ class SendEmail(BaseTool):
                 "message": _("Email queued to {0} recipient(s)").format(len(recipients)),
                 "recipients": recipients,
                 "subject": subject,
+                "attachments": [a["fname"] for a in attachments],
             }
         except Exception as e:
             log_failure("Send Email Tool Error", e)

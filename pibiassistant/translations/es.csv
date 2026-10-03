@@ -1230,3 +1230,9 @@ Amend Document,Enmendar documento
 Create From Document,Crear desde documento
 Assign Document,Asignar documento
 Add Comment,Añadir comentario
+Export data to a file,Exportar datos a un fichero
+Export Data,Exportar datos
+Send Email,Enviar correo
+At most {0} documents can be attached.,Se pueden adjuntar como máximo {0} documentos.
+Each attached document needs a doctype and a name.,Cada documento adjunto necesita un doctype y un nombre.
+The attachments are larger than 15 MB.,Los adjuntos superan los 15 MB.

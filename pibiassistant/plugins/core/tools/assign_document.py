@@ -26,6 +26,12 @@ from pibiassistant.plugins.core.doc_actions import access_error, fail
 from pibiassistant.plugins.query_errors import log_failure
 
 MAX_ASSIGNEES = 10
+_ACTIONS = {"add": "add", "assign": "add", "set": "add", "remove": "remove", "unassign": "remove", "delete": "remove", "clear": "remove"}
+
+
+def _action(value) -> str:
+    """Models often send 'assign' or 'unassign'; both mean what they say."""
+    return _ACTIONS.get(str(value or "add").strip().lower(), str(value))
 
 
 def _users(value) -> List[str]:
@@ -56,7 +62,7 @@ def check_assign(doctype: str, name: str, assign_to, action: str) -> Optional[st
 
 
 def preview(arguments: Dict[str, Any]) -> str:
-    doctype, name, action = arguments.get("doctype"), arguments.get("name"), arguments.get("action") or "add"
+    doctype, name, action = arguments.get("doctype"), arguments.get("name"), _action(arguments.get("action"))
     problem = check_assign(doctype, name, arguments.get("assign_to"), action)
     if problem:
         return f"{doctype} '{name}'. Will be refused: {problem}"
@@ -80,7 +86,7 @@ class DocumentAssign(BaseTool):
                 "doctype": {"type": "string", "description": "DocType of the document"},
                 "name": {"type": "string", "description": "Name/ID of the document"},
                 "assign_to": {"type": "array", "items": {"type": "string"}, "description": "User emails (max 10)"},
-                "action": {"type": "string", "enum": ["add", "remove"], "default": "add"},
+                "action": {"type": "string", "enum": ["add", "remove"], "default": "add", "description": "add = assign, remove = unassign"},
                 "description": {"type": "string", "description": "What the assignee should do (optional, add only)"},
                 "date": {"type": "string", "description": "Due date YYYY-MM-DD (optional, add only)"},
             },
@@ -89,7 +95,7 @@ class DocumentAssign(BaseTool):
 
     def execute(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         doctype, name = arguments.get("doctype"), arguments.get("name")
-        action = arguments.get("action") or "add"
+        action = _action(arguments.get("action"))
         users = _users(arguments.get("assign_to"))
         problem = check_assign(doctype, name, users, action)
         if problem:

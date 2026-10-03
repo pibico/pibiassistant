@@ -34,12 +34,15 @@ def _make_quotation():
 class TestLifecycleTools(unittest.TestCase):
     def setUp(self):
         frappe.set_user("Administrator")
+        self._lang = frappe.local.lang
+        frappe.local.lang = "en"  # the card labels are translated; assert on the English source
         self.quotation = _make_quotation()
         if not self.quotation:
             self.skipTest("the site has no customer, item and company to build a quotation")
         self.created = {"Quotation": [self.quotation], "Sales Order": []}
 
     def tearDown(self):
+        frappe.local.lang = self._lang
         frappe.set_user("Administrator")
         for dt in ("Sales Order", "Quotation"):
             for name in self.created.get(dt, []) + frappe.get_all(dt, filters={"amended_from": ["in", self.created.get(dt, [])]}, pluck="name"):

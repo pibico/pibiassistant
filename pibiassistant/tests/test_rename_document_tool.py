@@ -11,9 +11,12 @@ from pibiassistant.pibiassistant_chat.api.chat.aida_tools import WRITE_TOOLS, _a
 class TestRenameDocument(unittest.TestCase):
     def setUp(self):
         frappe.set_user("Administrator")
+        self._lang = frappe.local.lang
+        frappe.local.lang = "en"  # the card labels are translated; assert on the English source
         self.created = []
 
     def tearDown(self):
+        frappe.local.lang = self._lang
         frappe.set_user("Administrator")
         for name in self.created:
             if frappe.db.exists("Contact", name):

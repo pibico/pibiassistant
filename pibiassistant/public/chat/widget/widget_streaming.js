@@ -788,6 +788,8 @@ window.PAOWidgetStreaming = {
 				create_from_document: __("Create From Document"),
 				assign_document: __("Assign Document"),
 				add_comment: __("Add Comment"),
+				export_data: __("Export Data"),
+				send_email: __("Send Email"),
 				submit_document: __("Submit Document"),
 			};
 			const title = titleMap[toolName] || toolName.replace(/_/g, " ");

@@ -54,6 +54,8 @@ class CorePlugin(BasePlugin):
             "get_linked_documents",
             "delete_document",
             "rename_document",
+            "get_document_pdf",
+            "export_data",
             "cancel_document",
             "amend_document",
             "create_from_document",
