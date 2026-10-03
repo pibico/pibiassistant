@@ -80,6 +80,17 @@ def check_rename(doctype: str, name: str, new_name: str) -> str | None:
     return None
 
 
+def preview(arguments: Dict[str, Any]) -> str:
+    doctype, name, new_name = arguments.get("doctype"), arguments.get("name"), arguments.get("new_name")
+    problem = check_rename(doctype, name, new_name)
+    if problem:
+        return f"{doctype} '{name}' -> '{new_name}'. Will be refused: {problem}"
+    return (
+        f"{doctype}: '{name}' -> '{str(new_name).strip()}'. "
+        f"{count_references(doctype, name)} reference(s) in other documents will be updated."
+    )
+
+
 class DocumentRename(BaseTool):
     """Rename an existing document; Frappe rewrites every Link and Dynamic Link that points at it."""
 

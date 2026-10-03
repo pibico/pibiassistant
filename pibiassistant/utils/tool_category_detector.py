@@ -94,6 +94,11 @@ WRITE_TOOLS = {
     "submit_document",
     # Changes a document's name/ID; Frappe rewrites the references to it
     "rename_document",
+    "cancel_document",
+    "amend_document",
+    "create_from_document",
+    "assign_document",
+    "add_comment",
     # Attachments add a File record to a document
     "attach_file",
     # Issues a one-time upload URL bound to a document

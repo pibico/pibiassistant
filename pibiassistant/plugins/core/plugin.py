@@ -54,6 +54,11 @@ class CorePlugin(BasePlugin):
             "get_linked_documents",
             "delete_document",
             "rename_document",
+            "cancel_document",
+            "amend_document",
+            "create_from_document",
+            "assign_document",
+            "add_comment",
             "submit_document",
             # Attachments (existing Frappe file, small base64 payload, or a one-time upload link)
             "attach_file",

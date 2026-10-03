@@ -65,6 +65,11 @@ WRITE_TOOLS = frozenset(
         "submit_document",
         "delete_document",
         "rename_document",
+        "cancel_document",
+        "amend_document",
+        "create_from_document",
+        "assign_document",
+        "add_comment",
         "send_email",
         "run_workflow",
         "generate_document",
@@ -179,6 +184,9 @@ def _abilities_prompt() -> str:
             "first, the card is the confirmation. Prefer calling a tool over guessing, cite document names, and say "
             "clearly when a tool returns nothing, an error, or when the user rejected an action. When you create a "
             "document from a file the user attached, afterwards attach that file to the new document with attach_file. "
+            "To turn a Quotation into a Sales Order, an order into an invoice or a payment, and similar, use "
+            "create_from_document instead of copying lines by hand; to correct a submitted document use "
+            "cancel_document then amend_document. "
         )
     return (
         "You can query the site with the provided read-only tools; they run with the user's own permissions. "
@@ -336,19 +344,19 @@ def _trust(session_id: str, tool_name: str) -> None:
     frappe.cache().set_value(_trust_key(session_id), json.dumps(sorted(trusted)), expires_in_sec=TRUST_TTL_SECONDS)
 
 
-def _rename_preview(arguments: dict) -> str:
-    """What the rename would do, shown on the approval card: old and new name and how many documents refer to it."""
-    try:
-        from pibiassistant.plugins.core.tools.rename_document import check_rename, count_references
+_PREVIEW_TOOLS = frozenset(
+    {"rename_document", "cancel_document", "amend_document", "create_from_document", "assign_document", "add_comment"}
+)
 
-        doctype, name, new_name = arguments.get("doctype"), arguments.get("name"), arguments.get("new_name")
-        problem = check_rename(doctype, name, new_name)
-        if problem:
-            return f"{doctype} '{name}' -> '{new_name}'. Will be refused: {problem}"
-        return (
-            f"{doctype}: '{name}' -> '{str(new_name).strip()}'. "
-            f"{count_references(doctype, name)} reference(s) in other documents will be updated."
-        )
+
+def _tool_preview(name: str, arguments: dict) -> str:
+    """What a write would do, shown on the approval card; the tool module owns the wording and the checks."""
+    if name not in _PREVIEW_TOOLS:
+        return ""
+    try:
+        import importlib
+
+        return importlib.import_module(f"pibiassistant.plugins.core.tools.{name}").preview(arguments) or ""
     except Exception:
         return ""
 
@@ -360,14 +368,18 @@ def _approval_card(call: dict) -> dict:
         "submit_document": _("Submit a document"),
         "delete_document": _("Delete a document"),
         "rename_document": _("Rename a document"),
+        "cancel_document": _("Cancel a document"),
+        "amend_document": _("Amend a document"),
+        "create_from_document": _("Create a document from another"),
+        "assign_document": _("Assign a document"),
+        "add_comment": _("Add a comment"),
         "send_email": _("Send an email"),
         "run_workflow": _("Run a workflow action"),
         "generate_document": _("Generate a document"),
         "attach_file": _("Attach a file"),
     }
     summary = json.dumps(call["arguments"], ensure_ascii=False, default=str)
-    if call["name"] == "rename_document":
-        summary = _rename_preview(call["arguments"]) or summary
+    summary = _tool_preview(call["name"], call["arguments"]) or summary
     action = labels.get(call["name"], call["name"])
     target = " · ".join(str(call["arguments"][k]) for k in ("doctype", "name", "docname") if call["arguments"].get(k))
     return {
