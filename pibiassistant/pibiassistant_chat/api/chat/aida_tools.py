@@ -53,6 +53,7 @@ READ_TOOLS = frozenset(
         "get_document_history",
         "get_account_balance",
         "get_overdue_invoices",
+        "get_stock_balance",
         "get_skill",
         "aggregate_documents",
         "get_document_pdf",
@@ -227,7 +228,8 @@ def _system_prompt(user: str) -> str:
         f"You are talking to {full_name}. Today is {frappe.utils.nowdate()}. {_site_context()}"
         f"Answer in the user's language (language code: {frappe.local.lang or 'en'}), concisely, with Markdown. "
         f"{_abilities_prompt()}"
-        "Hints: stock levels are in the Bin doctype (item_code, warehouse, actual_qty), outstanding amounts in "
+        "Hints: for stock levels use get_stock_balance (by item, warehouse or as of a date; the data lives in the Bin "
+        "doctype), outstanding amounts in "
         "submitted Sales/Purchase Invoices (outstanding_amount); use search to resolve a customer, item or "
         "company name before filtering by it, and look for an existing document before creating a duplicate; for the PDF of a document "
         "use get_document_pdf, not generate_document. "

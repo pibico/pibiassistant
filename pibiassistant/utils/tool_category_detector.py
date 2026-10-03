@@ -81,6 +81,7 @@ READ_ONLY_TOOLS = {
     "get_document_history",
     "get_account_balance",
     "get_overdue_invoices",
+    "get_stock_balance",
     # Browser tools (read the page or move the user's view; no data mutation)
     "browser_get_form_data",  # Reads form field values
     "browser_get_page_context",  # Reads page type/doctype/DOM

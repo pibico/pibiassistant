@@ -83,6 +83,7 @@ class CorePlugin(BasePlugin):
             "get_document_history",
             "get_account_balance",
             "get_overdue_invoices",
+            "get_stock_balance",
             # Skills
             "get_skill",
             # AIDA health
