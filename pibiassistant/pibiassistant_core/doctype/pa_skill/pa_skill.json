@@ -19,6 +19,18 @@
   "description",
   "content_section",
   "content",
+  "package_section",
+  "version",
+  "license",
+  "compatibility",
+  "allowed_tools",
+  "column_break_package",
+  "source",
+  "package_sha256",
+  "has_files",
+  "skill_metadata",
+  "files_section",
+  "files",
   "tool_section",
   "linked_tool",
   "organization_section",
@@ -192,6 +204,79 @@
    "fieldtype": "Table MultiSelect",
    "label": "Shared With Roles",
    "options": "Has Role"
+  },
+  {
+   "fieldname": "package_section",
+   "fieldtype": "Section Break",
+   "label": "Package",
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:!doc.has_files"
+  },
+  {
+   "fieldname": "version",
+   "fieldtype": "Data",
+   "label": "Version"
+  },
+  {
+   "fieldname": "license",
+   "fieldtype": "Data",
+   "label": "License"
+  },
+  {
+   "fieldname": "compatibility",
+   "fieldtype": "Small Text",
+   "label": "Compatibility"
+  },
+  {
+   "fieldname": "allowed_tools",
+   "fieldtype": "Small Text",
+   "label": "Allowed Tools",
+   "description": "Space-separated tool names declared by the package (informational)"
+  },
+  {
+   "fieldname": "column_break_package",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Manual",
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "label": "Source",
+   "options": "Manual\nImported .skill\nSystem",
+   "read_only": 1
+  },
+  {
+   "fieldname": "package_sha256",
+   "fieldtype": "Data",
+   "label": "Package SHA-256",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "has_files",
+   "fieldtype": "Check",
+   "label": "Has Files",
+   "read_only": 1
+  },
+  {
+   "fieldname": "skill_metadata",
+   "fieldtype": "JSON",
+   "label": "Frontmatter",
+   "read_only": 1,
+   "description": "The SKILL.md frontmatter other than name and description, kept for export"
+  },
+  {
+   "fieldname": "files_section",
+   "fieldtype": "Section Break",
+   "label": "Files",
+   "depends_on": "eval:doc.has_files"
+  },
+  {
+   "fieldname": "files",
+   "fieldtype": "Table",
+   "label": "Files",
+   "options": "PA Skill File",
+   "read_only": 1
   }
  ],
  "links": [],

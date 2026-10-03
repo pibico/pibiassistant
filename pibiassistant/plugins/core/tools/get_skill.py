@@ -31,6 +31,11 @@ from pibiassistant.plugins.query_errors import permission_error_result
 
 ADMIN_ROLES = {"System Manager", "PA Admin"}
 CONTENT_MAX_CHARS = 15000
+USAGE_NOTE = (
+    "This server does not run scripts or fill templates. Scripts and templates are listed in files and can be read "
+    "with get_skill_file, to read or to run on the client. When you must produce the deliverable here, write it as "
+    "Markdown (headings, tables, lists) following the skill's structure so it can be converted to docx or PDF afterwards."
+)
 
 
 class GetSkill(BaseTool):
@@ -42,7 +47,8 @@ class GetSkill(BaseTool):
         self.description = (
             "Read a PA Skill, a step-by-step playbook for a kind of task. Call without skill_id to list "
             "the available skills (skill_id, title, description), then call with a skill_id to read its "
-            "instructions and follow them. Only published skills you may use are returned."
+            "instructions and follow them. A skill imported from a package also lists its files (references, assets, scripts): "
+            "read them with get_skill_file. Only published skills you may use are returned."
         )
         self.requires_permission = None
 
@@ -55,6 +61,23 @@ class GetSkill(BaseTool):
                 "limit": {"type": "integer", "default": 50, "maximum": 100, "description": "Maximum skills listed."},
             },
         }
+
+    @staticmethod
+    def _add_package_info(skill: Dict[str, Any]) -> None:
+        """Version and bundled files of an imported skill package (nothing on a site without the schema)."""
+        from pibiassistant.utils.skill_import import file_rows, schema_ready
+
+        if not schema_ready():
+            return
+        name = frappe.db.get_value("PA Skill", {"skill_id": skill["skill_id"]}, ["name", "version"], as_dict=True)
+        if not name:
+            return
+        files = file_rows(frappe.get_doc("PA Skill", name.name))
+        if name.version:
+            skill["version"] = name.version
+        if files:
+            skill["files"] = files
+            skill["usage_note"] = USAGE_NOTE
 
     def execute(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         if not frappe.has_permission("PA Skill", "read"):
@@ -75,6 +98,7 @@ class GetSkill(BaseTool):
                 if not rows:
                     return {"success": False, "error": f"Skill '{skill_id}' not found", "error_type": "not_found"}
                 skill = dict(rows[0])
+                self._add_package_info(skill)
                 content = skill.get("content") or ""
                 offset = clamp_int(arguments.get("offset"), 0, 0, len(content))
                 end = offset + CONTENT_MAX_CHARS

@@ -1054,3 +1054,31 @@
     .pa-admin-container .pa-top-tab { padding: 6px 3px; font-size: 0.75rem; gap: 2px; }
     .pa-admin-container .pa-tab-count { padding: 0 4px; }
 }
+
+/* Skill package import / files */
+.pa-admin-container .pa-import { display: flex; flex-direction: column; gap: 10px; }
+.pa-admin-container .pa-import-pick { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; font-weight: 500; }
+.pa-admin-container .pa-import-pick input[type="file"] { padding: 6px 8px; border-radius: 8px; background: var(--pa-grey); color: var(--pa-text); max-width: 100%; }
+.pa-admin-container .pa-import-card { padding: 10px 12px; border-radius: 12px; background: var(--pa-surface); box-shadow: 0 0 12px rgba(70, 130, 180, 0.15), 0 0 4px rgba(70, 130, 180, 0.08); line-height: 1.2; }
+.pa-admin-container .pa-import-title { margin: 0 0 4px; font-size: 1rem; line-height: 1.2; overflow-wrap: anywhere; }
+.pa-admin-container .pa-import-sub { margin: 10px 0 4px; font-size: 0.85rem; font-weight: 600; }
+.pa-admin-container .pa-import-warnings { list-style: none; margin: 8px 0 0; padding: 6px 8px; border-radius: 8px; background: var(--pa-danger-soft); color: var(--pa-text); font-size: 0.8rem; line-height: 1.2; }
+.pa-admin-container .pa-import-warnings li { display: flex; gap: 6px; align-items: flex-start; padding: 2px 0; overflow-wrap: anywhere; }
+.pa-admin-container .pa-import-warnings i { color: var(--pa-danger); flex: none; margin-top: 1px; }
+.pa-admin-container .pa-import-options { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.pa-admin-container .pa-import-options label { display: flex; flex-direction: column; gap: 3px; font-size: 0.8rem; font-weight: 500; }
+.pa-admin-container .pa-import-options select,
+.pa-admin-container .pa-import-options input[type="text"] { padding: 5px 8px; border: none; border-radius: 8px; background: var(--pa-grey); color: var(--pa-text); min-height: 30px; }
+.pa-admin-container .pa-import-actions { display: flex; justify-content: flex-end; margin-top: 10px; }
+.pa-admin-container .pa-files-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; line-height: 1.2; }
+.pa-admin-container .pa-files-table th { text-align: left; padding: 4px 6px; font-weight: 600; background: var(--pa-grey); }
+.pa-admin-container .pa-files-table td { padding: 3px 6px; vertical-align: top; }
+.pa-admin-container .pa-files-table tr:nth-child(even) td { background: var(--pa-grey); }
+.pa-admin-container .pa-file-path { overflow-wrap: anywhere; }
+.pa-admin-container .pa-file-size { white-space: nowrap; text-align: right; }
+@media (pointer: coarse) {
+    .pa-admin-container .pa-import-options select,
+    .pa-admin-container .pa-import-options input[type="text"],
+    .pa-admin-container .pa-import-options .btn,
+    .pa-admin-container .pa-import-pick input[type="file"] { min-height: 44px; }
+}

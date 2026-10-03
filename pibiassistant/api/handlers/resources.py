@@ -12,6 +12,7 @@ Handles resources/list and resources/read requests backed by the Skill DocType.
 """
 
 import re
+from urllib.parse import unquote
 from typing import Any, Dict, List, Optional
 
 import frappe
@@ -152,6 +153,30 @@ class SkillManager:
 
         return skill_doc.content
 
+    def read_skill_file(self, skill_id: str, path: str) -> Optional[Dict[str, Any]]:
+        """One bundled file of a skill (same access rules as its content). None when the skill does not exist;
+        raises ValueError for an unknown file or a site without the package schema."""
+        from pibiassistant.utils.skill_import import SkillImportError, read_file, schema_ready
+
+        skill_name = frappe.db.get_value("PA Skill", {"skill_id": skill_id}, "name")
+        if not skill_name:
+            return None
+        if not schema_ready():
+            raise ValueError("Skill files are not available on this site yet")
+
+        skill_doc = frappe.get_doc("PA Skill", skill_name)
+        user = frappe.session.user
+        if skill_doc.status != "Published" and skill_doc.owner_user != user:
+            frappe.throw(_("You don't have permission to access this skill"), frappe.PermissionError)
+        if not user_can_access_shared_doc(skill_doc):
+            frappe.throw(_("You don't have permission to access this skill"), frappe.PermissionError)
+        try:
+            found = read_file(skill_doc, path)
+        except SkillImportError as e:
+            raise ValueError(str(e)) from None
+        increment_usage("PA Skill", skill_name)
+        return found
+
     @staticmethod
     def _sort_by_precedence(skills: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
@@ -218,6 +243,35 @@ def handle_resources_list(request_id: Optional[Any] = None) -> Dict[str, Any]:
         return {"resources": []}
 
 
+SKILL_FILE_TEMPLATE = {
+    "uriTemplate": f"{_SKILL_URI_PREFIX}{{skill_id}}/{{path}}",
+    "name": "Skill file",
+    "description": "A reference, asset or script bundled with a skill (see the files list of get_skill). Scripts are "
+    "provided to read or to run on the client; this server never runs them.",
+    "mimeType": "application/octet-stream",
+}
+
+
+def handle_resource_templates_list() -> Dict[str, Any]:
+    from pibiassistant.utils.skill_import import schema_ready
+
+    return {"resourceTemplates": [SKILL_FILE_TEMPLATE] if schema_ready() else []}
+
+
+def _read_skill_file_resource(uri: str, skill_id: str, file_path: str) -> Dict[str, Any]:
+    import base64
+
+    found = SkillManager().read_skill_file(skill_id, file_path)
+    if found is None:
+        raise ValueError(f"Skill not found: {skill_id}")
+    item: Dict[str, Any] = {"uri": uri, "mimeType": found["mime_type"]}
+    if found["is_text"]:
+        item["text"] = found["data"].decode("utf-8")
+    else:
+        item["blob"] = base64.b64encode(found["data"]).decode("ascii")
+    return {"contents": [item]}
+
+
 def handle_resources_read(params: Dict[str, Any], request_id: Optional[Any] = None) -> Dict[str, Any]:
     """Handle resources/read request - return skill content by URI."""
     uri = params.get("uri")
@@ -228,9 +282,11 @@ def handle_resources_read(params: Dict[str, Any], request_id: Optional[Any] = No
     if not uri.startswith(_SKILL_URI_PREFIX):
         raise ValueError(f"Unknown resource URI scheme: {uri}")
 
-    skill_id = uri[len(_SKILL_URI_PREFIX) :]
+    skill_id, _sep, file_path = uri[len(_SKILL_URI_PREFIX) :].partition("/")
     if not skill_id or not _SKILL_ID_RE.match(skill_id):
         raise ValueError(f"Invalid skill_id in URI: {uri!r}")
+    if _sep:
+        return _read_skill_file_resource(uri, skill_id, unquote(file_path))
 
     try:
         manager = SkillManager()

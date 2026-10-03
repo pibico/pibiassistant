@@ -87,6 +87,7 @@ class CorePlugin(BasePlugin):
             "create_journal_entry",
             # Skills
             "get_skill",
+            "get_skill_file",
             # AIDA health
             "get_aida_status",
         ]

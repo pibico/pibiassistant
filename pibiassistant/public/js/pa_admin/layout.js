@@ -122,6 +122,7 @@ export function layoutHtml() {
                                 <option value="Draft">${__("Draft")}</option>
                                 <option value="Deprecated">${__("Deprecated")}</option>
                             </select>
+                            <button type="button" class="btn btn-xs btn-default pa-import-skill-btn" id="skill-import-btn"><i class="ph ph-upload-simple" aria-hidden="true"></i> ${__("Import .skill")}</button>
                         </div>
                         <div id="skills-list" class="pa-scroll-area">
                             <div class="pa-skeleton-wrap"><div class="pa-skeleton-card"><div class="pa-skeleton-line pa-skeleton-line--title"></div><div class="pa-skeleton-line pa-skeleton-line--body"></div></div><div class="pa-skeleton-card"><div class="pa-skeleton-line pa-skeleton-line--title"></div><div class="pa-skeleton-line pa-skeleton-line--body"></div></div></div>

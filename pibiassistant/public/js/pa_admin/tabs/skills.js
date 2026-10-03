@@ -3,6 +3,7 @@ import { call, log } from '../api.js';
 import { state } from '../state.js';
 import { skeletonCards } from '../utils.js';
 import { renderSafeMarkdown } from './sanitize.js';
+import { openImportPanel, exportSkill, filesTableHtml } from './skills_import.js';
 import {
 	emptyStateHtml, sharedChipsHtml, renderList, loadList, toggleStatus, togglePanel,
 } from './items.js';
@@ -35,6 +36,7 @@ function config(ctx) {
 		metaHtml: (s, lastUsed) => `
 			<span class="pa-meta-chip">${esc(s.skill_type ? __(s.skill_type) : '')}</span>
 			${s.linked_tool ? `<span class="pa-meta-chip"><i class="ph ph-wrench" aria-hidden="true"></i> ${esc(s.linked_tool)}</span>` : ''}
+			${s.has_files ? `<span class="pa-meta-chip"><i class="ph ph-package" aria-hidden="true"></i> ${esc(__('Package'))}${s.version ? ' v' + esc(s.version) : ''}</span>` : ''}
 			${sharedChipsHtml(s, lastUsed)}`,
 		matches: (s) => {
 			const q = (qs('#skill-search', root)?.value || '').toLowerCase();
@@ -85,8 +87,20 @@ export function showSkillContent(ctx, name) {
 			return;
 		}
 		if (!ctx.scope.alive) return;
-		if (msg && msg.content) setHtml(panel, `<div class="pa-preview-content">${renderSafeMarkdown(msg.content)}</div>`);
-		else setHtml(panel, `<div class="pa-muted">${esc(__('No content available'))}</div>`);
+		let extra = '';
+		const item = (state.skillsData || []).find((x) => x.name === name);
+		if (item && item.has_files) {
+			const info = await call('pibiassistant.api.admin_api.get_skill_files', { name }, { silent: true }).catch(() => null);
+			if (info && info.files && info.files.length) {
+				extra = `<h4 class="pa-import-sub">${esc(__('Files'))} (${info.files.length})</h4>${filesTableHtml(info.files)}`;
+			}
+		}
+		const exportBtn = item ? `<button type="button" class="btn btn-xs btn-default pa-skill-export-btn" data-skill="${esc(item.skill_id)}"><i class="ph ph-download-simple" aria-hidden="true"></i> ${esc(__('Export .skill'))}</button>` : '';
+		if (!ctx.scope.alive) return;
+		if (msg && msg.content) setHtml(panel, `<div class="pa-preview-content">${renderSafeMarkdown(msg.content)}</div>${extra}<div class="pa-import-actions">${exportBtn}</div>`);
+		else setHtml(panel, `<div class="pa-muted">${esc(__('No content available'))}</div>${extra}<div class="pa-import-actions">${exportBtn}</div>`);
+		const exp = qs('.pa-skill-export-btn', panel);
+		if (exp) exp.addEventListener('click', () => exportSkill(exp.dataset.skill));
 	});
 }
 
@@ -101,6 +115,9 @@ export function mountSkills(root, ctx) {
 	if (search) offs.push(on(search, 'input', debounce(rerender, 300)));
 	if (type) offs.push(on(type, 'change', rerender));
 	if (status) offs.push(on(status, 'change', rerender));
+
+	const importBtn = qs('#skill-import-btn', root);
+	if (importBtn) offs.push(on(importBtn, 'click', () => openImportPanel(ctx, { onDone: () => loadSkillsView(ctx) })));
 
 	const list = qs('#skills-list', root);
 	if (list) {

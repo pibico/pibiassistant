@@ -37,7 +37,30 @@ class PASkill(Document):
         self.validate_skill_id()
         self.validate_visibility_settings()
         self.validate_linked_tool()
+        self.validate_files()
         self.validate_publish_permission()
+
+    def validate_files(self):
+        """Package files come only from the admin-only importer: safe relative paths, no duplicates, and nobody
+        else may add, change or remove them (they are served verbatim to LLM clients)."""
+        rows = self.get("files") or []
+        seen = set()
+        for row in rows:
+            path = (row.path or "").strip()
+            parts = path.split("/")
+            if not path or "\\" in path or path.startswith("/") or any(p in ("", ".", "..") for p in parts) or path == "SKILL.md":
+                frappe.throw(_("Invalid file path in the skill package: {0}").format(path[:80]), frappe.ValidationError)
+            if path in seen:
+                frappe.throw(_("Duplicate file path in the skill package: {0}").format(path), frappe.ValidationError)
+            seen.add(path)
+        self.has_files = 1 if rows else 0
+
+        if check_assistant_admin_permission():
+            return
+        previous = self.get_doc_before_save()
+        before = {(r.path, r.sha256) for r in (previous.get("files") if previous else []) or []}
+        if {(r.path, r.sha256) for r in rows} != before:
+            frappe.throw(_("Only an PA Admin or System Manager can change the files of a skill"), frappe.PermissionError)
 
     def validate_publish_permission(self):
         """

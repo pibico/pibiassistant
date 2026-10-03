@@ -46,7 +46,9 @@ SERVER_INSTRUCTIONS = (
     "Use get_doctype_info before creating or updating documents, search or search_documents to resolve names, "
     "list_documents/aggregate_documents for data and totals, and prefer get_document_pdf for the printable "
     "version of a document. Writes (create, update, cancel, rename, email...) change real business data: "
-    "state what you are about to change. Results can be large; narrow filters or aggregate instead."
+    "state what you are about to change. Results can be large; narrow filters or aggregate instead. Skills "
+    "(get_skill, pa://skills/...) may bundle references, templates and scripts (get_skill_file or "
+    "pa://skills/{skill_id}/{path}): this server never runs scripts or fills templates, so write deliverables as Markdown."
 )
 
 # Tool results above this many characters are trimmed (rows dropped, said clearly) so one call cannot flood a client.
@@ -270,7 +272,9 @@ class MCPServer:
             elif method == "resources/read":
                 result = self._handle_resources_read(params, request_id)
             elif method == "resources/templates/list":
-                result = {"resourceTemplates": []}
+                from pibiassistant.api.handlers.resources import handle_resource_templates_list
+
+                result = handle_resource_templates_list()
             elif method == "prompts/list":
                 result = self._handle_prompts_list(params, request_id)
             elif method == "prompts/get":

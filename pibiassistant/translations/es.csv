@@ -1333,3 +1333,55 @@ Output budget used by reasoning; raise Max output tokens,El presupuesto de salid
 Row {0}: the provider cannot be changed. Remove the row and add a new one.,Fila {0}: no se puede cambiar el proveedor. Elimine la fila y añada una nueva.
 Row {0}: enter the API key again when you change the base URL or the deployment.,Fila {0}: vuelva a introducir la clave API al cambiar la URL base o el despliegue.
 Row {0}: {1},Fila {0}: {1}
+Import .skill,Importar .skill
+Export .skill,Exportar .skill
+Package,Paquete
+Files,Ficheros
+File,Fichero
+Kind,Tipo
+No files,Sin ficheros
+Choose a .skill file,Elige un fichero .skill
+"A .skill package is a zip with SKILL.md and optional references/, assets/ and scripts/ folders. Scripts and templates are stored for MCP clients to read or run on their side; this server never runs them.","Un paquete .skill es un zip con SKILL.md y, opcionalmente, las carpetas references/, assets/ y scripts/. Los scripts y las plantillas se guardan para que los clientes MCP los lean o ejecuten por su lado; este servidor nunca los ejecuta."
+Reading the package...,Leyendo el paquete...
+The package could not be read.,No se ha podido leer el paquete.
+The package could not be imported.,No se ha podido importar el paquete.
+The package could not be exported.,No se ha podido exportar el paquete.
+A new skill will be created.,Se creará un skill nuevo.
+The existing skill with this name will be updated and its version raised.,Se actualizará el skill existente con este nombre y subirá su versión.
+This exact package is already imported: nothing would change.,Este mismo paquete ya está importado: no cambiaría nada.
+"This name belongs to a skill shipped with the system, which cannot be replaced.","Este nombre pertenece a un skill del sistema, que no se puede sustituir."
+The package schema is not installed on this site yet: run bench migrate first.,El esquema de paquetes aún no está instalado en este sitio: ejecuta antes bench migrate.
+Roles (comma separated),Roles (separados por comas)
+Skill {0} imported,Skill {0} importado
+The skill package schema is not installed on this site yet: run bench migrate first.,El esquema de paquetes de skills aún no está instalado en este sitio: ejecuta antes bench migrate.
+Invalid status or visibility.,Estado o visibilidad no válidos.
+A shared skill needs at least one role.,Un skill compartido necesita al menos un rol.
+{0} is a skill shipped with the system and cannot be replaced by an import. Rename the skill in SKILL.md.,{0} es un skill del sistema y no se puede sustituir con una importación. Cambia el nombre del skill en SKILL.md.
+The skill has no file {0}.,El skill no tiene el fichero {0}.
+{0} is larger than the 10 MB read limit.,{0} supera el límite de lectura de 10 MB.
+The stored copy of {0} does not match its checksum.,La copia guardada de {0} no coincide con su suma de comprobación.
+Upload a .skill file first.,Sube primero un fichero .skill.
+The uploaded file was not found.,No se ha encontrado el fichero subido.
+You cannot read that file.,No puedes leer ese fichero.
+Invalid file path in the skill package: {0},Ruta de fichero no válida en el paquete del skill: {0}
+Duplicate file path in the skill package: {0},Ruta de fichero duplicada en el paquete del skill: {0}
+Only an PA Admin or System Manager can change the files of a skill,Solo un PA Admin o un System Manager puede cambiar los ficheros de un skill
+PA Skill File,Fichero de skill de PA
+Path,Ruta
+Size (bytes),Tamaño (bytes)
+MIME Type,Tipo MIME
+SHA-256,SHA-256
+Is Text,Es texto
+Text Content,Contenido de texto
+Stored File,Fichero guardado
+Version,Versión
+License,Licencia
+Compatibility,Compatibilidad
+Allowed Tools,Herramientas permitidas
+Source,Origen
+Package SHA-256,SHA-256 del paquete
+Has Files,Tiene ficheros
+Frontmatter,Frontmatter
+Get skill file,Obtener fichero de skill
+A plain SKILL.md file works too.,También sirve un fichero SKILL.md suelto.
+"Choose a .skill, .zip or SKILL.md file","Elige un fichero .skill, .zip o SKILL.md"

@@ -312,3 +312,35 @@ In Claude Desktop (or MCP Inspector) the skill should appear in the resource lis
 - [External App Tool Development](EXTERNAL_APP_DEVELOPMENT.md) — shipping MCP tools from your own app
 - [Technical Documentation](../architecture/TECHNICAL_DOCUMENTATION.md) — `SkillManager`, caching, MCP bindings
 - [Architecture](../internals/INTERNALS.md) — where the skills subsystem fits in the overall design
+
+## Importing Claude `.skill` packages
+
+The importer accepts a `.skill` or `.zip` archive, or a plain `SKILL.md` file (a skill that is only instructions, with
+no bundled files). It is available in the PA Skill list view (**Import .skill**), on a new PA Skill form, and in
+PA Admin > Skills.
+
+A `.skill` file (Claude / Agent Skills standard) is a zip with `<name>/SKILL.md` (YAML frontmatter with `name` and
+`description`, then the Markdown body) and optional `references/`, `assets/` and `scripts/` folders. Administrators
+(System Manager, PA Admin) import one from **PA Admin > Skills > Import .skill**: the file is uploaded, previewed
+(metadata, files, warnings, whether it creates or updates a skill) and then imported as Draft or Published.
+
+What the import does:
+
+- `name` becomes the `skill_id`, `description` and the body are stored, every other frontmatter key is kept (and
+  exported again). Files are stored as `PA Skill File` rows; binaries and texts over 1 MB are private `File`s.
+- Re-importing a package with the same name updates that skill and raises its version. Skills shipped with the system
+  are never replaced.
+- Safety checks run before anything is stored: zip-slip and absolute paths, symbolic links, zip bombs, size and entry
+  limits, secrets (GitHub/OpenAI/Anthropic/AWS tokens, private keys, URLs with credentials: such a package is refused),
+  and junk (`.git/`, `__pycache__/`, `*.pyc`, `.DS_Store`) is dropped with a warning. A `.git/config` that carries
+  credentials is reported so the token can be rotated.
+- **Scripts are never executed by this server**, and templates are not filled. They are stored so MCP clients can read
+  them (and run them in their own sandbox). On the server the deliverable of a skill is Markdown.
+
+How clients get the files:
+
+- MCP resources: `pa://skills/<skill_id>` is `SKILL.md`; `pa://skills/<skill_id>/<path>` is a bundled file (text, or a
+  base64 `blob` for binaries); `resources/templates/list` advertises the template.
+- Tools: `get_skill` lists the files; `get_skill_file(skill_id, path, offset)` reads one in chunks (also available in
+  the AIDA chat).
+- Export: **Export .skill** in the skill panel gives back a package with the same files (round trip).
