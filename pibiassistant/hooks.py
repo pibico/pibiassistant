@@ -263,10 +263,16 @@ after_migrate = [
 # --------
 
 fixtures = [
-    {"doctype": "Custom Field", "filters": {"dt": "User", "fieldname": ["in", ["assistant_enabled"]]}},
+    # Both Custom Field entries must stay in ONE dict: export_fixtures writes a single
+    # <doctype>.json per fixture entry, so a second "Custom Field" entry silently
+    # overwrites the first and its fields never ship (that is how
+    # User-assistant_enabled went missing and locked every user out of the MCP
+    # endpoint, since utils/auth.check_assistant_enabled fails closed).
     {
         "doctype": "Custom Field",
-        "filters": {"dt": "File", "fieldname": ["in", ["pa_pending_chat_attachment"]]},
+        "filters": {
+            "name": ["in", ["User-assistant_enabled", "File-pa_pending_chat_attachment"]]
+        },
     },
     {"doctype": "Role", "filters": {"role_name": ["in", ["PA User", "PA Admin"]]}},
     # System prompt templates - these are installed via after_migrate hook
