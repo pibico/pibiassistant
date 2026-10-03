@@ -37,13 +37,39 @@ from typing import Any, Dict, Optional
 from werkzeug.wrappers import Request, Response
 
 from pibiassistant.utils.json_safe import dumps_strict
+from pibiassistant.utils.result_limits import fit_result
 
 SUPPORTED_PROTOCOL_VERSIONS = ("2025-06-18", "2025-03-26", "2024-11-05")
+
+SERVER_INSTRUCTIONS = (
+    "ERPNext/Frappe assistant. Tools run with the permissions of the user who authorised this connection. "
+    "Use get_doctype_info before creating or updating documents, search or search_documents to resolve names, "
+    "list_documents/aggregate_documents for data and totals, and prefer get_document_pdf for the printable "
+    "version of a document. Writes (create, update, cancel, rename, email...) change real business data: "
+    "state what you are about to change. Results can be large; narrow filters or aggregate instead."
+)
+
+# Tool results above this many characters are trimmed (rows dropped, said clearly) so one call cannot flood a client.
+DEFAULT_MAX_RESULT_CHARS = 200_000
+# structuredContent duplicates the text block, so it is skipped for big payloads.
+MAX_STRUCTURED_CHARS = 50_000
+# ChatGPT connectors and deep research read these two tools' text as the bare {"results"} / document object.
+BARE_RESULT_TOOLS = {"search": "results", "fetch": "text"}
 
 
 class InvalidParams(Exception):
     """Raised by handlers for bad request params; mapped to JSON-RPC -32602."""
 
+
+
+def _max_result_chars() -> int:
+    import frappe
+
+    try:
+        value = int(frappe.conf.get("mcp_max_result_chars") or DEFAULT_MAX_RESULT_CHARS)
+    except Exception:  # no site bound (threads in tests) or a bad value: use the default
+        value = DEFAULT_MAX_RESULT_CHARS
+    return max(2_000, value)
 
 
 class MCPServer:
@@ -343,7 +369,8 @@ class MCPServer:
                 "prompts": {},  # We support prompts (database-driven templates)
                 "resources": {},  # We support resources (skill documents)
             },
-            "serverInfo": {"name": self.name, "version": "2.0.0"},
+            "serverInfo": {"name": self.name, "title": "AIDA by pibiCo", "version": "2.0.0"},
+            "instructions": SERVER_INSTRUCTIONS,
         }
 
     def _handle_tools_list(self, params: Dict, tool_registry: Optional[Dict] = None) -> Dict:
@@ -379,6 +406,8 @@ class MCPServer:
                 "description": description,
                 "inputSchema": tool["inputSchema"],
             }
+            if tool.get("title"):
+                tool_spec["title"] = tool["title"]
 
             # Add annotations if present
             if tool.get("annotations"):
@@ -441,11 +470,23 @@ class MCPServer:
                 if isinstance(inner, dict) and "_image_content" in inner:
                     image_content = inner.pop("_image_content")
 
-            # Serialize the text result (default=str handles datetime, Decimal, etc.)
-            if isinstance(result, str):
-                result_text = result
+            # ChatGPT connectors read the text of search and fetch as the bare {"results": [...]} / document
+            # object, not wrapped in the {"success", "result"} envelope every other tool returns.
+            payload = result
+            key = BARE_RESULT_TOOLS.get(tool_name)
+            if key and isinstance(result, dict) and isinstance(result.get("result"), dict) and key in result["result"]:
+                payload = result["result"]
+
+            # Serialize the text result (default=str handles datetime, Decimal, etc.); compact JSON saves tokens.
+            if isinstance(payload, str):
+                result_text = payload
             else:
-                result_text = dumps_strict(result, indent=2)
+                result_text = dumps_strict(payload, separators=(",", ":"), ensure_ascii=False)
+
+            limit = _max_result_chars()
+            truncated = len(result_text) > limit
+            if truncated:
+                result_text = fit_result(result_text, limit)
 
             # Build MCP content blocks
             content = [{"type": "text", "text": result_text}]
@@ -469,7 +510,10 @@ class MCPServer:
                 )
 
             tool_failed = isinstance(result, dict) and result.get("success") is False
-            return {"content": content, "isError": tool_failed}
+            response = {"content": content, "isError": tool_failed}
+            if isinstance(payload, dict) and not truncated and len(result_text) <= MAX_STRUCTURED_CHARS:
+                response["structuredContent"] = json.loads(result_text)
+            return response
 
         except Exception as e:
             frappe.logger().error(

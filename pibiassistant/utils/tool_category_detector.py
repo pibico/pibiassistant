@@ -291,16 +291,58 @@ def category_to_annotations(category: str) -> dict:
     if category == "dangerous":  # legacy alias
         category = "privileged"
 
+    # Every tool works on this site's own data: none reaches the open internet unless overridden below.
     if category == "read_only":
-        return {"readOnlyHint": True}
-    if category == "write":
-        return {"readOnlyHint": False}
-    if category == "read_write":
-        return {"readOnlyHint": False}
+        return {"readOnlyHint": True, "openWorldHint": False}
+    if category in ("write", "read_write"):
+        return {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False}
     if category == "privileged":
-        return {"readOnlyHint": False, "destructiveHint": True}
+        return {"readOnlyHint": False, "destructiveHint": True, "openWorldHint": False}
 
     return {}
+
+
+# Per-tool refinements on top of the category hints. Clients use them to decide how loudly to ask for approval:
+# destructive tools are confirmed harder, idempotent ones can be retried, open-world ones leave the site.
+TOOL_ANNOTATION_OVERRIDES = {
+    "update_document": {"idempotentHint": True},
+    "assign_document": {"idempotentHint": True},
+    "rename_document": {"idempotentHint": False},
+    "delete_document": {"destructiveHint": True, "idempotentHint": True},
+    "cancel_document": {"destructiveHint": True, "idempotentHint": True},
+    "run_workflow": {"destructiveHint": True},
+    "send_email": {"openWorldHint": True, "idempotentHint": False},
+    "export_data": {"idempotentHint": True},
+    "get_document_pdf": {"idempotentHint": True},
+    "generate_document": {"idempotentHint": True},
+    "attach_file": {"idempotentHint": False},
+}
+
+TOOL_TITLES = {
+    "search": "Search",
+    "fetch": "Fetch document",
+    "aggregate_documents": "Aggregate documents",
+    "get_aida_status": "AIDA status",
+    "get_pending_approvals": "Pending approvals",
+    "run_database_query": "Run database query",
+    "run_python_code": "Run Python code",
+    "create_dashboard_chart": "Create dashboard chart",
+    "generate_report": "Generate report",
+    "report_list": "List reports",
+}
+
+
+def tool_title(tool_name: str) -> str:
+    """Human title for a tool: an explicit one, else the name in words ("create_document" -> "Create document")."""
+    return TOOL_TITLES.get(tool_name) or tool_name.replace("_", " ").strip().capitalize()
+
+
+def tool_annotations(tool_name: str, category: str) -> dict:
+    """MCP annotations for one tool: its category hints, the per-tool overrides and its title."""
+    hints = category_to_annotations(category)
+    if not hints:
+        return {}
+    return {**hints, **TOOL_ANNOTATION_OVERRIDES.get(tool_name, {}), "title": tool_title(tool_name)}
 
 
 def get_category_info(category: str) -> dict:

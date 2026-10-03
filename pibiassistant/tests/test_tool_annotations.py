@@ -44,24 +44,30 @@ class TestCategoryToAnnotations(BaseAssistantTest):
     """category_to_annotations maps the 4 PA categories to MCP hints."""
 
     def test_read_only(self):
-        self.assertEqual(category_to_annotations("read_only"), {"readOnlyHint": True})
+        self.assertEqual(category_to_annotations("read_only"), {"readOnlyHint": True, "openWorldHint": False})
 
     def test_write(self):
-        self.assertEqual(category_to_annotations("write"), {"readOnlyHint": False})
+        self.assertEqual(
+            category_to_annotations("write"),
+            {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+        )
 
     def test_read_write(self):
-        self.assertEqual(category_to_annotations("read_write"), {"readOnlyHint": False})
+        self.assertEqual(
+            category_to_annotations("read_write"),
+            {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+        )
 
     def test_privileged_is_destructive(self):
         self.assertEqual(
             category_to_annotations("privileged"),
-            {"readOnlyHint": False, "destructiveHint": True},
+            {"readOnlyHint": False, "destructiveHint": True, "openWorldHint": False},
         )
 
     def test_dangerous_legacy_alias(self):
         self.assertEqual(
             category_to_annotations("dangerous"),
-            {"readOnlyHint": False, "destructiveHint": True},
+            {"readOnlyHint": False, "destructiveHint": True, "openWorldHint": False},
         )
 
     def test_unknown_category_yields_no_hints(self):
@@ -167,7 +173,7 @@ class TestToolsListEmitsAnnotations(BaseAssistantTest):
             "name": "delete_document",
             "description": "Delete a document",
             "inputSchema": {"type": "object", "properties": {}},
-            "annotations": {"readOnlyHint": False, "destructiveHint": True},
+            "annotations": {"readOnlyHint": False, "destructiveHint": True, "openWorldHint": False},
             "fn": lambda **kw: {},
         }
 
@@ -177,7 +183,7 @@ class TestToolsListEmitsAnnotations(BaseAssistantTest):
         self.assertEqual(by_name["get_document"]["annotations"], {"readOnlyHint": True})
         self.assertEqual(
             by_name["delete_document"]["annotations"],
-            {"readOnlyHint": False, "destructiveHint": True},
+            {"readOnlyHint": False, "destructiveHint": True, "openWorldHint": False},
         )
 
 

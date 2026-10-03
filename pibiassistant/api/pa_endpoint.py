@@ -67,7 +67,7 @@ def _build_tool_registry():
         from pibiassistant.core.tool_registry import get_tool_registry
         from pibiassistant.mcp.tool_adapter import build_tool_dict
         from pibiassistant.utils.plugin_manager import memoize_enabled_plugins
-        from pibiassistant.utils.tool_category_detector import category_to_annotations
+        from pibiassistant.utils.tool_category_detector import tool_annotations, tool_title
 
         # Every get_tool() re-syncs the enabled-plugin set from the DB; read it once.
         with memoize_enabled_plugins():
@@ -86,7 +86,8 @@ def _build_tool_registry():
                 tool_instance = registry.get_tool(tool_name)
                 if tool_instance:
                     tool_dict = build_tool_dict(tool_instance)
-                    annotations = category_to_annotations(categories.get(tool_name, "read_write"))
+                    annotations = tool_annotations(tool_name, categories.get(tool_name, "read_write"))
+                    tool_dict["title"] = tool_title(tool_name)
                     if annotations:
                         # Merge with any annotations the tool already declared.
                         tool_dict["annotations"] = {**(tool_dict.get("annotations") or {}), **annotations}

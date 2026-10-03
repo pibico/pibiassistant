@@ -25,6 +25,7 @@ import requests
 from frappe import _
 
 from pibiassistant.utils.plugin_manager import memoize_enabled_plugins
+from pibiassistant.utils.result_limits import fit_result
 
 from ..block_builder import truncate_result_for_emit
 from ..chat.cancel import is_cancelled
@@ -438,55 +439,8 @@ def _can_read_file(arguments: dict) -> bool:
     )
 
 
-def _find_rows(obj, depth=0):
-    """(container, key) of the longest list in a result, looking two levels deep."""
-    best = None
-    items = obj.items() if isinstance(obj, dict) else []
-    for key, value in items:
-        if isinstance(value, list) and (best is None or len(value) > len(best[0][best[1]])):
-            best = (obj, key)
-        elif isinstance(value, dict) and depth < 1:
-            inner = _find_rows(value, depth + 1)
-            if inner and (best is None or len(inner[0][inner[1]]) > len(best[0][best[1]])):
-                best = inner
-    return best
-
-
 def _fit_result(text: str, limit: int = MAX_TOOL_RESULT_CHARS) -> str:
-    """Keep a tool result under ``limit`` chars as valid JSON: drop trailing rows, say how many."""
-    if len(text) <= limit:
-        return text
-    hint = "Result truncated; narrow the filters, add fields or limit, or aggregate instead."
-    try:
-        obj = json.loads(text)
-    except ValueError:
-        return json.dumps({"truncated": True, "preview": text[: limit - 200], "hint": hint}, ensure_ascii=False)
-    if isinstance(obj, list):
-        obj = {"rows": obj}
-    found = _find_rows(obj)
-    if not found:
-        return json.dumps({"truncated": True, "preview": text[: limit - 200], "hint": hint}, ensure_ascii=False)
-    holder, key = found
-    rows = holder[key]
-    total = len(rows)
-
-    def build(keep):
-        holder[key] = rows[:keep]
-        return json.dumps(
-            {**obj, "truncated": True, "rows_shown": keep, "total": total, "hint": hint},
-            default=str,
-            ensure_ascii=False,
-        )
-
-    lo, hi, best = 1, total, None
-    while lo <= hi:
-        mid = (lo + hi) // 2
-        out = build(mid)
-        if len(out) <= limit:
-            best, lo = out, mid + 1
-        else:
-            hi = mid - 1
-    return best or json.dumps({"truncated": True, "preview": text[: limit - 200], "hint": hint}, ensure_ascii=False)
+    return fit_result(text, limit)
 
 
 def _run_tool(name: str, arguments: dict) -> tuple[str, str]:
